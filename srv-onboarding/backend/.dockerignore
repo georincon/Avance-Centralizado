@@ -1,0 +1,7 @@
+# Nunca enviar al contexto de build: compilados ni datos personales subidos en pruebas.
+build/
+.gradle/
+.kotlin/
+out/
+data/
+*.log

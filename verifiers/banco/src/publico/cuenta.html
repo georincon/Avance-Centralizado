@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi cuenta · {{NOMBRE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
+<link rel="stylesheet" href="{{BASE}}/estilo.css">
+</head>
+<body>
+<header>
+  <div class="barra">
+    <a class="logo" href="{{BASE}}/">
+      <span class="marca">
+        <svg viewBox="0 0 64 46" fill="none" aria-hidden="true">
+          <g stroke="#fff" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 40V19a9 9 0 0 1 18 0v21"/>
+            <path d="M34 8v23a9 9 0 0 0 18 0V8"/>
+          </g>
+        </svg>
+      </span>
+      {{NOMBRE}}
+    </a>
+    <div class="usuario"><span class="nombre" id="nombre-corto"></span><span id="avatar"></span><button class="salir" id="salir">Salir</button></div>
+  </div>
+</header>
+<main>
+  <div class="bienvenida" id="bienvenida" hidden>¡Tu cuenta está lista! Te regalamos un bono de bienvenida. La próxima vez entra con tu wallet, sin contraseñas.</div>
+  <div class="bienvenida" id="aviso" hidden></div>
+  <h1 id="saludo">Hola</h1>
+
+  <div class="cuentas" id="cuentas"></div>
+
+  <div class="rejilla" id="detalle">
+    <div>
+      <div class="caja saldo">
+        <div class="etiqueta" id="etiqueta">Saldo disponible</div>
+        <div class="valor" id="saldo">—</div>
+        <div class="cuenta"><span>N.º <strong id="numero"></strong></span><span id="desde"></span></div>
+        <div class="acciones-rapidas"><button disabled>Transferir</button><button disabled>Pagar</button><button disabled>Recargar</button></div>
+      </div>
+      <div class="caja credencial" id="caja-credencial" style="margin-top:20px">
+        <h2>Credencial de esta cuenta en tu wallet</h2>
+        <p class="nota" id="estado-credencial"></p>
+        <button class="primario" id="recibir-credencial">Recibir en mi wallet</button>
+      </div>
+      <div class="caja" style="margin-top:20px">
+        <h2>Movimientos</h2>
+        <table id="movimientos"></table>
+      </div>
+      <div class="caja zona-peligro" style="margin-top:20px">
+        <h2>Cerrar esta cuenta</h2>
+        <p class="nota" id="nota-cierre"></p>
+        <button class="peligro" id="cerrar-cuenta">Cerrar esta cuenta</button>
+      </div>
+    </div>
+    <div class="caja">
+      <span class="sello">✔ Verificado con tu wallet</span>
+      <h2>Tus datos</h2>
+      <img class="foto" id="foto" alt="Tu foto, del documento de la wallet" hidden>
+      <dl id="datos"></dl>
+    </div>
+  </div>
+
+  <div class="caja vacia" id="vacia" hidden>
+    <h2>No tienes cuentas activas</h2>
+    <p class="nota">Sigues siendo cliente del banco. Abre una cuenta nueva cuando quieras.</p>
+    <button class="primario" data-abrir>Abrir una cuenta</button>
+  </div>
+
+  <details class="caja cerradas" id="cerradas" hidden>
+    <summary>Cuentas cerradas</summary>
+    <table id="tabla-cerradas"></table>
+  </details>
+</main>
+<footer>Banco de ejemplo para probar el ecosistema EUDI Wallet. No es un banco real.</footer>
+
+<div class="velo" id="velo-abrir" role="dialog" aria-modal="true" aria-labelledby="titulo-abrir">
+  <div class="ventana">
+    <button class="cerrar" data-cerrar aria-label="Cerrar">✕</button>
+    <h2 id="titulo-abrir">Abrir otra cuenta</h2>
+    <p class="sub">Elige el tipo de cuenta. Ya ingresaste con tu wallet, no hace falta repetirlo.</p>
+    <div class="tipos" id="tipos"></div>
+    <div class="estado" id="estado-abrir"></div>
+    <button class="primario ancho" id="confirmar-abrir">Abrir la cuenta</button>
+  </div>
+</div>
+
+ <div class="velo" id="velo-credencial" role="dialog" aria-modal="true" aria-labelledby="titulo-credencial">
+  <div class="ventana">
+    <button class="cerrar" data-cerrar aria-label="Cerrar">✕</button>
+    <h2 id="titulo-credencial">Recibe tu credencial en la wallet</h2>
+    <p class="sub" id="sub-credencial"></p>
+    <div class="qr solo-escritorio" id="qr-credencial"><div class="girando"></div></div>
+    <a class="boton primario ancho solo-movil" id="abrir-credencial" href="#">Abrir mi wallet</a>
+    <div class="pide"><strong>Tu PIN de un solo uso:</strong>
+      <p class="pin" id="pin-credencial">····</p>
+      <p class="nota">Tu wallet te lo pedirá al recibirla. Vale 15 minutos.</p></div>
+    <div class="estado" id="estado-credencial-ventana"></div>
+  </div>
+</div>
+
+<div class="velo" id="velo-cerrar" role="dialog" aria-modal="true" aria-labelledby="titulo-cerrar">
+  <div class="ventana">
+    <button class="cerrar" data-cerrar aria-label="Cerrar">✕</button>
+    <h2 id="titulo-cerrar">Cerrar la cuenta</h2>
+    <p class="sub" id="sub-cerrar"></p>
+    <div id="paso-aviso">
+      <p class="nota" id="efecto-cierre"></p>
+      <button class="peligro ancho" id="seguir-cierre">Continuar y confirmar con mi wallet</button>
+    </div>
+    <div id="paso-wallet" hidden>
+      <div class="qr solo-escritorio" id="qr"><div class="girando"></div></div>
+      <a class="boton primario ancho solo-movil" id="abrir-wallet" href="#">Abrir mi wallet</a>
+      <div class="pide"><strong>Le pediremos a tu wallet:</strong><ul><li>Número de documento</li><li>Nombres y apellidos</li></ul>
+        <p class="nota">Debe ser el mismo documento con el que ingresaste.</p></div>
+    </div>
+    <div class="estado" id="estado-cerrar"></div>
+  </div>
+</div>
+
+<script>
+  const BASE = '{{BASE}}'
+  const MOVIL = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+  const $ = (id) => document.getElementById(id)
+  const pesos = (v) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(v)
+  const fecha = (f) => f ? new Date(f).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }) : '—'
+  const texto = (v) => (v ?? '—').toString()
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e }
+
+  if (MOVIL) document.querySelectorAll('.solo-movil').forEach((e) => (e.style.display = 'flex'))
+  if (MOVIL) document.querySelectorAll('.solo-escritorio').forEach((e) => (e.style.display = 'none'))
+
+  const params = new URLSearchParams(location.search)
+  if (params.get('nueva')) $('bienvenida').hidden = false
+  if (params.get('cerrada')) { $('aviso').textContent = `La cuenta ${params.get('cerrada')} quedó cerrada y su credencial fue revocada: tu wallet la mostrará como revocada.`; $('aviso').hidden = false }
+  const abrirOferta = params.get('nueva') === '1'
+  if (params.get('nueva') || params.get('cerrada')) history.replaceState(null, '', BASE + '/cuenta')
+
+  let cliente = null
+  let seleccion = null   // número de la cuenta que se está viendo
+
+  const activas = () => cliente.cuentas.filter((c) => c.estado === 'activa')
+  const nombreTipo = (t) => cliente.tipos[t] ?? t
+
+  async function cargar() {
+    const r = await fetch(`${BASE}/api/yo`)
+    if (!r.ok) return (location.href = BASE + '/')
+    cliente = await r.json()
+    pintar()
+  }
+
+  function pintar() {
+    const c = cliente
+    $('saludo').textContent = `Hola, ${c.nombres.split(' ')[0]}`
+    $('nombre-corto').textContent = `${c.nombres} ${c.apellidos}`
+    const av = $('avatar'); av.replaceChildren()
+    const avatar = document.createElement(c.foto ? 'img' : 'span')
+    if (c.foto) { avatar.src = c.foto; avatar.alt = '' } else { avatar.className = 'inicial'; avatar.textContent = c.nombres[0] }
+    av.append(avatar)
+    if (c.foto) { $('foto').src = c.foto; $('foto').hidden = false }
+    pintarDatos()
+
+    const act = activas()
+    if (!act.some((x) => x.numero === seleccion)) seleccion = act[0]?.numero ?? null
+    pintarSelector(act)
+    $('detalle').hidden = !seleccion
+    $('vacia').hidden = !!seleccion
+    if (seleccion) pintarCuenta(act.find((x) => x.numero === seleccion), act.length)
+    pintarCerradas()
+    if (seleccion) pintarCredencial(act.find((x) => x.numero === seleccion))
+  }
+
+  function pintarCredencial(x) {
+    const k = x.credencial ?? { entregadas: 0, vigentes: 0 }
+    $('estado-credencial').textContent = k.vigentes > 0
+      ? `Entregada: ${k.vigentes === 1 ? 'tienes 1 copia vigente' : `tienes ${k.vigentes} copias vigentes`} en tu wallet. Se revoca sola cuando cierres esta cuenta.`
+      : 'Todavía no la has recibido. Es una credencial verificable que prueba que eres titular de esta cuenta; se revoca sola cuando la cierres.'
+    $('recibir-credencial').textContent = k.vigentes > 0 ? 'Volver a recibirla (reemplaza la anterior)' : 'Recibir en mi wallet'
+  }
+
+  function pintarSelector(act) {
+    const cont = $('cuentas'); cont.replaceChildren()
+    for (const x of act) {
+      const b = el('button', 'tarjeta-cuenta' + (x.numero === seleccion ? ' activa' : ''))
+      b.append(el('span', 'tipo', nombreTipo(x.tipo)), el('strong', '', pesos(x.saldo)), el('span', 'num', 'N.º ' + x.numero))
+      b.onclick = () => { seleccion = x.numero; pintar() }
+      cont.append(b)
+    }
+    if (act.length < cliente.max_activas) {
+      const mas = el('button', 'tarjeta-cuenta nueva', '＋ Abrir otra cuenta')
+      mas.onclick = abrirVentanaAbrir
+      cont.append(mas)
+    }
+  }
+
+  function pintarCuenta(x, nActivas) {
+    $('etiqueta').textContent = `Saldo disponible · ${nombreTipo(x.tipo)}`
+    $('saldo').textContent = pesos(x.saldo)
+    $('numero').textContent = x.numero
+    $('desde').textContent = `Abierta el ${fecha(x.abierta)}`
+    const tabla = $('movimientos'); tabla.replaceChildren()
+    for (const m of x.movimientos.slice().reverse()) {
+      const tr = document.createElement('tr')
+      const t1 = el('td', '', m.concepto); t1.append(el('div', 'fecha', fecha(m.fecha)))
+      tr.append(t1, el('td', m.valor > 0 ? 'positivo' : '', (m.valor > 0 ? '+' : '') + pesos(m.valor)))
+      tabla.append(tr)
+    }
+    $('nota-cierre').textContent = nActivas > 1
+      ? 'Si tiene saldo, pasa a otra de tus cuentas activas. Tu wallet debe confirmar el cierre.'
+      : 'Es tu única cuenta activa: seguirás siendo cliente y podrás abrir otra cuando quieras. Si tiene saldo, se te entrega como retiro. Tu wallet debe confirmar el cierre.'
+  }
+
+  function pintarCerradas() {
+    const cerr = cliente.cuentas.filter((c) => c.estado === 'cerrada')
+    $('cerradas').hidden = cerr.length === 0
+    const t = $('tabla-cerradas'); t.replaceChildren()
+    for (const x of cerr) {
+      const tr = document.createElement('tr')
+      const t1 = el('td', '', `${nombreTipo(x.tipo)} · N.º ${x.numero}`)
+      t1.append(el('div', 'fecha', `Abierta ${fecha(x.abierta)}`))
+      const t2 = el('td', '', `Cerrada ${fecha(x.cerrada)}`)
+      if (x.credencial?.entregadas > 0) t2.append(el('div', 'fecha', 'Credencial revocada'))
+      tr.append(t1, t2)
+      t.append(tr)
+    }
+  }
+
+  function pintarDatos() {
+    const c = cliente
+    const filas = [
+      ['Documento', c.cedula],
+      ['Nombre', `${c.nombres} ${c.apellidos}`],
+      ['Nacimiento', fecha(c.fecha_nacimiento)],
+      ['Correo', c.correo],
+      ['Emitido por', c.verificacion?.emisor],
+      ['Documento vence', fecha(c.verificacion?.pid_vence)],
+      ['Verificado', fecha(c.verificacion?.fecha)],
+      ['Último ingreso', c.ultimo_ingreso ? fecha(c.ultimo_ingreso) : 'ahora'],
+    ]
+    const dl = $('datos'); dl.replaceChildren()
+    for (const [k, v] of filas) {
+      // Este PID no trae correo ni vencimiento: no se muestra una fila vacía.
+      if ((k === 'Correo' || k === 'Documento vence') && !texto(v).replace(/[—-]/g, '').trim()) continue
+      dl.append(el('dt', '', k), el('dd', '', texto(v)))
+    }
+  }
+
+  // ── Ventanas ─────────────────────────────────────────────────────────────
+  let sondeo
+  function cerrarVentanas() { clearTimeout(sondeo); document.querySelectorAll('.velo').forEach((v) => v.classList.remove('abierto')) }
+  document.querySelectorAll('[data-cerrar]').forEach((b) => (b.onclick = cerrarVentanas))
+  function estado(id, txt, tipo) {
+    const e = $(id); e.className = 'estado' + (tipo === 'error' ? ' error' : '')
+    e.replaceChildren(); if (tipo === 'esperando') e.append(el('div', 'girando')); e.append(txt ?? '')
+  }
+
+  // Abrir otra cuenta
+  let tipoElegido = 'ahorros'
+  function abrirVentanaAbrir() {
+    const cont = $('tipos'); cont.replaceChildren()
+    for (const [k, v] of Object.entries(cliente.tipos)) {
+      const b = el('button', 'tipo-op' + (k === tipoElegido ? ' activa' : ''), v)
+      b.type = 'button'
+      b.onclick = () => { tipoElegido = k; abrirVentanaAbrir() }
+      cont.append(b)
+    }
+    estado('estado-abrir', '')
+    $('velo-abrir').classList.add('abierto')
+  }
+  document.querySelectorAll('[data-abrir]').forEach((b) => (b.onclick = abrirVentanaAbrir))
+  $('confirmar-abrir').onclick = async () => {
+    estado('estado-abrir', 'Abriendo tu cuenta…', 'esperando')
+    try {
+      const r = await fetch(`${BASE}/api/cuentas`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ tipo: tipoElegido }) })
+      const j = await r.json()
+      if (!r.ok) return estado('estado-abrir', j.error ?? 'No se pudo abrir la cuenta.', 'error')
+      seleccion = j.numero
+      cerrarVentanas()
+      await cargar()
+      $('aviso').textContent = `Abriste la cuenta ${j.numero} (${nombreTipo(j.tipo)}).`; $('aviso').hidden = false
+      if (j.oferta) mostrarOferta(j.numero, j.oferta)   // al crear la cuenta se ofrece su credencial
+    } catch { estado('estado-abrir', 'No hay conexión con el banco.', 'error') }
+  }
+
+  // Credencial de la cuenta: oferta OpenID4VCI (QR o enlace + PIN). Se pregunta cada 3 s hasta que la wallet la recibe.
+  async function mostrarOferta(numero, oferta) {
+    clearTimeout(sondeo)
+    const antes = cliente.cuentas.find((c) => c.numero === numero)?.credencial?.entregadas ?? 0
+    $('sub-credencial').textContent = `Cuenta N.º ${numero} · ${nombreTipo(cliente.cuentas.find((c) => c.numero === numero)?.tipo)}`
+    $('qr-credencial').replaceChildren(el('div', 'girando'))
+    $('velo-credencial').classList.add('abierto')
+    estado('estado-credencial-ventana', 'Preparando tu credencial…', 'esperando')
+    try {
+      if (!oferta) {
+        const r = await fetch(`${BASE}/api/cuentas/${encodeURIComponent(numero)}/credencial`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
+        oferta = await r.json()
+        if (!r.ok) return estado('estado-credencial-ventana', oferta.error ?? 'No se pudo preparar la credencial.', 'error')
+      }
+      const img = document.createElement('img'); img.alt = 'Código QR para recibir la credencial'; img.src = oferta.qr
+      $('qr-credencial').replaceChildren(img)
+      $('abrir-credencial').href = oferta.enlace
+      $('pin-credencial').textContent = oferta.pin
+      estado('estado-credencial-ventana', MOVIL ? 'Abre tu wallet y escribe el PIN.' : 'Escanea el código con tu wallet y escribe el PIN.', 'esperando')
+      const vigilar = async () => {
+        try {
+          const r = await fetch(`${BASE}/api/yo`)
+          if (r.ok) {
+            cliente = await r.json()
+            const x = cliente.cuentas.find((c) => c.numero === numero)
+            if ((x?.credencial?.entregadas ?? 0) > antes) {
+              estado('estado-credencial-ventana', '¡Listo! Tu wallet recibió la credencial de esta cuenta.')
+              pintar()
+              // La credencial ya está en la wallet: el recuadro del QR se cierra solo.
+              setTimeout(() => { if ($('velo-credencial').classList.contains('abierto')) cerrarVentanas() }, 1200)
+              return
+            }
+          }
+        } catch { /* se reintenta */ }
+        sondeo = setTimeout(vigilar, 3000)
+      }
+      sondeo = setTimeout(vigilar, 3000)
+    } catch { estado('estado-credencial-ventana', 'No hay conexión con el banco.', 'error') }
+  }
+  $('recibir-credencial').onclick = () => mostrarOferta(seleccion)
+
+  // Cerrar una cuenta, confirmándolo con la wallet
+  $('cerrar-cuenta').onclick = () => {
+    const act = activas(), x = act.find((c) => c.numero === seleccion)
+    if (!x) return
+    $('sub-cerrar').textContent = `${nombreTipo(x.tipo)} · N.º ${x.numero}`
+    const otras = act.filter((c) => c.numero !== x.numero)
+    $('efecto-cierre').textContent = x.saldo > 0
+      ? (otras.length ? `Su saldo de ${pesos(x.saldo)} pasará a la cuenta ${otras[0].numero}.` : `Su saldo de ${pesos(x.saldo)} se te entrega como retiro.`)
+      : 'La cuenta no tiene saldo.'
+    $('efecto-cierre').textContent += otras.length ? '' : ' Seguirás siendo cliente y podrás abrir otra cuenta.'
+    $('paso-aviso').hidden = false; $('paso-wallet').hidden = true
+    estado('estado-cerrar', '')
+    $('velo-cerrar').classList.add('abierto')
+  }
+  $('seguir-cierre').onclick = async () => {
+    $('paso-aviso').hidden = true; $('paso-wallet').hidden = false
+    $('qr').replaceChildren(el('div', 'girando'))
+    estado('estado-cerrar', 'Preparando la confirmación…', 'esperando')
+    try {
+      const r = await fetch(`${BASE}/api/solicitud`, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ tipo: 'confirmar', cuenta: seleccion, dispositivo: MOVIL ? 'mismo' : 'otro' }),
+      })
+      const s = await r.json()
+      if (!r.ok) return estado('estado-cerrar', s.error ?? 'No se pudo preparar la confirmación.', 'error')
+      const img = document.createElement('img'); img.alt = 'Código QR para tu wallet'; img.src = s.qr
+      $('qr').replaceChildren(img)
+      $('abrir-wallet').href = s.enlace
+      estado('estado-cerrar', MOVIL ? 'Esperando tu wallet…' : 'Esperando que escanees el código…', 'esperando')
+      // En el teléfono la wallet vuelve a /volver; en el computador se pregunta aquí.
+      if (!MOVIL) preguntar(s.id)
+    } catch { estado('estado-cerrar', 'No hay conexión con el banco.', 'error') }
+  }
+  async function preguntar(id) {
+    try {
+      const r = await (await fetch(`${BASE}/api/solicitud/${id}`)).json()
+      if (r.estado === 'listo') {
+        estado('estado-cerrar', 'Cuenta cerrada.')
+        location.href = BASE + '/cuenta?cerrada=' + encodeURIComponent(r.cerrada ?? '')
+        return
+      }
+      if (r.estado === 'rechazada') return estado('estado-cerrar', r.motivo, 'error')
+    } catch { /* se reintenta */ }
+    sondeo = setTimeout(() => preguntar(id), 2000)
+  }
+
+  // Cuenta recién creada con la wallet: se le ofrece su credencial de una vez.
+  cargar().then(() => { if (abrirOferta && seleccion) mostrarOferta(seleccion) })
+  $('salir').onclick = async () => { await fetch(`${BASE}/api/salir`, { method: 'POST' }); location.href = BASE + '/' }
+</script>
+</body>
+</html>

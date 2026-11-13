@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/main.css}">
+    <title>UIS :: Ingreso con cédula digital</title>
+</head>
+<body>
+<main class="container p-4 text-center" style="max-width: 520px;">
+    <h1 class="h3 mb-3">Ingreso con tu cédula digital</h1>
+    <p class="text-body-secondary">Escanea este código con tu wallet y comparte tu cédula digital (PID). La UIS solo recibe tu número de
+        cédula y tu nombre para buscar tus programas.</p>
+    <img class="img-fluid mb-3" style="max-width: 320px;" alt="Código QR de la solicitud"
+         th:src="'data:' + ${qrCodeMediaType} + ';base64,' + ${qrCode}">
+    <div class="mb-3"><a class="btn btn-outline-primary" th:href="${requestUri}">Abrir en mi wallet</a></div>
+    <div id="pid-estado" class="alert alert-info" th:attr="data-estado-url=@{${estadoUrl}}">Esperando que compartas tu cédula digital…</div>
+    <a th:href="@{/issuer/login}">Cancelar</a>
+</main>
+<script type="application/javascript" th:src="@{/public/js/login-pid.js}"></script>
+</body>
+</html>

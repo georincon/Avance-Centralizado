@@ -1,0 +1,51 @@
+volumes:
+  gitb-repo:
+  gitb-dbdata:
+
+services:
+  gitb-redis:
+    image: isaitb/gitb-redis
+    container_name: itb-redis
+    restart: unless-stopped
+  gitb-mysql:
+    image: isaitb/gitb-mysql
+    container_name: itb-mysql
+    restart: unless-stopped
+    volumes:
+      - gitb-dbdata:/var/lib/mysql
+    healthcheck:
+      test: "/usr/bin/mysql --user=root --password=$$MYSQL_ROOT_PASSWORD --execute \"SHOW DATABASES;\""
+      interval: 3s
+      retries: 50
+  gitb-srv:
+    image: isaitb/gitb-srv
+    container_name: itb-srv
+    restart: unless-stopped
+    environment:
+      - CALLBACK_ROOT_URL=http://localhost:8080/itbsrv
+    ports:
+      - "8080:8080"
+  verification-service:
+    image: ghcr.io/eu-digital-identity-wallet/eudi-itb:main
+    container_name: verification-service
+    restart: unless-stopped
+  gitb-ui:
+    image: isaitb/gitb-ui
+    container_name: itb-ui
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      - DATA_ARCHIVE_KEY=passwd
+      - AUTOMATION_API_ENABLED=true
+      - THEME=ec
+    volumes:
+      - gitb-repo:/gitb-repository
+      - ./data/:/gitb-repository/data/in/:rw
+    depends_on:
+      gitb-redis:
+        condition: service_started
+      gitb-mysql:
+        condition: service_healthy
+      gitb-srv:
+        condition: service_started

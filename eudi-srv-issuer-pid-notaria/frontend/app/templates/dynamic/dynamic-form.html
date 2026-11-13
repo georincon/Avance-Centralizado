@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% include 'partials/cabeza.html' %}
+    <title>{{ credencial_nombre or 'Datos del trámite' }} · Notaría Avance</title>
+</head>
+<body>
+    {% include 'partials/cabecera.html' %}
+    {% set largos = ['declaracion', 'facultades', 'asunto', 'alcance', 'testigos'] %}
+    {% macro campo(name, attr, opcional) %}
+        {% set etq = attr.label if (attr is mapping and attr.label is defined) else etiqueta(name) %}
+        {% set es_fecha = attr.type == 'full-date' %}
+        {% set es_hora = name.startswith('hora') %}
+        {% set limite = 'max' if name in ['fecha_nacimiento', 'escritura_fecha', 'convivencia_desde'] else ('min' if name in ['vigente_hasta', 'fecha_salida', 'fecha_regreso'] else '') %}
+        <div class="campo {{ 'ancho' if name in largos else '' }}">
+            <label for="f_{{ name }}">{{ etq }}{% if not opcional %} <span class="req">*</span>{% endif %}{% if attr.from_pid %}<span class="chip">de tu PID</span>{% endif %}</label>
+            {% if attr.options is defined and attr.options %}
+            <select id="f_{{ name }}" name="{{ name }}" {{ '' if opcional else 'required' }}>
+                <option value="" selected {{ '' if opcional else 'disabled' }}>Selecciona una opción…</option>
+                {% for option in attr.options %}<option value="{{ option }}" {{ 'selected' if attr.filled_value == option else '' }}>{{ option }}</option>{% endfor %}
+            </select>
+            {% elif attr.type == 'bool' %}
+            <select id="f_{{ name }}" name="{{ name }}"><option value="true">Sí</option><option value="false">No</option></select>
+            {% elif name in largos %}
+            <textarea id="f_{{ name }}" name="{{ name }}" {{ '' if opcional else 'required' }}>{{ attr.filled_value if attr.filled_value is not none else '' }}</textarea>
+            {% else %}
+            <input id="f_{{ name }}" type="{{ 'date' if es_fecha else 'time' if es_hora else 'number' if attr.type == 'uint' else 'text' }}" name="{{ name }}" {% if es_fecha and limite %}data-limite="{{ limite }}"{% endif %}
+                   value="{{ attr.filled_value if attr.filled_value is not none else '' }}" {{ 'readonly' if attr.filled_value else '' }}
+                   {{ '' if opcional else 'required' }} {{ 'min=0' if attr.type == 'uint' else '' }}>
+            {% endif %}
+        </div>
+    {% endmacro %}
+
+    {% set con_archivo = 'documento_sha256' in mandatory_attributes %}
+    {% set rotulos = {'co.notaria.autenticacion_firma': 'Documento que firmas', 'co.notaria.constancia_copia_escritura': 'Copia de la escritura', 'co.notaria.reconocimiento_documento': 'Documento que reconoces'} %}
+    {% macro bloque_archivo() %}
+        <div class="campo ancho" id="bloque-archivo" data-max="{{ max_archivo_bytes }}">
+            <label for="archivo">{{ rotulos.get(credencial_id, 'Documento') }} <span class="req">*</span></label>
+            <div class="archivo" id="archivo-zona">
+                <input id="archivo" type="file" accept=".pdf,application/pdf,image/*,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                <div class="ayuda">Tamaño máximo: {{ (max_archivo_bytes / 1048576) | int }} MB · PDF, imagen o Word.</div>
+                <div id="archivo-estado" class="archivo-estado" hidden></div>
+            </div>
+            <div class="ayuda">El archivo no sale de tu dispositivo: aquí se calcula su huella SHA-256 y solo eso (con el nombre y el tamaño) queda en el documento notarial.
+                Esto no firma el archivo: deja constancia de cuál fue el presentado, y se puede comprobar después con el mismo archivo.</div>
+            <input type="hidden" name="documento_nombre" id="h-nombre">
+            <input type="hidden" name="documento_bytes" id="h-bytes">
+            <input type="hidden" name="documento_sha256" id="h-sha">
+        </div>
+    {% endmacro %}
+
+    <main class="pagina estrecha" role="main">
+        <h1>{{ credencial_nombre or 'Datos del trámite' }}</h1>
+        <p class="sub">Escribe los datos tal como deben quedar en el documento. Lo demás (número, fecha, notario, advertencia legal) lo pone la notaría.</p>
+
+        <form id="selectCountryForm" method="post" action="{{ redirect_url }}" enctype="multipart/form-data">
+            <div class="panel">
+                <div class="campos">
+                    {% for name, attr in mandatory_attributes | en_orden %}{% if con_archivo and name == 'documento_nombre' %}{{ bloque_archivo() }}{% elif con_archivo and name in ['documento_sha256', 'documento_bytes'] %}{% else %}{{ campo(name, attr, false) }}{% endif %}{% endfor %}
+                </div>
+            </div>
+            {% if optional_attributes %}
+            <div class="titulo-seccion">Datos opcionales</div>
+            <div class="panel">
+                <div class="campos">
+                    {% for name, attr in optional_attributes | en_orden %}{{ campo(name, attr, true) }}{% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            <div class="aviso">Documento emulado de una notaría simulada: no tiene validez legal.</div>
+            <div class="acciones">
+                <button type="submit" name="proceed" value="1" id="continuar"{% if con_archivo %} disabled{% endif %}>Continuar</button>
+                <button type="button" class="sec" onclick="window.history.back();">Cancelar</button>
+            </div>
+        </form>
+    </main>
+    {% include 'partials/pie.html' %}
+    <script>
+    // Los campos opcionales vacíos no se envían: así no quedan en el documento como cadenas vacías.
+    document.getElementById('selectCountryForm').addEventListener('submit', function (e) {
+      e.target.querySelectorAll('input:not([required]), textarea:not([required])').forEach(function (i) { if (!i.value.trim()) i.disabled = true; });
+    });
+    </script>
+    {% if con_archivo %}
+    <script>
+    // Huella SHA-256 del archivo, calculada aquí: el archivo no se envía a ningún servidor.
+    (function () {
+      var bloque = document.getElementById('bloque-archivo'), max = parseInt(bloque.dataset.max, 10);
+      var entrada = document.getElementById('archivo'), estado = document.getElementById('archivo-estado');
+      var boton = document.getElementById('continuar'), zona = document.getElementById('archivo-zona');
+      var campos = { n: document.getElementById('h-nombre'), b: document.getElementById('h-bytes'), h: document.getElementById('h-sha') };
+      function tamano(n) {
+        if (n < 1024) return n + ' bytes';
+        if (n < 1048576) return (n / 1024).toLocaleString('es-CO', { maximumFractionDigits: 0 }) + ' KB';
+        return (n / 1048576).toLocaleString('es-CO', { maximumFractionDigits: 1 }) + ' MB';
+      }
+      function limpiar() { campos.n.value = campos.b.value = campos.h.value = ''; boton.disabled = true; }
+      function mostrar(clase, html) { estado.hidden = false; estado.className = 'archivo-estado ' + clase; estado.innerHTML = html; }
+      function esc(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+      entrada.addEventListener('change', async function () {
+        limpiar();
+        var f = entrada.files[0];
+        if (!f) { estado.hidden = true; return; }
+        if (f.size === 0) { mostrar('mal', 'El archivo «' + esc(f.name) + '» está vacío. Elige otro.'); entrada.value = ''; return; }
+        if (f.size > max) { mostrar('mal', '«' + esc(f.name) + '» pesa ' + tamano(f.size) + ' y el máximo es ' + tamano(max) + '. Elige un archivo más liviano.'); entrada.value = ''; return; }
+        if (!(window.crypto && crypto.subtle)) { mostrar('mal', 'Este navegador no puede calcular la huella del archivo. Abre la página en un navegador actualizado.'); return; }
+        mostrar('calc', 'Calculando la huella de «' + esc(f.name) + '» (' + tamano(f.size) + ')…');
+        try {
+          var hash = await crypto.subtle.digest('SHA-256', await f.arrayBuffer());
+          var hex = Array.from(new Uint8Array(hash)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+          campos.n.value = f.name; campos.b.value = String(f.size); campos.h.value = hex; boton.disabled = false;
+          mostrar('ok', '<strong>✓ ' + esc(f.name) + '</strong> · ' + tamano(f.size) +
+            '<br><span class="huella" title="' + hex + '">Huella SHA-256: ' + hex.slice(0, 10) + '…' + hex.slice(-10) + '</span>');
+        } catch (e) {
+          mostrar('mal', 'No se pudo leer el archivo. Intenta de nuevo o elige otro.'); limpiar();
+        }
+      });
+    })();
+    </script>
+    {% endif %}
+    <script>
+    // Límites de las fechas SIN usar los atributos min/max del campo: con ellos algunos navegadores recortan o reescriben el año
+    // mientras se escribe (2023 queda como 0023). El campo de fecha queda libre y aquí solo se valida el valor ya completo.
+    // Las fechas "de un hecho" no pueden ser futuras; las de vigencia, salida o regreso no pueden ser pasadas; el regreso no
+    // puede ser antes de la salida. El servidor vuelve a comprobarlo todo.
+    (function () {
+      var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      var hoy = d.toISOString().slice(0, 10);
+      var ANIO = /^\d{4}-\d{2}-\d{2}$/;
+      var salida = document.getElementById('f_fecha_salida'), regreso = document.getElementById('f_fecha_regreso');
+
+      function validar(i) {
+        var v = i.value, lim = i.dataset.limite, msg = '';
+        // Mientras el año no tenga 4 cifras el navegador entrega "" (vacío): no se dice nada hasta que haya un valor completo.
+        if (ANIO.test(v)) {
+          var anio = parseInt(v.slice(0, 4), 10);
+          if (anio < 1900) msg = 'El año debe tener cuatro cifras (por ejemplo, 2023).';
+          else if (lim === 'max' && v > hoy) msg = 'La fecha no puede ser posterior a hoy.';
+          else if (lim === 'min' && v < hoy) msg = 'La fecha no puede ser anterior a hoy.';
+          else if (i === regreso && salida && ANIO.test(salida.value) && v < salida.value) msg = 'El regreso no puede ser antes de la salida.';
+        }
+        i.setCustomValidity(msg);
+      }
+      document.querySelectorAll('input[type=date]').forEach(function (i) {
+        ['input', 'change', 'blur'].forEach(function (ev) { i.addEventListener(ev, function () { validar(i); }); });
+        validar(i);
+      });
+      if (salida && regreso) salida.addEventListener('change', function () { validar(regreso); });
+    })();
+    </script>
+</body>
+</html>

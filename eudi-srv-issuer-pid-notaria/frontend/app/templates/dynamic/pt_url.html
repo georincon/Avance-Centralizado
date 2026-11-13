@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    {% include 'partials/cabeza.html' %}
+    <title>Notaría Avance</title>
+    <script type="text/javascript">
+        var hash = window.location.hash;
+        var params = new URLSearchParams(window.location.search);
+        var id = params.get('id');
+        window.location.replace(location.origin + "/dynamic/redirect?id=" + id + "&" + hash.substring(1));
+    </script>
+</head>
+
+<body>
+</body>
+
+</html>

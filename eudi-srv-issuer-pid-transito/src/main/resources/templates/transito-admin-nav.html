@@ -1,0 +1,23 @@
+<!--
+  Código propio de este fork (emulador de la Dirección de Tránsito de Bucaramanga).
+  Barra de navegación del panel de administración: se incluye en TODAS las páginas del panel
+  (Licencias, Historial de emisiones y Avisos de revocación) para pasar de una a otra sin volver atrás.
+  Uso:  <th:block th:replace="~{transito-admin-nav :: nav('licencias')}"/>   (activo: licencias | historial | avisos)
+-->
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="nav(activo)">
+    <div class="dtb-franja"></div>
+    <nav class="dtb-nav">
+        <a th:href="@{/transito/admin/ciudadanos}" th:classappend="${activo == 'licencias'} ? 'activo'">Licencias</a>
+        <a th:href="@{/transito/admin/historial}" th:classappend="${activo == 'historial'} ? 'activo'">Historial de emisiones</a>
+        <a th:href="@{/transito/admin/avisos}" th:classappend="${activo == 'avisos'} ? 'activo'">Avisos de revocación</a>
+        <span class="espacio"></span>
+        <form method="post" th:action="@{/transito/admin/logout}" class="m-0">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">Salir</button>
+        </form>
+    </nav>
+</th:block>
+</body>
+</html>

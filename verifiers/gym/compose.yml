@@ -1,0 +1,66 @@
+# El gimnasio de ejemplo (tarjeta de socio y control de ingreso y egreso). Cuelga de la red compartida
+# "avance-eudi" con el alias app-PREFIJO: el nginx central le pasa con la ruta completa
+# https://DOMINIO/PREFIJO/… y https://DOMINIO/.well-known/<x>/PREFIJO (la metadata del emisor). Habla con su
+# verifier (../_comun, instancia VERIFIER_INSTANCIA) por la misma red.
+#
+# Se usa con ./levantar.sh o, ya creada: docker compose -p gym --env-file .env logs -f
+name: gym
+
+services:
+  gym:
+    build: .
+    restart: unless-stopped
+    user: ${UID_GID:-1000:1000}
+    environment:
+      # Base de datos PROPIA del historial (emisiones y verificaciones de este portal): ver el servicio postgres-verif.
+      HISTORIAL_DB_URL: postgres://verif_gym:verif_gym@postgres-verif:5432/verif_gym
+      URL_PUBLICA: https://${DOMINIO}/${PREFIJO}
+      VERIFIER_API: http://verifier-${VERIFIER_INSTANCIA}/verifier-${VERIFIER_INSTANCIA}
+      TRUST_VALIDATOR_URL: ${TRUST_VALIDATOR_URL}
+      GYM_NOMBRE: ${GYM_NOMBRE}
+      ADMIN_CLAVE: ${ADMIN_CLAVE}
+      AFORO_MAXIMO: ${AFORO_MAXIMO:-60}
+      SECRETOS_DIR: /secretos
+      SOCIOS_ARCHIVO: /datos/socios.json
+      PUERTO: "80"
+    volumes:
+      - ./datos:/datos
+      - ./secretos:/secretos:ro
+    networks:
+      default: {}   # red del proyecto: por aquí llega a su base de datos
+      avance-eudi:
+        aliases: ["app-${PREFIJO}"]
+
+  # Base de datos PROPIA de este portal (historial de emisiones y verificaciones). Solo la ve su portal (red del proyecto); para DBeaver
+  # se publica únicamente en 127.0.0.1:5469. Va en este mismo compose: si el portal se instala en otro servidor, se lleva su base.
+  postgres-verif:
+    image: postgres:17-alpine
+    container_name: postgres-verif-gym
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: verif_gym
+      POSTGRES_USER: verif_gym
+      POSTGRES_PASSWORD: verif_gym
+      TZ: America/Bogota
+    ports: ["127.0.0.1:5469:5432"]
+    volumes:
+      - postgres_verif:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U verif_gym -d verif_gym"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  postgres_verif:
+    name: gym_postgres_verif
+
+networks:
+  # Red privada del proyecto (portal + su base). Subred pequeña y fija: Docker ya agotó sus rangos automáticos con tantos proyectos.
+  default:
+    ipam:
+      config:
+        - subnet: 172.16.106.0/28
+  avance-eudi:
+    name: avance-eudi
+    external: true

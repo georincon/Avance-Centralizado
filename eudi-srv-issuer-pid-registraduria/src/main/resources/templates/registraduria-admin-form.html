@@ -1,0 +1,156 @@
+<!--
+  Código propio de este fork (emulador de la Registraduría Nacional del Estado Civil).
+  No es parte del eudi-srv-pid-issuer original de la Comisión Europea.
+  Campos tomados de una cédula de ciudadanía colombiana real (frente + reverso),
+  salvo firma, huella y código de barras (fuera de alcance, ver CONTEXTO-REGISTRADURIA.md).
+-->
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/main.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/registraduria-theme.css}">
+    <link rel="icon" type="image/png" th:href="@{/public/img/registraduria/escudo-favicon.png}">
+    <title>Registraduría (emulador) :: Ciudadano</title>
+</head>
+<body>
+<div class="rne-header">
+    <img th:src="@{/public/img/registraduria/logo-blanco.svg}" alt="Escudo Registraduría Nacional del Estado Civil">
+    <div>
+        <h1>Registraduría (emulador)</h1>
+    </div>
+</div>
+<th:block th:replace="~{registraduria-admin-nav :: nav('ciudadanos')}"/>
+<main class="container p-4" style="max-width: 720px;">
+    <h2 class="rne-titulo mb-4" th:text="${isEdit} ? 'Editar ciudadano' : 'Nuevo ciudadano'">Ciudadano</h2>
+
+    <div class="alert alert-danger" th:if="${validationError}" th:text="${validationError}">Error</div>
+
+    <form class="rne-card" method="post" th:action="@{/registraduria/admin/ciudadanos}" enctype="multipart/form-data">
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label for="documentNumber" class="form-label">Número de documento</label>
+                <input type="text" class="form-control" id="documentNumber" name="documentNumber"
+                       th:value="${cedula != null ? cedula.documentNumber : ''}"
+                       th:readonly="${isEdit}" required>
+            </div>
+            <div class="col-md-4">
+                <label for="apellidos" class="form-label">Apellidos</label>
+                <input type="text" class="form-control" id="apellidos" name="apellidos"
+                       th:value="${cedula != null ? cedula.apellidos : ''}" required>
+            </div>
+            <div class="col-md-4">
+                <label for="nombres" class="form-label">Nombres</label>
+                <input type="text" class="form-control" id="nombres" name="nombres"
+                       th:value="${cedula != null ? cedula.nombres : ''}" required>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label for="fechaNacimiento" class="form-label">Fecha de nacimiento</label>
+                <input type="date" class="form-control" id="fechaNacimiento" name="fechaNacimiento"
+                       th:value="${cedula != null ? cedula.fechaNacimiento : ''}" required>
+            </div>
+            <div class="col-md-4">
+                <label for="lugarNacimientoCiudad" class="form-label">Ciudad de nacimiento</label>
+                <input type="text" class="form-control" id="lugarNacimientoCiudad" name="lugarNacimientoCiudad"
+                       th:value="${cedula != null ? cedula.lugarNacimientoCiudad : ''}" required>
+            </div>
+            <div class="col-md-4">
+                <label for="lugarNacimientoDepartamento" class="form-label">Departamento de nacimiento</label>
+                <input type="text" class="form-control" id="lugarNacimientoDepartamento"
+                       name="lugarNacimientoDepartamento"
+                       th:value="${cedula != null ? cedula.lugarNacimientoDepartamento : ''}">
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <label for="sexo" class="form-label">Sexo</label>
+                <select class="form-select" id="sexo" name="sexo" required>
+                    <option value="">—</option>
+                    <option value="M" th:selected="${cedula != null and cedula.sexo.name() == 'M'}">M</option>
+                    <option value="F" th:selected="${cedula != null and cedula.sexo.name() == 'F'}">F</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="estaturaCm" class="form-label">Estatura (cm)</label>
+                <input type="number" class="form-control" id="estaturaCm" name="estaturaCm" min="50" max="250"
+                       th:value="${cedula != null ? cedula.estaturaCm : ''}">
+            </div>
+            <div class="col-md-3">
+                <label for="grupoSanguineo" class="form-label">Grupo sanguíneo / RH</label>
+                <select class="form-select" id="grupoSanguineo" name="grupoSanguineo">
+                    <option value="">—</option>
+                    <option th:each="g : ${gruposSanguineos}"
+                            th:value="${g}" th:text="${g}"
+                            th:selected="${cedula != null and cedula.grupoSanguineo != null and cedula.grupoSanguineo.etiqueta == g}">
+                        B+
+                    </option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="nacionalidad" class="form-label">Nacionalidad</label>
+                <input type="text" class="form-control" id="nacionalidad" name="nacionalidad" maxlength="2"
+                       th:value="${cedula != null ? cedula.nacionalidad : 'CO'}">
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="fechaExpedicion" class="form-label">Fecha de expedición</label>
+                <input type="date" class="form-control" id="fechaExpedicion" name="fechaExpedicion"
+                       th:value="${cedula != null ? cedula.fechaExpedicion : ''}">
+            </div>
+            <div class="col-md-6">
+                <label for="lugarExpedicion" class="form-label">Lugar de expedición</label>
+                <input type="text" class="form-control" id="lugarExpedicion" name="lugarExpedicion"
+                       th:value="${cedula != null ? cedula.lugarExpedicion : ''}">
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label for="correoElectronico" class="form-label">Correo electrónico</label>
+                <input type="email" class="form-control" id="correoElectronico" name="correoElectronico" maxlength="255"
+                       placeholder="nombre@correo.com"
+                       th:value="${cedula != null ? cedula.correoElectronico : ''}">
+            </div>
+            <div class="col-md-6">
+                <label for="celular" class="form-label">Celular</label>
+                <input type="text" class="form-control" id="celular" name="celular" maxlength="16" inputmode="numeric"
+                       placeholder="3001234567"
+                       th:value="${cedula != null ? cedula.celular : ''}">
+            </div>
+            <div class="form-text">
+                Datos de contacto (opcionales). Si se llenan, viajan dentro del PID para que la persona pueda compartirlos
+                con quien los pida (correo electrónico y número celular). El celular es de 10 dígitos, sin indicativo, y empieza por 3; se comparte tal cual.
+                Para que el PID ya emitido los incluya hay que emitirlo de nuevo.
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label for="foto" class="form-label">Foto de referencia</label>
+                <input type="file" class="form-control" id="foto" name="foto" accept="image/jpeg,image/png">
+                <div class="form-text">
+                    Foto nueva para comparación facial de la wallet — no la impresa en la cédula.
+                    <span th:if="${isEdit and cedula.fotoReferencia != null}">Ya hay una foto cargada; sube otra solo si quieres reemplazarla.</span>
+                </div>
+            </div>
+            <div class="col-md-6" th:if="${isEdit and cedula.fotoReferencia != null}">
+                <img class="img-thumbnail" style="max-height: 150px;"
+                     th:src="@{/registraduria/admin/ciudadanos/{documentNumber}/foto(documentNumber=${cedula.documentNumber})}"
+                     alt="Foto de referencia actual">
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <a class="btn btn-outline-secondary" th:href="@{/registraduria/admin/ciudadanos}">Cancelar</a>
+    </form>
+</main>
+</body>
+</html>

@@ -1,0 +1,433 @@
+{
+  "co.notaria.declaracion_convivencia": {
+    "format": "dc+sd-jwt",
+    "scope": "co.notaria.declaracion_convivencia",
+    "cryptographic_binding_methods_supported": [
+      "jwk"
+    ],
+    "credential_signing_alg_values_supported": [
+      "ES256"
+    ],
+    "proof_types_supported": {
+      "jwt": {
+        "proof_signing_alg_values_supported": [
+          "ES256"
+        ],
+        "key_attestations_required": {
+          "key_storage": [
+            "iso_18045_high"
+          ],
+          "user_authentication": [
+            "iso_18045_high"
+          ],
+          "preferred_key_storage_status_period": 2678400
+        }
+      },
+      "attestation": {
+        "proof_signing_alg_values_supported": [
+          "ES256"
+        ],
+        "key_attestations_required": {
+          "key_storage": [
+            "iso_18045_high"
+          ],
+          "user_authentication": [
+            "iso_18045_high"
+          ],
+          "preferred_key_storage_status_period": 2678400
+        }
+      }
+    },
+    "vct": "urn:co:notaria:convivencia:1",
+    "credential_metadata": {
+      "display": [
+        {
+          "name": "Declaración de convivencia",
+          "locale": "es",
+          "description": "Declaración extraproceso de que el declarante convive con una persona (para afiliarla como beneficiaria en una EPS)",
+          "background_color": "#7a3b4f",
+          "text_color": "#FFFFFF",
+          "logo": {
+            "uri": "https://civica-desarrollo.avance.org.co/notaria-issuer/static/notaria/logo.png",
+            "alt_text": "Notaría Avance"
+          },
+          "background_image": {
+            "uri": "https://civica-desarrollo.avance.org.co/notaria-issuer/static/notaria/fondos/notaria-convivencia.jpg"
+          }
+        }
+      ],
+      "credential_reuse_policy": {
+        "id": "arf_annex_ii",
+        "options": [
+          {
+            "details": [
+              "limited_time"
+            ],
+            "reissue_trigger_lifetime_left": 7776000
+          }
+        ]
+      },
+      "claims": [
+        {
+          "path": [
+            "numero"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Número",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "fecha"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Fecha",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "notaria"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Notaría",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "notario"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Notario",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "declarante_nombre"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Declarante",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "declarante_documento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Documento del declarante",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "companero_nombre"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Compañero(a) permanente",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "companero_documento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Documento del compañero(a)",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "convivencia_desde"
+          ],
+          "mandatory": true,
+          "value_type": "full-date",
+          "source": "user",
+          "display": [
+            {
+              "name": "Convive desde",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "vigente_hasta"
+          ],
+          "mandatory": true,
+          "value_type": "full-date",
+          "source": "user",
+          "display": [
+            {
+              "name": "Válida hasta",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "declarante_tipo_documento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Tipo de documento del declarante",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "companero_tipo_documento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Tipo de documento del compañero(a)",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "estado_civil_declarante"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Estado civil del declarante",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "estado_civil_companero"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Estado civil del compañero(a)",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "domicilio_comun"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Domicilio común",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "entidad_destino"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Con destino a",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "testigos"
+          ],
+          "mandatory": false,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Testigos",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "tipo_declaracion"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Naturaleza",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "fecha_hora_comparecencia"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Fecha y hora de la comparecencia",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "medio_comparecencia"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Medio de comparecencia",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "advertencia_legal"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Advertencia legal",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "simulacion"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Aviso",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "issuing_authority"
+          ],
+          "mandatory": true,
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Autoridad emisora",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "issuing_country"
+          ],
+          "mandatory": true,
+          "source": "issuer",
+          "display": [
+            {
+              "name": "País emisor",
+              "locale": "es"
+            }
+          ]
+        }
+      ]
+    },
+    "issuer_config": {
+      "issuing_authority": "Notaría Avance",
+      "organization_id": "notaria-avance",
+      "validity": 90,
+      "organization_name": "Notaría Avance",
+      "doctype": "urn:co:notaria:convivencia:1",
+      "emulated_claims": {
+        "numero": "{consecutivo}",
+        "fecha": "{hoy}",
+        "notaria": "Notaría Avance",
+        "notario": "Andrea Restrepo Vélez",
+        "declarante_tipo_documento": "Cédula de ciudadanía",
+        "companero_tipo_documento": "Cédula de ciudadanía",
+        "tipo_declaracion": "Declaración extrajuicio de un hecho de convivencia",
+        "fecha_hora_comparecencia": "{ahora}",
+        "medio_comparecencia": "Virtual, con verificación biométrica contra la Registraduría (simulada)",
+        "advertencia_legal": "Constancia de un hecho para afiliación. NO declara la unión marital de hecho ni constituye sociedad patrimonial: eso se hace por escritura pública o acta de conciliación (Ley 54 de 1990, art. 4, modificado por la Ley 979 de 2005).",
+        "simulacion": "Documento emulado por una notaría simulada del ecosistema de pruebas: no tiene validez legal.",
+        "issuing_country": "CO"
+      },
+      "persona_claims": {
+        "declarante_nombre": "nombre_completo",
+        "declarante_documento": "documento"
+      }
+    }
+  }
+}

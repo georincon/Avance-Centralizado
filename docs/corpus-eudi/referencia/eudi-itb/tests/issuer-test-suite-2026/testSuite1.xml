@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite id="issuanceTestSuite" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <gitb:name>Issuance Integration Tests</gitb:name>
+        <gitb:description>This scenario validates the issuance of verifiable credentials from an issuer to a digital wallet using the OpenID for Verifiable Credential Issuance (OID4VCI) 1.0 protocol.</gitb:description>
+        <gitb:version>1.0</gitb:version>
+    </metadata>
+    <actors>
+		<gitb:actor id="issuer">
+            <gitb:name>Issuer</gitb:name>
+            <gitb:desc>Issuer</gitb:desc>
+        </gitb:actor>
+        <gitb:actor id="simulatedCredentialOffer">
+            <gitb:name>Simulated Credential Offer</gitb:name>
+            <gitb:desc>Simulated Credential Offer.</gitb:desc>
+        </gitb:actor>
+        <gitb:actor id="wallet">
+            <gitb:name>Wallet</gitb:name>
+            <gitb:desc>Wallet SUT.</gitb:desc>
+        </gitb:actor>
+    </actors>
+    <!--itb.backend.dev.issuer.eudiw.dev-->
+    <testcase id="issue_pid_sdjwt_credentialoffer"/>
+    <testcase id="issue_pid_mdoc_credentialoffer"/>
+    <testcase id="issue_mdl_mdoc_credentialoffer"/>
+    <testcase id="issue_pid_sdjwt_mdoc_credentialoffer"/>
+    <testcase id="issue_pid_sdjwt_credentialoffer_untrusted_certificate"/>
+    <testcase id="issue_pid_mdoc_credentialoffer_untrusted_certificate"/>
+    <testcase id="issue_pid_sdjwt_credentialoffer_invalid_credential"/>
+    <testcase id="issue_pid_mdoc_credentialoffer_invalid_credential"/>
+    <testcase id="issue_pid_sdjwt_credentialoffer_untrusted_access_certificate"/>
+    <testcase id="issue_pid_mdoc_credentialoffer_untrusted_access_certificate"/>
+    <testcase id="issue_pid_sdjwt_credentialoffer_revocation"/>
+    <testcase id="issue_pid_mdoc_credentialoffer_revocation"/>
+    <testcase id="issue_pid_sdjwt_credentialoffer_invalid_metadata"/>
+    <testcase id="issue_pid_mdoc_credentialoffer_invalid_metadata"/>
+    <testcase id="issue_mdl_mdoc_credentialoffer_revocation"/>
+</testsuite>

@@ -1,0 +1,19 @@
+{
+  "name": "acceso-ejemplo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Portal de control de acceso: muestra la foto, el nombre y el documento del PID verificado para que un guardia decida el ingreso",
+  "type": "module",
+  "main": "src/servidor.js",
+  "scripts": {
+    "start": "node src/servidor.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "pg": "^8.13.1",
+    "qrcode": "^1.5.4"
+  }
+}

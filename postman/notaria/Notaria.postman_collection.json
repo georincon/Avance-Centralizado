@@ -1,0 +1,1380 @@
+{
+  "info": {
+    "name": "Notaría de ejemplo · Notaría Avance",
+    "description": "Portal, trámites notariales, verificación y emisor OpenID4VCI de `verifiers/notaria`. Empieza por **01 · Estado del servicio**. Guía: `README.md`. Cambia `base_url` en el entorno para apuntar a `https://localhost`.",
+    "_postman_id": "b3d8c0a1-7e2f-4c6a-9b11-notaria-avance",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 · Estado del servicio",
+      "description": "Comprobaciones rápidas, sin sesión ni claves. Si estas dos salen en verde, la notaría está arriba y se puede seguir.",
+      "item": [
+        {
+          "name": "Salud",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"estado = ok\", () => pm.expect(dig(json, \"estado\")).to.eql(\"ok\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria/salud",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "salud"
+              ],
+              "query": []
+            },
+            "description": "Responde `ok` si el portal de la notaría está en pie.\n\n**Resultado esperado:** HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "Portal (página principal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"la respuesta contiene '<'\", () => pm.expect(pm.response.text()).to.include(\"<\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria"
+              ],
+              "query": []
+            },
+            "description": "La página que ve la persona: elegir el trámite, identificarse, llenarlo y recibirlo en la wallet. Crea la cookie de sesión.\n\n**Resultado esperado:** HTTP 200."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 · Identificarse con el PID",
+      "description": "Antes de cualquier trámite la persona presenta su PID desde la wallet, a través del verifier de la notaría (`verifier-notaria`). La notaría crea la solicitud y devuelve el enlace `haip-vp://…` (y el QR); la wallet responde y la notaría consulta el resultado. Los datos de la persona (documento, nombres, nacimiento y foto) salen del PID verificado: nadie los escribe.",
+      "item": [
+        {
+          "name": "Crear solicitud de identificación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trae id\", () => pm.expect(dig(json, \"id\")).to.not.be.undefined);",
+                  "pm.test(\"trae enlace\", () => pm.expect(dig(json, \"enlace\")).to.not.be.undefined);",
+                  "pm.test(\"trae qr\", () => pm.expect(dig(json, \"qr\")).to.not.be.undefined);",
+                  "if (json && dig(json, \"id\") !== undefined) pm.collectionVariables.set(\"solicitud_id\", typeof dig(json, \"id\") === \"string\" ? dig(json, \"id\") : JSON.stringify(dig(json, \"id\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/solicitud",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "solicitud"
+              ],
+              "query": []
+            },
+            "description": "Pide el PID con documento, nombres, apellidos, nacimiento y foto. Devuelve el `id`, el `enlace` para la wallet y el `qr` (imagen). Con `\"dispositivo\": \"mismo\"` la wallet vuelve al navegador al terminar.\n\n**Guarda para las siguientes pruebas:** `solicitud_id`\n\n**Resultado esperado:** HTTP 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"proposito\": \"identificacion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar el resultado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trae estado\", () => pm.expect(dig(json, \"estado\")).to.not.be.undefined);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/solicitud/{{solicitud_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "solicitud",
+                "{{solicitud_id}}"
+              ],
+              "query": []
+            },
+            "description": "El navegador pregunta cada par de segundos si la wallet ya respondió: `esperando` hasta que la persona presenta el PID; después `listo` con sus datos.\n\n**Paso manual (lo hace una persona):** abre el enlace `haip-vp://…` de la prueba anterior con la wallet (o escanea el QR del portal) y acepta compartir los datos. Sin ese paso, la respuesta es `esperando`.\n\n**Resultado esperado:** HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "Quién soy (sesión)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200 o 401\", () => pm.expect([200, 401]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/yo",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "yo"
+              ],
+              "query": []
+            },
+            "description": "Los datos de la persona identificada en esta sesión. Antes de identificarse con la wallet responde 401.\n\n**Resultado esperado:** HTTP 200 o 401."
+          },
+          "response": []
+        },
+        {
+          "name": "Cerrar la identificación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"ok = True\", () => pm.expect(dig(json, \"ok\")).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/salir",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "salir"
+              ],
+              "query": []
+            },
+            "description": "Olvida a la persona de esta sesión (hay que volver a identificarse).\n\n**Resultado esperado:** HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "Propósito vacío: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/solicitud",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "solicitud"
+              ],
+              "query": []
+            },
+            "description": "Hay que decir `identificacion`, o `verificacion` con un tipo de documento.\n\n**Resultado esperado:** HTTP 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verificar un tipo inexistente: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/solicitud",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "solicitud"
+              ],
+              "query": []
+            },
+            "description": "Un `tipo` que la notaría no emite no abre ninguna solicitud.\n\n**Resultado esperado:** HTTP 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"proposito\": \"verificacion\",\n  \"tipo\": \"no-existe\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Solicitud desconocida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"estado = rechazada\", () => pm.expect(dig(json, \"estado\")).to.eql(\"rechazada\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/solicitud/id-que-no-existe",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "solicitud",
+                "id-que-no-existe"
+              ],
+              "query": []
+            },
+            "description": "Un id que no es de esta sesión no revela nada.\n\n**Resultado esperado:** HTTP 404."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 · Trámites (requieren identificarse)",
+      "description": "Los nueve trámites notariales: declaración extraproceso, poder especial, reconocimiento de documento, fe de vida, autenticación de firma, copia de escritura, registro civil, convivencia y permiso de salida de menor. Cada trámite queda en el protocolo con un número y se entrega a la wallet con una oferta (QR) y un PIN de 4 dígitos. Necesita haberse identificado con la wallet (carpeta 02): sin esa sesión responde 401. Postman guarda la cookie de sesión solo, así que basta con usar la misma pestaña/entorno. Hay que ser mayor de edad (se comprueba con la fecha de nacimiento del PID).",
+      "item": [
+        {
+          "name": "Mis trámites",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200 o 401\", () => pm.expect([200, 401]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/tramites",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "tramites"
+              ],
+              "query": []
+            },
+            "description": "El protocolo de la persona identificada, del más reciente al más antiguo. Necesita haberse identificado con la wallet (carpeta 02): sin esa sesión responde 401. Postman guarda la cookie de sesión solo, así que basta con usar la misma pestaña/entorno.\n\n**Resultado esperado:** HTTP 200 o 401."
+          },
+          "response": []
+        },
+        {
+          "name": "Otorgar un poder especial",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 201 o 401\", () => pm.expect([201, 401]).to.include(pm.response.code));",
+                  "if (json && dig(json, \"tramite.numero\") !== undefined) pm.collectionVariables.set(\"tramite_numero\", typeof dig(json, \"tramite.numero\") === \"string\" ? dig(json, \"tramite.numero\") : JSON.stringify(dig(json, \"tramite.numero\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/tramites",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "tramites"
+              ],
+              "query": []
+            },
+            "description": "Crea el trámite y devuelve la oferta: `enlace` (`openid-credential-offer://…`), `pin` de 4 dígitos y `vence`. La oferta dura 15 minutos y sirve una vez. Necesita haberse identificado con la wallet (carpeta 02): sin esa sesión responde 401. Postman guarda la cookie de sesión solo, así que basta con usar la misma pestaña/entorno.\n\n**Guarda para las siguientes pruebas:** `tramite_numero`\n\n**Resultado esperado:** HTTP 201 o 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"poder\",\n  \"datos\": {\n    \"apoderado_nombre\": \"Carlos Andrés Rojas Pérez\",\n    \"apoderado_documento\": \"1020304050\",\n    \"facultades\": \"Representarme ante la entidad de salud para reclamar mis medicamentos.\",\n    \"vigente_hasta\": \"2027-12-31\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Declaración extraproceso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 201 o 401\", () => pm.expect([201, 401]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/tramites",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "tramites"
+              ],
+              "query": []
+            },
+            "description": "Declaración bajo juramento (Decreto 1557 de 1989). Necesita haberse identificado con la wallet (carpeta 02): sin esa sesión responde 401. Postman guarda la cookie de sesión solo, así que basta con usar la misma pestaña/entorno.\n\n**Resultado esperado:** HTTP 201 o 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"declaracion\",\n  \"datos\": {\n    \"finalidad\": \"Caja de compensación familiar\",\n    \"declaracion\": \"Declaro bajo la gravedad del juramento que convivo con mi familia y dependo económicamente de mis ingresos.\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fe de vida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 201 o 401\", () => pm.expect([201, 401]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/tramites",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "tramites"
+              ],
+              "query": []
+            },
+            "description": "Constancia de que la persona vive (válida 30 días). Pide confirmar que comparece personalmente. Necesita haberse identificado con la wallet (carpeta 02): sin esa sesión responde 401. Postman guarda la cookie de sesión solo, así que basta con usar la misma pestaña/entorno.\n\n**Resultado esperado:** HTTP 201 o 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"fe_vida\",\n  \"datos\": {\n    \"confirmo\": true,\n    \"entidad_destino\": \"Fondo de pensiones\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reconocimiento de documento (solo la huella)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 201 o 401\", () => pm.expect([201, 401]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/tramites",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "tramites"
+              ],
+              "query": []
+            },
+            "description": "El archivo **no sale del navegador**: el portal calcula su SHA-256 y solo la huella, el nombre y el tamaño van al documento. Necesita haberse identificado con la wallet (carpeta 02): sin esa sesión responde 401. Postman guarda la cookie de sesión solo, así que basta con usar la misma pestaña/entorno.\n\n**Resultado esperado:** HTTP 201 o 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"reconocimiento\",\n  \"datos\": {\n    \"documento_nombre\": \"contrato-arrendamiento.pdf\",\n    \"documento_sha256\": \"9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08\",\n    \"documento_bytes\": 48213\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Trámite desconocido: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 400 o 401\", () => pm.expect([400, 401]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/tramites",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "tramites"
+              ],
+              "query": []
+            },
+            "description": "Un `tipo` que la notaría no emite. Necesita haberse identificado con la wallet (carpeta 02): sin esa sesión responde 401. Postman guarda la cookie de sesión solo, así que basta con usar la misma pestaña/entorno.\n\n**Resultado esperado:** HTTP 400 o 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"no-existe\",\n  \"datos\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Datos inválidos: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 400 o 401\", () => pm.expect([400, 401]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/tramites",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "tramites"
+              ],
+              "query": []
+            },
+            "description": "La notaría valida lo que se declara: aquí el documento del apoderado no son dígitos y la facultad es muy corta. Necesita haberse identificado con la wallet (carpeta 02): sin esa sesión responde 401. Postman guarda la cookie de sesión solo, así que basta con usar la misma pestaña/entorno.\n\n**Resultado esperado:** HTTP 400 o 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"poder\",\n  \"datos\": {\n    \"apoderado_nombre\": \"Carlos Rojas\",\n    \"apoderado_documento\": \"abc\",\n    \"facultades\": \"corta\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Pedir de nuevo la oferta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200 o 401 o 404 o 409\", () => pm.expect([200, 401, 404, 409]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/tramites/{{tramite_numero}}/oferta",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "tramites",
+                "{{tramite_numero}}",
+                "oferta"
+              ],
+              "query": []
+            },
+            "description": "Vuelve a mostrar el QR y el PIN de un trámite que todavía no está en ninguna wallet. Si ya se entregó, responde 409: para recibirlo otra vez hay que pedir la **reexpedición** (la copia anterior queda revocada). Necesita haberse identificado con la wallet (carpeta 02): sin esa sesión responde 401. Postman guarda la cookie de sesión solo, así que basta con usar la misma pestaña/entorno.\n\n**Resultado esperado:** HTTP 200 o 401 o 404 o 409.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reexpedir (la copia anterior queda revocada)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200 o 401 o 404 o 409\", () => pm.expect([200, 401, 404, 409]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/tramites/{{tramite_numero}}/oferta",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "tramites",
+                "{{tramite_numero}}",
+                "oferta"
+              ],
+              "query": []
+            },
+            "description": "Para quien perdió la wallet: emite una nueva copia y revoca la anterior en la lista de estado. Necesita haberse identificado con la wallet (carpeta 02): sin esa sesión responde 401. Postman guarda la cookie de sesión solo, así que basta con usar la misma pestaña/entorno.\n\n**Resultado esperado:** HTTP 200 o 401 o 404 o 409.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reexpedir\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Anular el trámite (revocar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200 o 401 o 404\", () => pm.expect([200, 401, 404]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/tramites/{{tramite_numero}}/anular",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "tramites",
+                "{{tramite_numero}}",
+                "anular"
+              ],
+              "query": []
+            },
+            "description": "Anula el trámite: su bit en la lista de estado pasa a 1 y quien lo verifique lo rechaza («el documento fue anulado»). En un poder es revocarlo. Necesita haberse identificado con la wallet (carpeta 02): sin esa sesión responde 401. Postman guarda la cookie de sesión solo, así que basta con usar la misma pestaña/entorno.\n\n**Resultado esperado:** HTTP 200 o 401 o 404.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"Prueba de Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Anular un trámite ajeno: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 401 o 404\", () => pm.expect([401, 404]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/tramites/999999/anular",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "tramites",
+                "999999",
+                "anular"
+              ],
+              "query": []
+            },
+            "description": "Solo se anula un trámite propio.\n\n**Resultado esperado:** HTTP 401 o 404.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 · Verificar un documento notarial",
+      "description": "Cualquiera puede comprobar un documento notarial: elige el tipo, la notaría se lo pide a la wallet de quien lo muestra y dice si es auténtico y sigue vigente. Un poder revocado no pasa. Cambia la variable `tipo_documento` por: declaracion, poder, reconocimiento, fe_vida, autenticacion, copia_escritura, registro_civil, convivencia o permiso_menor.",
+      "item": [
+        {
+          "name": "Crear solicitud de verificación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trae id\", () => pm.expect(dig(json, \"id\")).to.not.be.undefined);",
+                  "pm.test(\"trae enlace\", () => pm.expect(dig(json, \"enlace\")).to.not.be.undefined);",
+                  "pm.test(\"trae qr\", () => pm.expect(dig(json, \"qr\")).to.not.be.undefined);",
+                  "if (json && dig(json, \"id\") !== undefined) pm.collectionVariables.set(\"solicitud_id\", typeof dig(json, \"id\") === \"string\" ? dig(json, \"id\") : JSON.stringify(dig(json, \"id\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/solicitud",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "solicitud"
+              ],
+              "query": []
+            },
+            "description": "Pide a la wallet el documento del tipo `{{tipo_documento}}` con todos sus datos.\n\n**Guarda para las siguientes pruebas:** `solicitud_id`\n\n**Resultado esperado:** HTTP 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"proposito\": \"verificacion\",\n  \"tipo\": \"{{tipo_documento}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar el resultado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trae estado\", () => pm.expect(dig(json, \"estado\")).to.not.be.undefined);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria/api/solicitud/{{solicitud_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "api",
+                "solicitud",
+                "{{solicitud_id}}"
+              ],
+              "query": []
+            },
+            "description": "Mientras la wallet no responde dice `esperando`; después entrega los datos ya verificados (firma del emisor, lista PUBEAA, estado y prueba de posesión), o el motivo del rechazo.\n\n**Paso manual (lo hace una persona):** abre el enlace `haip-vp://…` con la wallet que tiene el documento y acepta compartirlo.\n\n**Resultado esperado:** HTTP 200."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 · Emisor OpenID4VCI 1.0 (lo que hace la wallet)",
+      "description": "El emisor entrega cada documento como SD-JWT VC por **código preautorizado con PIN**. No hay `authorization_code`: los documentos se piden en el portal, no desde la wallet. El token exige la **WIA** de una wallet certificada (lista WP) y DPoP, y el documento queda ligado a la clave del dispositivo. Estas pruebas cubren lo público y los rechazos; la entrega completa necesita la wallet (o `verifiers/notaria/pruebas/probar-notaria.sh`).",
+      "item": [
+        {
+          "name": "Metadatos del emisor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trae credential_issuer\", () => pm.expect(dig(json, \"credential_issuer\")).to.not.be.undefined);",
+                  "pm.test(\"trae credential_configurations_supported\", () => pm.expect(dig(json, \"credential_configurations_supported\")).to.not.be.undefined);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/.well-known/openid-credential-issuer/notaria",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                ".well-known",
+                "openid-credential-issuer",
+                "notaria"
+              ],
+              "query": []
+            },
+            "description": "Lo primero que lee la wallet: los nueve documentos que ofrece (`co.notaria.*`), su formato (`dc+sd-jwt`), sus datos y los colores de cada tarjeta. Es pública y con CORS.\n\n**Resultado esperado:** HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "Metadatos (ubicación alterna)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trae credential_issuer\", () => pm.expect(dig(json, \"credential_issuer\")).to.not.be.undefined);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria/.well-known/openid-credential-issuer",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                ".well-known",
+                "openid-credential-issuer"
+              ],
+              "query": []
+            },
+            "description": "La misma metadata al final de la ruta, que algunas wallets también prueban.\n\n**Resultado esperado:** HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "Servidor de autorización",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trae token_endpoint\", () => pm.expect(dig(json, \"token_endpoint\")).to.not.be.undefined);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/.well-known/oauth-authorization-server/notaria",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                ".well-known",
+                "oauth-authorization-server",
+                "notaria"
+              ],
+              "query": []
+            },
+            "description": "Dónde pedir el token y qué exige (solo código preautorizado).\n\n**Resultado esperado:** HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "Oferta desconocida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria/oferta/no-existe",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "oferta",
+                "no-existe"
+              ],
+              "query": []
+            },
+            "description": "La oferta (la que va en el QR) dura 15 minutos y sirve una vez; una desconocida o vencida da 404.\n\n**Resultado esperado:** HTTP 404."
+          },
+          "response": []
+        },
+        {
+          "name": "Token con otro tipo de grant: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error = unsupported_grant_type\", () => pm.expect(dig(json, \"error\")).to.eql(\"unsupported_grant_type\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria/token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "token"
+              ],
+              "query": []
+            },
+            "description": "Solo se acepta `urn:ietf:params:oauth:grant-type:pre-authorized_code`.\n\n**Resultado esperado:** HTTP 400.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "authorization_code"
+                },
+                {
+                  "key": "code",
+                  "value": "x"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Token con código inexistente: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error = invalid_grant\", () => pm.expect(dig(json, \"error\")).to.eql(\"invalid_grant\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria/token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "token"
+              ],
+              "query": []
+            },
+            "description": "Un código que venció o ya se usó: se pide otra oferta en la notaría.\n\n**Resultado esperado:** HTTP 400.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "urn:ietf:params:oauth:grant-type:pre-authorized_code"
+                },
+                {
+                  "key": "pre-authorized_code",
+                  "value": "no-existe"
+                },
+                {
+                  "key": "tx_code",
+                  "value": "0000"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Nonce",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trae c_nonce\", () => pm.expect(dig(json, \"c_nonce\")).to.not.be.undefined);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria/nonce",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "nonce"
+              ],
+              "query": []
+            },
+            "description": "Nonce de un solo uso para que la wallet firme su prueba de posesión al pedir la credencial.\n\n**Resultado esperado:** HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "Credencial sin token: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"error = invalid_token\", () => pm.expect(dig(json, \"error\")).to.eql(\"invalid_token\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria/credencial",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "credencial"
+              ],
+              "query": []
+            },
+            "description": "Sin `Authorization` no se entrega nada.\n\n**Resultado esperado:** HTTP 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"credential_configuration_id\": \"co.notaria.poder_especial\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Lista de estado (revocación)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"la respuesta contiene 'eyJ'\", () => pm.expect(pm.response.text()).to.include(\"eyJ\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria/estado/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria",
+                "estado",
+                "1"
+              ],
+              "query": []
+            },
+            "description": "Lista firmada (`statuslist+jwt`) con un bit por trámite: 1 = anulado o reexpedido. La consultan los verifiers para saber si el documento sigue vigente. No se guarda en caché.\n\n**Resultado esperado:** HTTP 200."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://civica-desarrollo.avance.org.co"
+    },
+    {
+      "key": "tipo_documento",
+      "value": "poder"
+    },
+    {
+      "key": "solicitud_id",
+      "value": ""
+    },
+    {
+      "key": "tramite_numero",
+      "value": ""
+    }
+  ]
+}

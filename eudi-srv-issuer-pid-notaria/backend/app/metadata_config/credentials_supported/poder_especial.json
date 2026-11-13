@@ -1,0 +1,392 @@
+{
+  "co.notaria.poder_especial": {
+    "format": "dc+sd-jwt",
+    "scope": "co.notaria.poder_especial",
+    "cryptographic_binding_methods_supported": [
+      "jwk"
+    ],
+    "credential_signing_alg_values_supported": [
+      "ES256"
+    ],
+    "proof_types_supported": {
+      "jwt": {
+        "proof_signing_alg_values_supported": [
+          "ES256"
+        ],
+        "key_attestations_required": {
+          "key_storage": [
+            "iso_18045_high"
+          ],
+          "user_authentication": [
+            "iso_18045_high"
+          ],
+          "preferred_key_storage_status_period": 2678400
+        }
+      },
+      "attestation": {
+        "proof_signing_alg_values_supported": [
+          "ES256"
+        ],
+        "key_attestations_required": {
+          "key_storage": [
+            "iso_18045_high"
+          ],
+          "user_authentication": [
+            "iso_18045_high"
+          ],
+          "preferred_key_storage_status_period": 2678400
+        }
+      }
+    },
+    "vct": "urn:co:notaria:poder-especial:1",
+    "credential_metadata": {
+      "display": [
+        {
+          "name": "Poder especial",
+          "locale": "es",
+          "description": "Poder especial con presentación personal ante notario",
+          "background_color": "#1f5f9e",
+          "text_color": "#FFFFFF",
+          "logo": {
+            "uri": "https://civica-desarrollo.avance.org.co/notaria-issuer/static/notaria/logo.png",
+            "alt_text": "Notaría Avance"
+          },
+          "background_image": {
+            "uri": "https://civica-desarrollo.avance.org.co/notaria-issuer/static/notaria/fondos/notaria-poder.jpg"
+          }
+        }
+      ],
+      "credential_reuse_policy": {
+        "id": "arf_annex_ii",
+        "options": [
+          {
+            "details": [
+              "limited_time"
+            ],
+            "reissue_trigger_lifetime_left": 7776000
+          }
+        ]
+      },
+      "claims": [
+        {
+          "path": [
+            "numero"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Número",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "fecha"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Fecha",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "notaria"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Notaría",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "notario"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Notario",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "poderdante_nombre"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Poderdante",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "poderdante_documento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Documento del poderdante",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "apoderado_nombre"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Apoderado",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "apoderado_documento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Documento del apoderado",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "facultades"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Facultades",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "vigente_hasta"
+          ],
+          "mandatory": true,
+          "value_type": "full-date",
+          "source": "user",
+          "display": [
+            {
+              "name": "Vigente hasta",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "poderdante_tipo_documento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Tipo de documento del poderdante",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "apoderado_tipo_documento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Tipo de documento del apoderado",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "tipo_poder"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Tipo de poder",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "asunto"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Asunto o proceso",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "lugar_otorgamiento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Lugar de otorgamiento",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "fecha_hora_comparecencia"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Fecha y hora de la comparecencia",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "medio_comparecencia"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Medio de comparecencia",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "advertencia_legal"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Advertencia legal",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "simulacion"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Aviso",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "issuing_authority"
+          ],
+          "mandatory": true,
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Autoridad emisora",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "issuing_country"
+          ],
+          "mandatory": true,
+          "source": "issuer",
+          "display": [
+            {
+              "name": "País emisor",
+              "locale": "es"
+            }
+          ]
+        }
+      ]
+    },
+    "issuer_config": {
+      "issuing_authority": "Notaría Avance",
+      "organization_id": "notaria-avance",
+      "validity": 3650,
+      "organization_name": "Notaría Avance",
+      "doctype": "urn:co:notaria:poder-especial:1",
+      "emulated_claims": {
+        "numero": "{consecutivo}",
+        "fecha": "{hoy}",
+        "notaria": "Notaría Avance",
+        "notario": "Andrea Restrepo Vélez",
+        "poderdante_tipo_documento": "Cédula de ciudadanía",
+        "apoderado_tipo_documento": "Cédula de ciudadanía",
+        "tipo_poder": "Poder especial",
+        "lugar_otorgamiento": "Bucaramanga, Santander",
+        "fecha_hora_comparecencia": "{ahora}",
+        "medio_comparecencia": "Virtual, con verificación biométrica contra la Registraduría (simulada)",
+        "advertencia_legal": "Poder especial. Para actos que exigen escritura pública (por ejemplo, sobre inmuebles) este poder no basta: se requiere otorgarlo por escritura. Se puede revocar en cualquier momento.",
+        "simulacion": "Documento emulado por una notaría simulada del ecosistema de pruebas: no tiene validez legal.",
+        "issuing_country": "CO"
+      },
+      "persona_claims": {
+        "poderdante_nombre": "nombre_completo",
+        "poderdante_documento": "documento"
+      }
+    }
+  }
+}

@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="testCase1_documentRetrieval" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <gitb:name>Remote Qualified Electronic Signature flow using OpenID4VP</gitb:name>
+        <gitb:version>1.0</gitb:version>
+        <gitb:description>This test case verifies that it is possible to sign a PDF document with the Remote Qualified Electronic Signature flow using OpenID4VP</gitb:description>
+        <gitb:specification>
+            <gitb:reference>QES-01</gitb:reference>
+        </gitb:specification>
+        <gitb:documentation><![CDATA[
+            <table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0 style='border-collapse:collapse;border:none;mso-border-alt:solid windowtext .5pt; mso-yfti-tbllook:1184;mso-padding-alt:0in 5.4pt 0in 5.4pt'>
+            <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Test case ID<o:p></o:p></span></b></p>
+            </td>
+            <td width=450 colspan=2 valign=top style='width:337.85pt;border:solid windowtext 1.0pt; border-left:none;mso-border-left-alt:solid windowtext .5pt;mso-border-alt: solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>QES-01<o:p></o:p></span></b></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:1'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Title<o:p></o:p></span></b></p>
+            </td>
+            <td width=450 colspan=2 valign=top style='width:337.85pt;border-top:none; border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>Remote Qualified Electronic Signature flow using OpenID4VP<o:p></o:p></span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:2'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Test session type<o:p></o:p></span></b></p>
+            </td>
+            <td width=450 colspan=2 valign=top style='width:337.85pt;border-top:none; border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>Remote QES<o:p></o:p></span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:3'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>P2P test case ID<o:p></o:p></span></b></p>
+            </td>
+            <td width=450 colspan=2 valign=top style='width:337.85pt;border-top:none; border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>Remote_Presentation_21<o:p></o:p></span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:4'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Purpose<o:p></o:p></span></b></p>
+            </td>
+            <td width=450 colspan=2 valign=top style='width:337.85pt;border-top:none; border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>This test case verifies that it is possible to sign a PDF document with the Remote Qualified Electronic Signature flow using OpenID4VP<o:p></o:p></span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:5'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Preconditions<o:p></o:p></span></b></p>
+            </td>
+            <td width=450 colspan=2 valign=top style='width:337.85pt;border-top:none; border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>N/A<o:p></o:p></span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:6'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Remarks<o:p></o:p></span></b></p>
+            </td>
+            <td width=450 colspan=2 valign=top style='width:337.85pt;border-top:none; border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>N/A<o:p></o:p></span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:7'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span
+            style='mso-ansi-language:EN-US'>Steps<o:p></o:p></span></b></p>
+            </td>
+            <td width=218 valign=top style='width:163.65pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Action<o:p></o:p></span></b></p>
+            </td>
+            <td width=232 valign=top style='width:174.2pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Expected result<o:p></o:p></span></b></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:8'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>1<o:p></o:p></span></p>
+            </td>
+            <td width=218 valign=top style='width:163.65pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>The wallet user starts the test case in ITB<o:p></o:p></span></p>
+            </td>
+            <td width=232 valign=top style='width:174.2pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>ITB displays a popup with a QR code containing the signing request<o:p></o:p></span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:9'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>2<o:p></o:p></span></p>
+            </td>
+            <td width=218 valign=top style='width:163.65pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>The wallet user scans the QR code with their wallet<o:p></o:p></span></p>
+            </td>
+            <td width=232 valign=top style='width:174.2pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>The wallet requests permission to sign the document<o:p></o:p></span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:10'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>3<o:p></o:p></span></p>
+            </td>
+            <td width=218 valign=top style='width:163.65pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'> 
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>The wallet user gives permission to sign the document<o:p></o:p></span></p>
+            </td>
+            <td width=232 valign=top style='width:174.2pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'> 
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>The signed document is shared with the remote reader<o:p></o:p></span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:11;mso-yfti-lastrow:yes'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>4<o:p></o:p></span></p>
+            </td>
+            <td width=218 valign=top style='width:163.65pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>ITB records the test execution result<o:p></o:p></span></p>
+            </td>
+            <td width=232 valign=top style='width:174.2pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>The test execution result appears on the ITB screen<o:p></o:p></span></p>
+            </td>
+            </tr>
+            </table>
+        ]]></gitb:documentation>
+    </metadata>
+
+    <actors>
+        <gitb:actor id="simulatedDocumentRetrieval" name="Simulated Document Retrieval" />
+        <gitb:actor id="relyingParty" name="Relying Party" />
+        <gitb:actor id="wallet" name="Wallet" role="SUT"/>
+    </actors>
+
+    <steps>
+        <verify handler="ExpressionValidator" desc="Verify Relying Party URL is set" stopOnError="true">
+            <input name="expression">$DOMAIN{relyingPartyURL} != ""</input>
+            <input name="successMessage">"URL of Relying Party requesting document signing is defined."</input>
+            <input name="failureMessage">"URL of Relying Party requesting document signing is not defined."</input>
+        </verify>
+
+        <assign to="documentSignatureSetupURL">$DOMAIN{relyingPartyURL} || "/tests/get"</assign>
+        <assign to="signedDocumentURL">$DOMAIN{relyingPartyURL} || "/tests/get"</assign>
+        <assign to="relyingPartyLogsURL">$DOMAIN{relyingPartyURL} || "/tests/logs"</assign>
+        <log>"Document Signature Request Object retrieved from: " || $documentSignatureSetupURL</log>
+        
+        <assign to="httpHeaders{Content-Type}">"application/json"</assign>
+        <send  id="documentSignatureRequest" desc="Send request to setup document signing request" handler="HttpMessagingV2" from="simulatedDocumentRetrieval" to="relyingParty" stopOnError="true">
+            <input name="uri">$documentSignatureSetupURL</input>
+            <input name="method">"GET"</input>
+            <input name="headers">$httpHeaders</input>
+        </send>
+        <verify handler="ExpressionValidator" desc="Verify http status code of document signature setup" stopOnError="true">
+            <input name="expression">$documentSignatureRequest{response}{status} = "200"</input>
+            <input name="successMessage">"The received http status code was 200."</input>
+            <input name="failureMessage">"The received http status code was not 200."</input>
+        </verify>
+        <assign to="documentSignatureResponse" source="$documentSignatureRequest{response}{body}" type="string"/>
+        <process handler="JsonPathProcessor" operation="process" output="transactionId" stopOnError="true">
+           <input name="content">$documentSignatureResponse</input>
+           <input name="expression">"$.transaction_id"</input>
+           <input name="outputType">"default"</input>
+        </process>
+        <log> "document signature setup response transaction id:" || $transactionId</log>
+        <process handler="JsonPathProcessor" operation="process" output="base64Img" stopOnError="true" >
+           <input name="content">$documentSignatureResponse</input>
+           <input name="expression">"$.qr_code"</input>
+           <input name="outputType">"default"</input>
+        </process>
+        <log>"document signature setup response qr_code:" || $base64Img</log>
+
+        <interact inputTitle="Scan the QR Code" desc="Scan the QR Code with your wallet." with="wallet" stopOnError="true" >
+            <instruct desc="Click on the magnifying glass to display the QR code"/>
+            <instruct desc="Scan this QR with your wallet" contentType="BASE64" mimeType="image/png">$base64Img</instruct>
+            <instruct desc="After signing the document with your wallet, click on the Close button to continue"/>
+        </interact>
+
+        <log>"Retrieving signed document at: " || $signedDocumentURL || "/" || $transactionId</log>
+        <assign to="attempt" type="number">1</assign>
+        <assign to="maxAttempts" type="number">$DOMAIN{maxAttempts}</assign>
+        <assign to="signedDocStatus">'404'</assign>
+        <assign to="signedDocResponse">'none'</assign>
+        <while title="HTTP Call Loop to the Relying Party" desc="Make HTTP calls until successful signed document is received or timeout" stopOnError="true" >
+            <cond><![CDATA[$attempt <= $maxAttempts and $signedDocStatus = '404']]></cond>
+            <do>
+                <log>"Making HTTP request (attempt " || $attempt || ")..."</log>
+                <send id="signedDocResponse" desc="Retrieve signed document" handler="HttpMessagingV2" from="simulatedDocumentRetrieval" to="relyingParty">
+                    <input name="uri">$signedDocumentURL || "/" || $transactionId</input>
+                    <input name="method">"GET"</input>
+                    <input name="headers">$httpHeaders</input>
+                </send>
+                <assign to="signedDocStatus" type="string">$signedDocResponse{response}{status}</assign>
+                <assign to="attempt" type="number">$attempt + 1</assign>
+                <process handler="DelayProcessor" operation="delay" input="$DOMAIN{delayBetweenCalls}"/>
+            </do>
+        </while>         
+        <verify handler="ExpressionValidator" desc="Verify http status code of the signed document retrieval request"  stopOnError="true" >
+            <input name="expression">$signedDocStatus = "200"</input>
+            <input name="successMessage">"The received http status code was 200."</input>
+            <input name="failureMessage">"The received http status code was not 200."</input>
+        </verify>
+        <log>"Logs Retrieval body:" || $signedDocResponse{response}{body}</log>
+
+        <send id="signatureLogs" desc="Retrieve signature logs" handler="HttpMessagingV2" from="simulatedDocumentRetrieval" to="relyingParty">
+            <input name="uri">$relyingPartyLogsURL || "/"  || $transactionId</input>
+            <input name="method">"GET"</input>
+        </send>
+        <verify handler="ExpressionValidator" desc="Verify http status code of the signature logs retrieval" stopOnError="true">
+            <input name="expression">$signatureLogs{response}{status} = "200"</input>
+            <input name="successMessage">"The received http status code was 200."</input>
+            <input name="failureMessage">"The received http status code was not 200."</input>
+        </verify>
+        <log>$signatureLogs{response}{body}</log>
+
+        <verify handler="$DOMAIN{qesValidationService}" desc="Validate signature logs" >
+            <input name="text">$signatureLogs{response}{body}</input>
+        </verify>
+
+    </steps>
+    <output>
+        <success>
+            <default>"Test session succeeded."</default>
+        </success>
+        <failure>
+            <default>"Test session failed. Refer to the failed step's report for more details."</default>
+        </failure>
+    </output>
+</testcase>

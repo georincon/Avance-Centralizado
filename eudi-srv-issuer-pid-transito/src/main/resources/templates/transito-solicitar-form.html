@@ -1,0 +1,87 @@
+<!--
+  Código propio de este fork (emulador de la Dirección de Tránsito de Bucaramanga).
+  No es parte del eudi-srv-pid-issuer original de la Comisión Europea.
+-->
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/main.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/transito-theme.css}">
+    <link rel="icon" type="image/png" th:href="@{/public/img/transito/favicon.png}">
+    <title>Dirección de Tránsito de Bucaramanga :: Solicitar licencia de conducción digital</title>
+</head>
+<body>
+<div class="dtb-header">
+    <img th:src="@{/public/img/transito/logo-itt.png}" alt="Logo Dirección de Tránsito de Bucaramanga">
+    <div>
+        <h1>Dirección de Tránsito de Bucaramanga</h1>
+        <p class="dtb-subtitle mb-0">Licencia de conducción móvil (mDL)</p>
+    </div>
+</div>
+<main class="container p-4" style="max-width: 480px;">
+    <h2 class="mb-3">Pide tu licencia de conducción digital</h2>
+    <p class="text-body-secondary">
+        Escribe tu cédula, tus nombres, apellidos y fecha de nacimiento como aparecen en ella, y tómate una selfie: comparamos los datos y la selfie con los de la Dirección de Tránsito.
+        Si tu licencia está activa y coincide, te generamos un código QR para que lo escanees con tu wallet de identidad digital y la recibas como licencia de conducción móvil (mDL, ISO 18013-5). La selfie no se guarda.</p>
+
+    <div class="alert alert-danger" th:if="${error}" th:text="${error}">Error</div>
+
+    <form method="post" enctype="multipart/form-data" th:action="@{/transito/solicitar}">
+        <div class="mb-4">
+            <label for="documentNumber" class="form-label">Número de cédula</label>
+            <input type="text" class="form-control form-control-lg" id="documentNumber" name="documentNumber"
+                   inputmode="numeric" autofocus required>
+        </div>
+        <div class="row g-2 mb-3">
+            <div class="col-12 col-sm-6">
+                <label for="firstNames" class="form-label">Nombres</label>
+                <input type="text" class="form-control" id="firstNames" name="firstNames" autocomplete="off" required>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label for="lastNames" class="form-label">Apellidos</label>
+                <input type="text" class="form-control" id="lastNames" name="lastNames" autocomplete="off" required>
+            </div>
+            <div class="col-12">
+                <label for="birthDate" class="form-label">Fecha de nacimiento</label>
+                <input type="date" class="form-control" id="birthDate" name="birthDate" required>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Selfie</label>
+            <video id="selfie-video" class="w-100 rounded border" autoplay playsinline muted hidden></video>
+            <img id="selfie-preview" class="w-100 rounded border" alt="Tu selfie" hidden>
+            <canvas id="selfie-canvas" hidden></canvas>
+            <div class="d-flex gap-2 mt-2 flex-wrap">
+                <button type="button" class="btn btn-outline-secondary" id="selfie-start">Abrir cámara</button>
+                <button type="button" class="btn btn-outline-primary" id="selfie-shot" hidden>Tomar selfie</button>
+                <button type="button" class="btn btn-outline-secondary" id="selfie-retry" hidden>Repetir</button>
+            </div>
+            <input type="file" class="form-control mt-2" id="selfie-file" name="selfie" accept="image/*" capture="user" required>
+            <div class="form-text">Si tu navegador no abre la cámara, elige una foto de tu rostro de frente y con buena luz.</div>
+        </div>
+        <div class="mb-4" role="group" aria-labelledby="categorias-titulo">
+            <input type="hidden" name="categoriesChosen" value="1">
+            <div class="form-label" id="categorias-titulo">
+                Categoría de tu licencia <span class="text-danger" aria-hidden="true">*</span>
+                <span class="text-body-secondary">(elige una o varias)</span>
+            </div>
+            <div class="dtb-categorias">
+                <label class="dtb-categoria" th:each="c : ${categorias}" th:for="${'cat-' + c.codigo}">
+                    <input type="checkbox" th:id="${'cat-' + c.codigo}" name="categories" th:value="${c.codigo}" th:checked="${c.marcada}">
+                    <span class="dtb-categoria-texto"><strong th:text="${c.codigo}">B1</strong><small th:text="${c.descripcion}">Descripción</small></span>
+                </label>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg w-100">Generar código QR</button>
+    </form>
+
+    <p class="text-body-secondary mt-4" style="font-size: 0.85rem;">
+        Datos de prueba. Esto es un emulador — no envíes tu cédula real si no estás haciendo pruebas autorizadas.
+    </p>
+</main>
+<script type="application/javascript" th:src="@{/public/js/transito-solicitar.js}"></script>
+</body>
+</html>

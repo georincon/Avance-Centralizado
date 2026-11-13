@@ -1,0 +1,133 @@
+name: Test case format guard
+
+# Structural guard for FCAF test cases. It checks the conventions a test case
+# file must follow, never whether an assertion matches a specification.
+#
+# The logic lives here on `site`, next to the rest of the build shell. Content
+# branches carry only a thin caller, the same arrangement `pages.yml` uses, so
+# the rules are maintained in one place for every branch and both repositories.
+#
+# Enforcement is staged inside tools/fcaf_lint.py: a check blocks only once its
+# backlog is cleared. Everything else is reported as a warning with a count, so
+# an inherited defect never blocks an unrelated pull request.
+
+on:
+  workflow_call:
+    inputs:
+      root:
+        description: Directory holding the FCAF content
+        required: false
+        type: string
+        default: docs/fcaf
+      all_files:
+        description: Check the whole corpus instead of the files the pull request touches
+        required: false
+        type: boolean
+        default: false
+      guard_ref:
+        description: >-
+          Ref of this repository the guard script is taken from. Pin it to a
+          branch to try a rule change out before merging it.
+        required: false
+        type: string
+        default: site
+  workflow_dispatch:
+    inputs:
+      content_ref:
+        description: Branch or tag to check
+        required: true
+        type: string
+        default: submitted
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the content under review
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.content_ref || github.ref }}
+          fetch-depth: 0
+
+      # github.job_workflow_ref is empty here, so the ref cannot be derived from
+      # the call itself. It is an explicit input instead, which also lets a
+      # caller try a rule change out before it is merged.
+      - name: Check out the guard
+        uses: actions/checkout@v4
+        with:
+          repository: eu-digital-identity-wallet/eudi-doc-functional-conformance-assessment
+          ref: ${{ inputs.guard_ref || 'site' }}
+          path: .guard
+
+      - name: Run the guard
+        id: guard
+        env:
+          ROOT: ${{ inputs.root || 'docs/fcaf' }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          ALL_FILES: ${{ inputs.all_files }}
+        run: |
+          set -o pipefail
+          scope=()
+          if [ "$ALL_FILES" != "true" ] && [ -n "$BASE_SHA" ]; then
+            # Only the files this pull request touches. Inherited defects stay
+            # visible in a full run (workflow_dispatch, or all_files), but never
+            # block a contributor.
+            git fetch --no-tags --depth=1 origin "$BASE_SHA" 2>/dev/null || true
+            scope=(--changed-only "$BASE_SHA")
+          fi
+          test -f .guard/tools/fcaf_lint.py || {
+            echo "::error::the guard script was not checked out"; ls -la .guard; exit 2; }
+
+          # Two passes over the same files. The github formatter drives the
+          # inline annotations, which GitHub caps at ten per level per step, so
+          # on a pull request touching several files most findings never reach
+          # the diff. The text formatter produces the complete list for the job
+          # summary, which carries no such cap. A failing run must not abort the
+          # step before the summary is written, hence the explicit || status=$?.
+          status=0
+          python3 .guard/tools/fcaf_lint.py \
+            --root "$ROOT" --format github "${scope[@]}" || status=$?
+          python3 .guard/tools/fcaf_lint.py \
+            --root "$ROOT" "${scope[@]}" > guard.log || true
+
+          # Findings are printed as "path:line: level: [CODE] message", sorted
+          # by path, so grouping is a matter of noticing when the path changes.
+          # The level is dropped: the section it lands in already states it.
+          group() {
+            grep ": $1: " guard.log \
+              | sed -e "s#^${ROOT%/}/##" -e "s/: $1: /: /" \
+              | awk -F: 'f!=$1 {f=$1; if (n++) print ""; print f} {sub(/^[^:]*:/, ""); print "  " $0}'
+          }
+          # Grouped once into a file: head reading a pipe would close it early
+          # and take the step down with SIGPIPE under pipefail.
+          emit() {
+            local level=$1 label=$2 open=$3 total shown
+            total=$(grep -c ": $level: " guard.log || true)
+            if [ "$total" -eq 0 ]; then return 0; fi
+            group "$level" > "grouped-$level.txt"
+            shown=$(wc -l < "grouped-$level.txt")
+            echo "<details${open:+ open}><summary>$label ($total)</summary>"
+            echo
+            echo '```'
+            head -n 500 "grouped-$level.txt"
+            if [ "$shown" -gt 500 ]; then
+              echo "... truncated, the full list is in the step log"
+            fi
+            echo '```'
+            echo
+            echo "</details>"
+            echo
+          }
+          {
+            echo "### FCAF test case format guard"
+            echo
+            grep -E '^(checked|applied fixes|blocking findings|by check|warnings by check)' guard.log \
+              | sed 's/^/    /'
+            echo
+            emit error "Blocking findings" open
+            emit warning "Warnings, not blocking" ""
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"

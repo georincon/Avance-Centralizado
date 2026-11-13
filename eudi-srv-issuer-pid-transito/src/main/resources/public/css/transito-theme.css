@@ -1,0 +1,282 @@
+/*
+ * Código propio de este fork (emulador de la Dirección de Tránsito de Bucaramanga).
+ * No es parte del eudi-srv-pid-issuer original de la Comisión Europea.
+ *
+ * Diseño inspirado en https://transitobucaramanga.gov.co/dtb/ (sitio institucional de la DTB):
+ * franja superior gov.co, cabecera con el logo de la DTB y menú horizontal, tarjetas en cuadrícula.
+ * El sitio bloquea la descarga automática, así que NO se copiaron su CSS ni sus imágenes: la paleta es la
+ * institucional estándar de gov.co (azul #3366CC / #00793a y amarillo de la bandera) y el logo es un
+ * emblema tipográfico provisional (public/img/transito/logo-*.svg). Para usar el logo oficial, reemplazar esos
+ * dos archivos conservando el nombre.
+ */
+
+:root {
+    --dtb-azul-900: #0b3d1e;
+    --dtb-azul-800: #00793a;
+    --dtb-azul-700: #2e9e4f;
+    --dtb-azul-600: #1b6b36;
+    --dtb-acento: #fcd116;
+    --dtb-acento-claro: #dff3e5;
+    --dtb-amarillo: #fcd116;
+    --dtb-rojo: #ce1126;
+    --dtb-blanco: #ffffff;
+    --dtb-gris-texto: #313131;
+
+    --dtb-font-heading: "Work Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --dtb-font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+    font-family: var(--dtb-font-body);
+    color: var(--dtb-gris-texto);
+}
+
+.dtb-header {
+    background-color: var(--dtb-azul-800);
+    color: var(--dtb-blanco);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 4px solid var(--dtb-acento);
+}
+
+.dtb-header img {
+    height: 48px;
+    width: auto;
+}
+
+.dtb-header h1,
+.dtb-header h2 {
+    font-family: var(--dtb-font-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin: 0;
+    color: var(--dtb-blanco);
+}
+
+.dtb-header .dtb-subtitle {
+    color: var(--dtb-acento-claro);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+main h2,
+main h5 {
+    font-family: var(--dtb-font-heading);
+    color: var(--dtb-azul-800);
+}
+
+.btn-primary {
+    --bs-btn-bg: var(--dtb-azul-800);
+    --bs-btn-border-color: var(--dtb-azul-800);
+    --bs-btn-hover-bg: var(--dtb-azul-600);
+    --bs-btn-hover-border-color: var(--dtb-azul-600);
+    --bs-btn-active-bg: var(--dtb-azul-900);
+    --bs-btn-active-border-color: var(--dtb-azul-900);
+}
+
+.btn-outline-secondary {
+    --bs-btn-color: var(--dtb-azul-700);
+    --bs-btn-border-color: var(--dtb-azul-700);
+    --bs-btn-hover-bg: var(--dtb-azul-700);
+    --bs-btn-hover-border-color: var(--dtb-azul-700);
+}
+
+a {
+    color: var(--dtb-azul-700);
+}
+
+table thead {
+    background-color: var(--dtb-acento-claro);
+}
+
+/* Cuadro de confirmación SÍ / NO (revocar credenciales) */
+.dtb-confirm {
+    border: 0;
+    border-radius: .5rem;
+    padding: 1.5rem;
+    max-width: 30rem;
+    box-shadow: 0 .5rem 2rem rgba(0, 0, 0, .35);
+}
+
+.dtb-confirm::backdrop {
+    background: rgba(0, 0, 0, .55);
+}
+
+/* Tarjetas con casilla (sin uso actual) */
+.dtb-formatos {
+    display: grid;
+    gap: .6rem;
+}
+
+.dtb-formato {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    margin: 0;
+    padding: .8rem 1rem;
+    border: 1px solid #c4ccd6;
+    border-radius: .5rem;
+    background: var(--dtb-blanco);
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s, background-color .15s;
+}
+
+.dtb-formato:hover {
+    border-color: var(--dtb-azul-700);
+}
+
+.dtb-formato input[type="checkbox"] {
+    flex: 0 0 auto;
+    float: none;
+    width: 1.35rem;
+    height: 1.35rem;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--dtb-azul-700);
+}
+
+.dtb-formato:has(input:checked) {
+    border-color: var(--dtb-azul-700);
+    background: #eef8f1;
+    box-shadow: 0 0 0 1px var(--dtb-azul-700);
+}
+
+.dtb-formato:has(input:focus-visible) {
+    outline: 3px solid var(--dtb-acento);
+    outline-offset: 2px;
+}
+
+.dtb-formato-texto {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+
+.dtb-formato-texto strong {
+    font-size: 1.05rem;
+    color: var(--dtb-azul-900);
+}
+
+.dtb-formato-texto small {
+    color: #5b6672;
+}
+
+
+/* Categorías de la licencia: una tarjeta con casilla por categoría, una por línea */
+.dtb-categorias {
+    display: grid;
+    gap: .6rem;
+}
+
+.dtb-categoria {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    margin: 0;
+    padding: .8rem 1rem;
+    border: 1px solid #c4ccd6;
+    border-radius: .5rem;
+    background: var(--dtb-blanco);
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s, background-color .15s;
+}
+
+.dtb-categoria:hover {
+    border-color: var(--dtb-azul-800);
+}
+
+.dtb-categoria input[type="checkbox"] {
+    flex: 0 0 auto;
+    float: none;
+    width: 1.35rem;
+    height: 1.35rem;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--dtb-azul-800);
+}
+
+.dtb-categoria:has(input:checked) {
+    border-color: var(--dtb-azul-800);
+    background: var(--dtb-acento-claro);
+    box-shadow: 0 0 0 1px var(--dtb-azul-800);
+}
+
+.dtb-categoria:has(input:focus-visible) {
+    outline: 3px solid var(--dtb-acento);
+    outline-offset: 2px;
+}
+
+.dtb-categoria-texto {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+
+.dtb-categoria-texto strong {
+    font-size: 1.05rem;
+    color: var(--dtb-azul-900);
+}
+
+.dtb-categoria-texto small {
+    color: #5b6672;
+}
+
+/* Barra de navegación del panel de administración (Licencias · Historial de emisiones · Avisos de revocación). */
+.dtb-franja {
+    height: 6px;
+    background: linear-gradient(90deg, var(--dtb-amarillo) 0 50%, var(--dtb-azul-800) 50% 75%, var(--dtb-rojo) 75% 100%);
+}
+
+.dtb-nav {
+    background: var(--dtb-blanco);
+    border-bottom: 1px solid #d9e7dd;
+    padding: 0 1.5rem;
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.dtb-nav a {
+    padding: 0.85rem 1rem;
+    color: var(--dtb-azul-800);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.92rem;
+    border-bottom: 3px solid transparent;
+}
+
+.dtb-nav a:hover {
+    background: #f1f8f3;
+}
+
+.dtb-nav a.activo {
+    border-bottom-color: var(--dtb-amarillo);
+    background: #f1f8f3;
+}
+
+.dtb-nav .espacio {
+    flex: 1;
+}
+
+/* ---- Aspecto común de las páginas del panel de administración (el mismo del Historial de emisiones) ---- */
+body { background: #eef5f0; }
+main h2.dtb-titulo, main h2 { font-family: Georgia, 'Times New Roman', serif; color: #00793a; font-weight: 700; }
+.dtb-card { background: #fff; border: 1px solid #d9e7dd; border-radius: 12px; padding: 1rem 1.25rem; box-shadow: 0 1px 3px rgba(11,61,30,.07); margin-bottom: 1rem; }
+.dtb-tabla-marco { overflow: hidden; }
+.dtb-tabla thead th { background: #00793a; color: #fff; border: 0; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; padding: .7rem .75rem; }
+.dtb-tabla td { vertical-align: middle; padding: .6rem .75rem; font-size: .9rem; }
+.dtb-tabla tbody tr:nth-child(even) { background: #f6faf7; }
+.dtb-tabla tbody tr:hover { background: #e3f4e8; }
+.badge { border-radius: 99px; font-weight: 700; letter-spacing: .02em; padding: .3em .75em; }
+.badge.bg-danger { background-color: #fde3e6 !important; color: #ce1126 !important; }
+.badge.bg-success { background-color: #dff3e5 !important; color: #1b6b36 !important; }
+.badge.bg-warning { background-color: #fff4c2 !important; color: #7a5f00 !important; }
+.badge.bg-secondary { background-color: #e8edf3 !important; color: #5b6b7c !important; }
+.btn-primary { background: #00793a; border-color: #00793a; }
+.btn-primary:hover { background: #1b6b36; border-color: #1b6b36; }
+.form-select:focus, .form-control:focus { border-color: #2e9e4f; box-shadow: 0 0 0 .2rem rgba(46,158,79,.2); }

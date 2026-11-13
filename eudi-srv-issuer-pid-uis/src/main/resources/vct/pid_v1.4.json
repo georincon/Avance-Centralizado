@@ -1,0 +1,490 @@
+{
+  "vct": "urn:eudi:pid:1",
+  "name": "Type Metadata for Person Identification Data",
+  "display": [
+    {
+      "locale": "en",
+      "name": "PID",
+      "description": "Person Identification Data"
+    }
+  ],
+  "claims": [
+    {
+      "path": [
+        "iss"
+      ],
+      "mandatory": true,
+      "sd": "never"
+    },
+    {
+      "path": [
+        "nbf"
+      ],
+      "mandatory": false,
+      "sd": "never"
+    },
+    {
+      "path": [
+        "exp"
+      ],
+      "mandatory": true,
+      "sd": "never"
+    },
+    {
+      "path": [
+        "cnf"
+      ],
+      "mandatory": true,
+      "sd": "never"
+    },
+    {
+      "path": [
+        "vct"
+      ],
+      "mandatory": true,
+      "sd": "never"
+    },
+    {
+      "path": [
+        "status"
+      ],
+      "mandatory": false,
+      "sd": "never"
+    },
+    {
+      "path": [
+        "sub"
+      ],
+      "mandatory": false,
+      "sd": "never"
+    },
+    {
+      "path": [
+        "iat"
+      ],
+      "mandatory": true,
+      "sd": "never"
+    },
+    {
+      "path": [
+        "family_name"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Family Name(s)"
+        }
+      ],
+      "mandatory": true,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "given_name"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Given Name(s)"
+        }
+      ],
+      "mandatory": true,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "birthdate"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Birth Date"
+        }
+      ],
+      "mandatory": true,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "place_of_birth"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Birth Place"
+        }
+      ],
+      "mandatory": true,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "place_of_birth",
+        "locality"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Locality"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "place_of_birth",
+        "region"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Region"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "place_of_birth",
+        "country"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Country"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "nationalities"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Nationality"
+        }
+      ],
+      "mandatory": true,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "nationalities",
+        null
+      ],
+      "mandatory": true,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "address"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Address"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "address",
+        "house_number"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "House Number"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "address",
+        "street_address"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Street"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "address",
+        "locality"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Locality"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "address",
+        "region"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Region"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "address",
+        "postal_code"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Postal Code"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "address",
+        "country"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Country"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "address",
+        "formatted"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Full Address"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "personal_administrative_number"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Personal Administrative Number"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "picture"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Portrait Image"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "birth_family_name"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Birth Family Name(s)"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "birth_given_name"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Birth Given Name(s)"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "sex"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Sex"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "email"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Email Address"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "phone_number"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Mobile Phone Number"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "date_of_expiry"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Expiry Date"
+        }
+      ],
+      "mandatory": true,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "issuing_authority"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Issuing Authority"
+        }
+      ],
+      "mandatory": true,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "issuing_country"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Issuing Country"
+        }
+      ],
+      "mandatory": true,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "document_number"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Document Number"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "issuing_jurisdiction"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Issuing Jurisdiction"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "date_of_issuance"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Issuance Date"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "trust_anchor"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Trust Anchor"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    },
+    {
+      "path": [
+        "attestation_legal_category"
+      ],
+      "display": [
+        {
+          "locale": "en",
+          "label": "Attestation Legal Category"
+        }
+      ],
+      "mandatory": false,
+      "sd": "always"
+    }
+  ]
+}

@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{EPS}}</title>
+<link rel="icon" href="{{BASE}}/publico/logo.png">
+<link rel="stylesheet" href="{{BASE}}/publico/tema.css">
+</head>
+<body data-base="{{BASE}}" data-eps="{{EPS}}" data-seccion="inicio" data-slot="persona">
+<section id="portada" hidden></section>
+<main id="vista"></main>
+
+<div class="velo" id="velo" role="dialog" aria-modal="true">
+  <div class="ventana">
+    <button class="cerrar" id="cerrar" aria-label="Cerrar">✕</button>
+    <h3 id="v-titulo"></h3>
+    <p id="v-sub"></p>
+    <div class="qr escritorio" id="v-qr"></div>
+    <a class="boton primario movil" id="v-abrir" href="#" style="width:100%;margin-bottom:12px">Abrir mi wallet</a>
+    <div class="estado" id="v-estado"></div>
+  </div>
+</div>
+
+<script src="{{BASE}}/publico/marco.js"></script>
+<script>
+const BASE = '{{BASE}}'
+const IPS = {{IPS}}
+const MOVIL = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+const $ = (id) => document.getElementById(id)
+if (MOVIL) { document.querySelectorAll('.movil').forEach((e) => (e.style.display = 'flex')); document.querySelectorAll('.escritorio').forEach((e) => (e.style.display = 'none')) }
+
+// Nodos sin HTML: los datos (de la wallet o clínicos) van siempre como texto.
+function el(t, props = {}, ...hijos) {
+  const n = document.createElement(t)
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') n.className = v
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v)
+    else if (k === 'style') n.style.cssText = v
+    else if (v !== undefined && v !== null && v !== false) n.setAttribute(k, v === true ? '' : v)
+  }
+  for (const h of hijos.flat()) if (h !== null && h !== undefined && h !== false && h !== '') n.append(h instanceof Node ? h : String(h))
+  return n
+}
+const api = async (ruta, o = {}) => {
+  const r = await fetch(BASE + ruta, { ...o, headers: { 'content-type': 'application/json' }, body: o.body && JSON.stringify(o.body) })
+  const c = await r.json().catch(() => ({}))
+  if (!r.ok) throw new Error(c.error || c.motivo || `Error ${r.status}`)
+  return c
+}
+const fecha = (f) => (f ? new Date(f).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }) : '—')
+const dl = (pares) => el('dl', {}, ...pares.flatMap(([k, v]) => [el('dt', {}, k), el('dd', {}, v ?? '—')]))
+
+let yo = null
+async function cargar() {
+  try { yo = await api('/api/yo') } catch { yo = null }
+  const c = $('persona')
+  c.replaceChildren()
+  c.hidden = !yo
+  if (yo) c.append(el('span', { class: 'nombre' }, `${yo.persona.nombres} ${yo.persona.apellidos}`),
+    el('button', { class: 'claro', onclick: async () => { await api('/api/salir', { method: 'POST' }); yo = null; await cargar(); location.hash = 'inicio' } }, 'Salir'))
+}
+
+// --- Pedirle algo a la wallet -----------------------------------------------------------------
+let sondeo
+function cerrar() { clearTimeout(sondeo); $('velo').classList.remove('abierto') }
+$('cerrar').onclick = cerrar
+const estadoV = (t, tipo) => { $('v-estado').className = 'estado' + (tipo === 'error' ? ' error' : ''); $('v-estado').replaceChildren(...(tipo === 'esperando' ? [el('div', { class: 'girando' })] : []), t) }
+function pedir({ proposito, partes, titulo, sub, seguir }) {
+  return new Promise(async (resolver) => {
+    $('v-titulo').textContent = titulo
+    $('v-sub').textContent = MOVIL ? `${sub} Abre tu wallet, revisa y acepta: volverás aquí.` : `${sub} Escanea el código con la wallet.`
+    $('v-qr').replaceChildren(el('div', { class: 'girando' }))
+    estadoV('Preparando la solicitud…', 'esperando')
+    $('velo').classList.add('abierto')
+    try {
+      const s = await api('/api/solicitud', { method: 'POST', body: { proposito, partes, dispositivo: MOVIL ? 'mismo' : 'otro' } })
+      $('v-qr').replaceChildren(el('img', { src: s.qr, alt: 'Código QR para la wallet' }))
+      $('v-abrir').href = s.enlace
+      if (seguir) sessionStorage.setItem('eps:seguir', seguir)
+      estadoV('Esperando la wallet…', 'esperando')
+      if (MOVIL) return
+      const preguntar = async () => {
+        try {
+          const r = await api(`/api/solicitud/${s.id}`)
+          if (r.estado === 'listo') { cerrar(); return resolver({ ...r, id: s.id }) }
+          if (r.estado === 'rechazada') return estadoV(r.motivo, 'error')
+        } catch { /* reintentar */ }
+        sondeo = setTimeout(preguntar, 2000)
+      }
+      preguntar()
+    } catch (e) { estadoV(e.message, 'error') }
+  })
+}
+async function identificarse() {
+  const r = await pedir({ proposito: 'identificacion', titulo: 'Identifícate con tu wallet', sub: 'La EPS te pedirá tu documento de identidad (PID).', seguir: 'mi-eps' })
+  if (r) { await cargar(); location.hash = 'mi-eps' }
+}
+
+// --- Vistas ---------------------------------------------------------------------------------------
+const vista = $('vista')
+const volver = () => el('button', { class: 'volver', onclick: () => (location.hash = 'inicio') }, '← Volver al inicio')
+
+const icono = (n, clase = '') => { const s = el('span', { class: clase }); s.innerHTML = ICONO(n); return s }
+function portada() {
+  const acceso = (n, t, href) => el('a', { href }, icono(n, 'redondo'), t)
+  $('portada').replaceChildren(
+    el('div', { class: 'portada' }, el('div', { class: 'ancho' },
+      el('div', {},
+        el('span', { class: 'etiqueta-portada' }, 'Afiliación digital'),
+        el('h1', {}, 'Tu salud, ', el('em', {}, 'en tu wallet')),
+        el('p', {}, 'Lleva tu carné de afiliado y el resumen de tu historia clínica en el teléfono. Cuando te atiendan, tú decides qué compartir: tus alergias en urgencias, tus medicamentos en la farmacia… y nada más.'),
+        el('div', { class: 'acciones' },
+          el('button', { class: 'coral', onclick: () => (yo ? (location.hash = 'mi-eps') : identificarse()) }, 'Entrar a Mi EPS'),
+          el('a', { class: 'boton fantasma', href: '#verificar' }, 'Verificar a un paciente'))),
+      el('img', { class: 'collage', src: `${BASE}/publico/img/collage.svg`, alt: 'Personas de distintas edades atendidas por la EPS' }))),
+    el('div', { class: 'franja' }, el('div', { class: 'ancho' },
+      acceso('carne', 'Carné de afiliado', '#mi-eps'), acceso('historia', 'Historia clínica', '#mi-eps'),
+      acceso('verificar', 'Verificar paciente', '#verificar'), acceso('medico', 'Portal médico', `${BASE}/medico`))))
+}
+
+function vistaInicio(error) {
+  portada(); $('portada').hidden = false
+  const servicio = (n, titulo, texto, boton) => el('div', { class: 'caja servicio' }, icono(n, 'icono'), el('h2', {}, titulo), el('p', {}, texto), boton)
+  vista.replaceChildren(
+    error ? el('div', { class: 'aviso error', style: 'margin-bottom:16px' }, error) : '',
+    el('div', { class: 'titulo-seccion' }, icono('estetoscopio'), el('h2', {}, 'Servicios destacados')),
+    el('div', { class: 'rejilla' },
+      servicio('carne', 'Soy afiliado', 'Identifícate con tu documento de identidad digital para ver tu afiliación y tu historia, y recibirlas en la wallet.',
+        el('button', { class: 'primario', onclick: () => (yo ? (location.hash = 'mi-eps') : identificarse()) }, 'Entrar a Mi EPS')),
+      servicio('medico', 'Soy médico de la EPS', 'Entra al portal médico con tu wallet. Si es la primera vez, solicitas acceso con tu registro médico y el administrador lo aprueba.',
+        el('a', { class: 'boton secundario', href: `${BASE}/medico` }, 'Portal médico')),
+      servicio('verificar', 'Atiendo pacientes', 'Farmacia, IPS o médico: pide al paciente que presente su carné o las partes de su historia que necesitas.',
+        el('button', { class: 'secundario', onclick: () => (location.hash = 'verificar') }, 'Verificar'))),
+    el('div', { class: 'banner' },
+      el('div', {}, el('h2', {}, 'Tu carné siempre contigo'), el('p', {}, 'Recíbelo en tu wallet con un código QR y un PIN de un solo uso. Si pierdes el teléfono, lo revocas desde aquí.'),
+        el('button', { class: 'coral', onclick: () => (yo ? (location.hash = 'mi-eps') : identificarse()) }, 'Recibir mi carné')),
+      el('img', { src: `${BASE}/publico/img/telefono.svg`, alt: '' })),
+    el('div', { class: 'titulo-seccion', style: 'margin-top:34px' }, icono('candado'), el('h2', {}, '¿Cómo funciona?')),
+    el('div', { class: 'pasos' },
+      el('div', { class: 'paso' }, el('b', {}, 'Te identificas'), el('span', {}, 'Con tu documento de identidad digital, sin contraseñas.')),
+      el('div', { class: 'paso' }, el('b', {}, 'Recibes tus documentos'), el('span', {}, 'Tu carné y el resumen de tu historia pasan a tu wallet.')),
+      el('div', { class: 'paso' }, el('b', {}, 'Compartes lo necesario'), el('span', {}, 'Quien te atiende pide; tú aceptas solo lo que haga falta.'))))
+}
+
+async function vistaMiEps() {
+  if (!yo) return identificarse()
+  await cargar()
+  const a = yo.afiliado
+  if (!a) {
+    const reg = el('select', {}, el('option', { value: 'Contributivo' }, 'Contributivo (trabajas o cotizas)'), el('option', { value: 'Subsidiado' }, 'Subsidiado'))
+    const ips = el('select', {}, ...IPS.map((i) => el('option', { value: i }, i)))
+    const error = el('div', { class: 'aviso error', hidden: true })
+    return vista.replaceChildren(volver(), el('h1', {}, 'Afíliate'),
+      el('p', { class: 'lead' }, `${yo.persona.nombres}, no encontramos una afiliación tuya. Tus datos salen de tu documento de identidad digital; solo elige el régimen y tu IPS.`),
+      el('div', { class: 'caja', style: 'max-width:520px' }, el('label', {}, 'Régimen', reg), el('label', {}, 'IPS donde te atenderán', ips), error,
+        el('button', { class: 'primario', onclick: async () => {
+          try { await api('/api/afiliacion', { method: 'POST', body: { regimen: reg.value, ips: ips.value } }); vistaMiEps() } catch (e) { error.textContent = e.message; error.hidden = false }
+        } }, 'Afiliarme')))
+  }
+  const f = a.afiliacion, h = a.historia, c = h.ultima_consulta
+  const lista = (xs) => (xs?.length ? xs.join('; ') : 'Ninguna registrada')
+  vista.replaceChildren(volver(), el('h1', {}, 'Mi EPS'),
+    el('div', { class: 'rejilla' },
+      el('div', { class: 'carne' },
+        el('div', { class: 'fila' }, el('strong', { style: 'font-size:1.1rem' }, 'Carné de afiliado'), el('span', { class: `etiqueta ${f.estado === 'Activo' ? 'vigente' : 'revocada'}` }, f.estado)),
+        el('div', {}, el('small', {}, 'Afiliado'), `${a.nombres} ${a.apellidos} · ${a.documento}`),
+        el('div', { class: 'fila' }, el('div', {}, el('small', {}, 'Régimen'), `${f.regimen} · ${f.tipo}`), el('div', {}, el('small', {}, 'N.º'), f.numero)),
+        el('div', {}, el('small', {}, 'IPS asignada'), f.ips),
+        el('button', { class: 'claro', disabled: f.estado !== 'Activo', onclick: () => entregar('carne') }, 'Recibir el carné en mi wallet')),
+      el('div', { class: 'caja' }, el('h2', {}, 'Mi historia clínica'),
+        dl([['Grupo sanguíneo', h.grupo_sanguineo || 'Sin registrar'], ['Alergias', lista(h.alergias)], ['Enfermedades crónicas', lista(h.condiciones)],
+          ['Medicamentos', lista(h.medicamentos)], ['Vacunas', lista(h.vacunas)],
+          ['Última consulta', c ? `${c.fecha} · ${c.servicio} · ${c.motivo}${c.diagnostico ? ` · ${c.diagnostico}` : ''}` : 'Sin consultas'],
+          ['Actualizada', h.actualizada ? `${fecha(h.actualizada)}${h.actualizada_por ? ` por ${h.actualizada_por}` : ''}` : 'Aún no tiene datos']]),
+        el('button', { class: 'primario', onclick: () => entregar('historia') }, 'Recibir el resumen en mi wallet'))),
+    el('h2', { style: 'margin-top:24px' }, 'Mis beneficiarios (opcional)'),
+    (a.beneficiarios ?? []).length ? el('table', { class: 'tarjetas' }, el('thead', {}, el('tr', {}, el('th', {}, 'Nombre'), el('th', {}, 'Documento'), el('th', {}, 'Parentesco'), el('th', {}, 'Desde'))),
+      el('tbody', {}, ...a.beneficiarios.map((b) => el('tr', {}, el('td', { 'data-label': 'Nombre' }, b.nombre), el('td', { 'data-label': 'Documento' }, b.documento), el('td', { 'data-label': 'Parentesco' }, b.parentesco), el('td', { 'data-label': 'Desde' }, fecha(b.desde)))))) : el('p', { class: 'lead' }, 'Aún no tienes beneficiarios.'),
+    a.afiliacion.tipo !== 'Beneficiario' ? el('div', { class: 'acciones-pila' },
+      el('button', { class: 'primario', disabled: f.estado !== 'Activo', onclick: async () => { const r = await pedir({ proposito: 'convivencia', titulo: 'Afiliar a mi compañero(a)', sub: 'Presenta tu declaración de convivencia de la notaría.' }); if (r) vistaMiEps() } }, 'Afiliar a mi compañero(a) con mi declaración de convivencia'),
+      el('button', { class: 'primario', disabled: f.estado !== 'Activo', onclick: async () => { const r = await pedir({ proposito: 'registro-civil', titulo: 'Afiliar a mi hijo(a)', sub: 'Presenta el registro civil de nacimiento de tu hijo o hija.' }); if (r) vistaMiEps() } }, 'Afiliar a mi hijo(a) con su registro civil'),
+      el('p', { style: 'color:var(--suave);font-size:.9rem' }, 'Pide la declaración de convivencia (vale 90 días) o el registro civil de tu hijo(a) en la notaría y recíbelo en tu wallet. La EPS comprueba que lo emitió una notaría de confianza y que te señala a ti.')) : '',
+    el('h2', { style: 'margin-top:24px' }, 'Lo que has recibido en tu wallet'),
+    a.credenciales.length ? el('table', { class: 'tarjetas' }, el('thead', {}, el('tr', {}, el('th', {}, 'Documento'), el('th', {}, 'Recibido'), el('th', {}, 'Estado'), el('th', {}))),
+      el('tbody', {}, ...a.credenciales.map((e) => el('tr', {},
+        el('td', { 'data-label': 'Documento' }, e.tipo === 'carne' ? 'Carnet IPS Avance' : `Historia clínica (versión ${e.version})`), el('td', { 'data-label': 'Recibido' }, fecha(e.fecha)),
+        el('td', { 'data-label': 'Estado' }, el('span', { class: `etiqueta ${e.estado}` }, e.estado === 'vigente' ? 'Vigente' : e.estado === 'reemplazada' ? 'Reemplazada' : 'Revocada')),
+        el('td', { class: 'celda-acciones' }, e.estado === 'vigente' ? el('div', { class: 'acciones-fila' }, el('button', { class: 'primario', title: 'Pide una copia nueva; al recibirla, la anterior deja de valer', onclick: () => entregar(e.tipo, true) }, 'Reexpedir'), el('button', { class: 'peligro', onclick: async () => { await api(`/api/credenciales/${e.indice}/revocar`, { method: 'POST' }); vistaMiEps() } }, 'Revocar')) : ''))))) :
+      el('p', { class: 'lead' }, 'Todavía nada.'),
+    el('p', { style: 'color:var(--suave);font-size:.9rem;margin-top:12px' }, 'Cuando tu médico actualiza tu historia, la que tenías en la wallet queda reemplazada: pide la nueva. Si pierdes el teléfono o cambias de celular, pulsa Reexpedir: recibes una copia nueva y la anterior deja de valer.'))
+}
+
+async function entregar(tipo, reexpedir = false) {
+  try {
+    const o = await api('/api/oferta', { method: 'POST', body: { tipo, reexpedir } })
+    vista.replaceChildren(el('button', { class: 'volver', onclick: () => (location.hash = 'mi-eps') }, '← Volver a Mi EPS'),
+      el('h1', {}, tipo === 'carne' ? 'Recibe tu carné' : 'Recibe tu historia clínica'),
+      el('div', { class: 'caja entrega' },
+        MOVIL ? el('a', { class: 'boton primario', href: o.enlace }, 'Recibir en mi wallet') : el('img', { src: o.qr, alt: 'Código QR con la oferta' }),
+        el('div', {}, el('p', {}, MOVIL ? 'Toca el botón y, cuando tu wallet lo pida, escribe este PIN:' : 'Escanéalo con tu wallet y, cuando lo pida, escribe este PIN:'),
+          el('div', { class: 'pin' }, o.pin), el('p', {}, 'La oferta vale 15 minutos y sirve una vez.'), reexpedir ? el('p', { style: 'color:var(--suave)' }, 'Al recibirla, la copia anterior deja de valer.') : '')))
+  } catch (e) { alertar(e.message) }
+}
+function alertar(m) { vista.prepend(el('div', { class: 'aviso error', style: 'margin-bottom:12px' }, m)) }
+
+const PARTES = [['grupo_sanguineo', 'Grupo sanguíneo'], ['alergias', 'Alergias'], ['condiciones_cronicas', 'Enfermedades crónicas'], ['medicamentos', 'Medicamentos actuales'],
+  ['vacunas', 'Vacunas'], ['ultima_consulta', 'Última consulta'], ['observaciones', 'Observaciones']]
+
+function vistaVerificar(resultado) {
+  const salida = el('div', { style: 'margin-top:18px' })
+  const checks = PARTES.map(([k, n]) => { const i = el('input', { type: 'checkbox', value: k }); if (['alergias', 'medicamentos', 'grupo_sanguineo'].includes(k)) i.checked = true; return [i, el('label', { class: 'check' }, i, n)] })
+  const mostrar = (r) => {
+    if (r.estado !== 'listo') return salida.replaceChildren(el('div', { class: 'aviso error' }, r.motivo))
+    const d = r.documento
+    salida.replaceChildren(el('div', { class: 'aviso ok', style: 'margin-bottom:12px' },
+      el('strong', {}, `✔ ${d.nombre} auténtico y vigente. `), `Firmado por ${d.de_esta_eps ? 'esta EPS' : d.emisor}; lo presentó su titular.`),
+      el('div', { class: 'caja' }, dl(d.datos)),
+      d.tipo === 'historia' ? el('p', { style: 'color:var(--suave);font-size:.9rem;margin-top:10px' }, 'Solo ves lo que el paciente aceptó compartir. No se guarda aquí.') : '')
+  }
+  vista.replaceChildren(volver(), el('h1', {}, 'Verificar a un paciente'),
+    el('p', { class: 'lead' }, 'Pide al paciente que presente desde su wallet su carné de afiliado, o las partes de su historia clínica que necesitas para atenderle. La wallet le muestra qué pides y él decide.'),
+    el('div', { class: 'rejilla' },
+      el('div', { class: 'caja' }, el('h2', {}, 'Carné de afiliado'), el('p', {}, 'Para farmacias e IPS: quién es, régimen, plan, IPS y si la afiliación está activa.'),
+        el('button', { class: 'primario', onclick: async () => { sessionStorage.setItem('eps:verificando', 'carne'); const r = await pedir({ proposito: 'carne', titulo: 'Presenta tu carné', sub: 'Se pedirá el carné de afiliado.' }); if (r) mostrar(r) } }, 'Pedir el carné')),
+      el('div', { class: 'caja' }, el('h2', {}, 'Historia clínica'), el('p', {}, 'Para el médico que atiende: elige solo lo necesario.'), ...checks.map(([, l]) => l),
+        el('button', { class: 'primario', onclick: async () => {
+          const partes = checks.filter(([i]) => i.checked).map(([i]) => i.value)
+          if (!partes.length) return
+          const r = await pedir({ proposito: 'historia', partes, titulo: 'Presenta tu historia clínica', sub: `Se pedirán: ${partes.length} parte(s) de la historia.` })
+          if (r) mostrar(r)
+        } }, 'Pedir esas partes'))),
+    salida)
+  if (resultado) api(`/api/solicitud/${resultado}`).then(mostrar).catch((e) => mostrar({ motivo: e.message }))
+}
+
+async function ruta() {
+  cerrar()
+  $('portada').hidden = true
+  const h = decodeURIComponent(location.hash.slice(1))
+  if (h.startsWith('error=')) return vistaInicio(h.slice(6))
+  if (h === 'identificado') { await cargar(); return location.replace(`#${sessionStorage.getItem('eps:seguir') || 'mi-eps'}`) }
+  if (h.startsWith('verificado=')) return vistaVerificar(h.slice(11))
+  if (h === 'mi-eps') return vistaMiEps()
+  if (h === 'verificar') return vistaVerificar()
+  vistaInicio()
+}
+window.addEventListener('hashchange', ruta)
+cargar().then(ruta)
+</script>
+</body>
+</html>

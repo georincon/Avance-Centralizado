@@ -1,0 +1,503 @@
+{
+  "co.notaria.registro_civil_nacimiento": {
+    "format": "dc+sd-jwt",
+    "scope": "co.notaria.registro_civil_nacimiento",
+    "cryptographic_binding_methods_supported": [
+      "jwk"
+    ],
+    "credential_signing_alg_values_supported": [
+      "ES256"
+    ],
+    "proof_types_supported": {
+      "jwt": {
+        "proof_signing_alg_values_supported": [
+          "ES256"
+        ],
+        "key_attestations_required": {
+          "key_storage": [
+            "iso_18045_high"
+          ],
+          "user_authentication": [
+            "iso_18045_high"
+          ],
+          "preferred_key_storage_status_period": 2678400
+        }
+      },
+      "attestation": {
+        "proof_signing_alg_values_supported": [
+          "ES256"
+        ],
+        "key_attestations_required": {
+          "key_storage": [
+            "iso_18045_high"
+          ],
+          "user_authentication": [
+            "iso_18045_high"
+          ],
+          "preferred_key_storage_status_period": 2678400
+        }
+      }
+    },
+    "vct": "urn:co:notaria:registro-civil:1",
+    "credential_metadata": {
+      "display": [
+        {
+          "name": "Registro civil de nacimiento",
+          "locale": "es",
+          "description": "Inscripción del nacimiento de un hijo o hija, declarada por su padre o madre",
+          "background_color": "#2f6b4f",
+          "text_color": "#FFFFFF",
+          "logo": {
+            "uri": "https://civica-desarrollo.avance.org.co/notaria-issuer/static/notaria/logo.png",
+            "alt_text": "Notaría Avance"
+          },
+          "background_image": {
+            "uri": "https://civica-desarrollo.avance.org.co/notaria-issuer/static/notaria/fondos/notaria-registro-civil.jpg"
+          }
+        }
+      ],
+      "credential_reuse_policy": {
+        "id": "arf_annex_ii",
+        "options": [
+          {
+            "details": [
+              "limited_time"
+            ],
+            "reissue_trigger_lifetime_left": 7776000
+          }
+        ]
+      },
+      "claims": [
+        {
+          "path": [
+            "numero"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Número",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "fecha"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Fecha",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "notaria"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Notaría",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "notario"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Notario",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "inscrito_nombre"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Inscrito(a)",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "fecha_nacimiento"
+          ],
+          "mandatory": true,
+          "value_type": "full-date",
+          "source": "user",
+          "display": [
+            {
+              "name": "Fecha de nacimiento",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "lugar_nacimiento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Lugar de nacimiento",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "sexo"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Sexo",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "progenitor_nombre"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Declarante",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "progenitor_documento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Documento del declarante",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "calidad"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "En calidad de",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "otro_progenitor"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Otro progenitor",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "nuip"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "NUIP",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "indicativo_serial"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Indicativo serial",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "hora_nacimiento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Hora de nacimiento",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "nacionalidad_inscrito"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Nacionalidad",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "certificado_nacido_vivo"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Certificado de nacido vivo n.º",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "madre_nombre"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Madre",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "madre_documento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Documento de la madre",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "padre_nombre"
+          ],
+          "mandatory": false,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Padre",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "padre_documento"
+          ],
+          "mandatory": false,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Documento del padre",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "oficina_registro"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Oficina de registro",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "notas_marginales"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Notas marginales",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "fecha_hora_comparecencia"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Fecha y hora de la comparecencia",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "medio_comparecencia"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Medio de comparecencia",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "advertencia_legal"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Advertencia legal",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "simulacion"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Aviso",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "issuing_authority"
+          ],
+          "mandatory": true,
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Autoridad emisora",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "issuing_country"
+          ],
+          "mandatory": true,
+          "source": "issuer",
+          "display": [
+            {
+              "name": "País emisor",
+              "locale": "es"
+            }
+          ]
+        }
+      ]
+    },
+    "issuer_config": {
+      "issuing_authority": "Notaría Avance",
+      "organization_id": "notaria-avance",
+      "validity": 3650,
+      "organization_name": "Notaría Avance",
+      "doctype": "urn:co:notaria:registro-civil:1",
+      "emulated_claims": {
+        "numero": "{consecutivo}",
+        "fecha": "{hoy}",
+        "notaria": "Notaría Avance",
+        "notario": "Andrea Restrepo Vélez",
+        "nacionalidad_inscrito": "Colombiana",
+        "oficina_registro": "Notaría Avance, Bucaramanga (simulada)",
+        "notas_marginales": "Sin notas marginales",
+        "fecha_hora_comparecencia": "{ahora}",
+        "medio_comparecencia": "Virtual, con verificación biométrica contra la Registraduría (simulada)",
+        "advertencia_legal": "Inscripción emulada. El registro civil oficial lo inscribe la Registraduría o una notaría en el sistema oficial; este documento no lo reemplaza ni genera NUIP real.",
+        "simulacion": "Documento emulado por una notaría simulada del ecosistema de pruebas: no tiene validez legal.",
+        "issuing_country": "CO"
+      },
+      "persona_claims": {
+        "progenitor_nombre": "nombre_completo",
+        "progenitor_documento": "documento"
+      }
+    }
+  }
+}

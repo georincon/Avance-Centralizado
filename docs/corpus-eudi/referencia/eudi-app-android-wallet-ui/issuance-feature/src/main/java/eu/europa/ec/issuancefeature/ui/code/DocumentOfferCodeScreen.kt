@@ -1,0 +1,320 @@
+/*
+ * Copyright (c) 2026 European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
+ * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
+ * except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/software/page/eupl
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the Licence is distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF
+ * ANY KIND, either express or implied. See the Licence for the specific language
+ * governing permissions and limitations under the Licence.
+ */
+
+package eu.europa.ec.issuancefeature.ui.code
+
+import android.content.Context
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
+import eu.europa.ec.authenticationlogic.secure.SecurePin
+import eu.europa.ec.commonfeature.config.OfferCodeUiConfig
+import eu.europa.ec.commonfeature.ui.issuance.IssuerNotTrustedSheetContent
+import eu.europa.ec.commonfeature.ui.issuance.IssuerPartiallyTrustedSheetContent
+import eu.europa.ec.uilogic.component.AppIconAndText
+import eu.europa.ec.uilogic.component.AppIconAndTextDataUi
+import eu.europa.ec.uilogic.component.content.ContentScreen
+import eu.europa.ec.uilogic.component.content.ImePaddingConfig
+import eu.europa.ec.uilogic.component.content.ScreenNavigateAction
+import eu.europa.ec.uilogic.component.preview.PreviewTheme
+import eu.europa.ec.uilogic.component.preview.ThemeModePreviews
+import eu.europa.ec.uilogic.component.utils.SPACING_LARGE
+import eu.europa.ec.uilogic.component.utils.SPACING_MEDIUM
+import eu.europa.ec.uilogic.component.utils.SPACING_SMALL
+import eu.europa.ec.uilogic.component.wrap.SecurePinTextFieldState
+import eu.europa.ec.uilogic.component.wrap.WrapModalBottomSheet
+import eu.europa.ec.uilogic.component.wrap.WrapSecurePinTextField
+import eu.europa.ec.uilogic.component.wrap.rememberSecurePinTextFieldState
+import eu.europa.ec.uilogic.config.ConfigNavigation
+import eu.europa.ec.uilogic.config.NavigationType
+import eu.europa.ec.uilogic.extension.paddingFrom
+import eu.europa.ec.uilogic.navigation.IssuanceScreens
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DocumentOfferCodeScreen(
+    navController: NavController,
+    viewModel: DocumentOfferCodeViewModel
+) {
+    val state: State by viewModel.viewState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val pinInputState = rememberSecurePinTextFieldState(
+        expectedPinLength = state.offerCodeUiConfig.txCodeLength
+    )
+
+    val isBottomSheetOpen = state.isBottomSheetOpen
+    val scope = rememberCoroutineScope()
+    val bottomSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
+
+    ContentScreen(
+        isLoading = state.isLoading,
+        contentErrorConfig = state.error,
+        navigatableAction = ScreenNavigateAction.BACKABLE,
+        imePaddingConfig = ImePaddingConfig.ONLY_CONTENT,
+        onBack = { viewModel.setEvent(Event.Pop) },
+    ) { paddingValues ->
+        Content(
+            context = context,
+            title = state.screenTitle,
+            subTitle = state.screenSubtitle,
+            pinInputState = pinInputState,
+            effectFlow = viewModel.effect,
+            onEventSend = { viewModel.setEvent(it) },
+            onNavigationRequested = { navigationEffect ->
+                handleNavigationEffect(navigationEffect, navController)
+            },
+            paddingValues = paddingValues,
+            state = state,
+            coroutineScope = scope,
+            modalBottomSheetState = bottomSheetState,
+        )
+
+        if (isBottomSheetOpen) {
+            WrapModalBottomSheet(
+                onDismissRequest = {
+                    viewModel.setEvent(Event.BottomSheet.Close)
+                },
+                sheetState = bottomSheetState
+            ) {
+                SheetContent(
+                    sheetContent = state.sheetContent,
+                    onEventSent = { viewModel.setEvent(it) }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun Content(
+    context: Context,
+    title: String,
+    subTitle: String,
+    pinInputState: SecurePinTextFieldState,
+    state: State,
+    effectFlow: Flow<Effect>,
+    onEventSend: (Event) -> Unit,
+    onNavigationRequested: (Effect.Navigation) -> Unit,
+    paddingValues: PaddingValues,
+    coroutineScope: CoroutineScope,
+    modalBottomSheetState: SheetState,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .paddingFrom(paddingValues, bottom = false)
+            .verticalScroll(rememberScrollState())
+    ) {
+        AppIconAndText(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = SPACING_LARGE.dp),
+            appIconAndTextData = AppIconAndTextDataUi(),
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = SPACING_LARGE.dp),
+            verticalArrangement = Arrangement.spacedBy(SPACING_SMALL.dp, Alignment.Top)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            )
+
+            Text(
+                text = subTitle,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            )
+        }
+
+        CodeFieldLayout(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = SPACING_LARGE.dp),
+            pinInputState = pinInputState,
+            state = state,
+            onPinComplete = { securePin ->
+                onEventSend(
+                    Event.OnPinEntered(
+                        code = securePin,
+                        context = context
+                    )
+                )
+            }
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        effectFlow.onEach { effect ->
+            when (effect) {
+                is Effect.Navigation -> onNavigationRequested(effect)
+
+                is Effect.ShowBottomSheet -> {
+                    onEventSend(Event.BottomSheet.UpdateBottomSheetState(isOpen = true))
+                }
+
+                is Effect.CloseBottomSheet -> {
+                    coroutineScope.launch {
+                        modalBottomSheetState.hide()
+                    }.invokeOnCompletion {
+                        if (!modalBottomSheetState.isVisible) {
+                            onEventSend(Event.BottomSheet.UpdateBottomSheetState(isOpen = false))
+                            onEventSend(Event.BottomSheet.FinishedClosing)
+                        } else {
+                            onEventSend(Event.BottomSheet.UpdateBottomSheetState(isOpen = true))
+                        }
+                    }
+                }
+            }
+        }.collect()
+    }
+}
+
+@Composable
+private fun SheetContent(
+    sheetContent: DocumentOfferCodeBottomSheetContent,
+    onEventSent: (event: Event) -> Unit,
+) {
+    when (sheetContent) {
+        is DocumentOfferCodeBottomSheetContent.IssuerNotTrusted -> {
+            IssuerNotTrustedSheetContent(
+                onClose = {
+                    onEventSent(Event.BottomSheet.Close)
+                },
+            )
+        }
+
+        is DocumentOfferCodeBottomSheetContent.PartialSuccessWithUntrustedIssuer -> {
+            IssuerPartiallyTrustedSheetContent(
+                onClose = {
+                    onEventSent(Event.BottomSheet.Close)
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun CodeFieldLayout(
+    modifier: Modifier = Modifier,
+    pinInputState: SecurePinTextFieldState,
+    state: State,
+    onPinComplete: (SecurePin) -> Unit,
+) {
+    WrapSecurePinTextField(
+        modifier = modifier,
+        state = pinInputState,
+        onPinLengthChanged = {},
+        onPinComplete = onPinComplete,
+        pinWidth = 42.dp,
+        focusOnCreate = true,
+        shouldHideKeyboardOnCompletion = true,
+        enabled = !state.isLoading
+    )
+}
+
+private fun handleNavigationEffect(
+    navigationEffect: Effect.Navigation,
+    navController: NavController
+) {
+    when (navigationEffect) {
+        is Effect.Navigation.SwitchScreen -> {
+            navController.navigate(navigationEffect.screenRoute) {
+                popUpTo(IssuanceScreens.DocumentOfferCode.screenRoute) {
+                    inclusive = true
+                }
+            }
+        }
+
+        is Effect.Navigation.Pop -> navController.popBackStack()
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@ThemeModePreviews
+@Composable
+private fun DocumentOfferCodeScreenEmptyPreview() {
+    PreviewTheme {
+
+        val pinInputState = rememberSecurePinTextFieldState(
+            expectedPinLength = 4
+        )
+
+        Content(
+            title = "Demo Issuer requires verification",
+            subTitle = "Type the 5-digit transaction code you received.",
+            pinInputState = pinInputState,
+            effectFlow = Channel<Effect>().receiveAsFlow(),
+            onEventSend = {},
+            onNavigationRequested = {},
+            paddingValues = PaddingValues(SPACING_MEDIUM.dp),
+            context = LocalContext.current,
+            state = State(
+                isLoading = false,
+                error = null,
+                notifyOnAuthenticationFailure = false,
+                screenTitle = "Demo Issuer requires verification",
+                screenSubtitle = "Type the 5-digit transaction code you received.",
+                offerCodeUiConfig = OfferCodeUiConfig(
+                    offerUri = "https://offer.uri.com",
+                    txCodeLength = 5,
+                    issuerName = "Demo Issuer",
+                    onSuccessNavigation = ConfigNavigation(
+                        navigationType = NavigationType.Pop
+                    )
+                )
+            ),
+            coroutineScope = rememberCoroutineScope(),
+            modalBottomSheetState = rememberModalBottomSheetState(),
+        )
+    }
+}

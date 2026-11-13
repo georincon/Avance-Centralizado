@@ -1,0 +1,25 @@
+/*.html
+/*.docx
+node_modules
+dist
+build
+site
+docs/arf.html
+docs/arf.jpeg
+docs/arf.pdf
+docs/arf.png
+.vscode
+.cache
+.lycheecache
+.venv
+.DS_Store
+
+docs/annexes/annex-2/high-level-requirements.xlsx
+docs/annexes/annex-2/~$high-level-requirements.xlsx
+docs/annexes/annex-2/DBA Notes on scripts.txt
+docs/media/arf-figures-source.md
+hltr/high-level-requirements.xlsx
+hltr/~$high-level-requirements.xlsx
+hltr/high-level-requirements_bck.xlsx
+hltr/high-level-requirements_bck.csv
+__pycache__/

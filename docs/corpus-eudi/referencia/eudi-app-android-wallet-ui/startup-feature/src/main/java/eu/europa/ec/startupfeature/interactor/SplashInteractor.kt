@@ -1,0 +1,169 @@
+/*
+ * Copyright (c) 2026 European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
+ * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
+ * except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/software/page/eupl
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the Licence is distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF
+ * ANY KIND, either express or implied. See the Licence for the specific language
+ * governing permissions and limitations under the Licence.
+ */
+
+package eu.europa.ec.startupfeature.interactor
+
+import eu.europa.ec.businesslogic.config.ConfigLogic
+import eu.europa.ec.businesslogic.controller.storage.PrefKeys
+import eu.europa.ec.commonfeature.config.BiometricMode
+import eu.europa.ec.commonfeature.config.BiometricUiConfig
+import eu.europa.ec.commonfeature.config.IssuanceFlowType
+import eu.europa.ec.commonfeature.config.IssuanceUiConfig
+import eu.europa.ec.commonfeature.config.OnBackNavigationConfig
+import eu.europa.ec.commonfeature.config.TrustMarkMode
+import eu.europa.ec.commonfeature.config.TrustMarkUiConfig
+import eu.europa.ec.commonfeature.interactor.QuickPinInteractor
+import eu.europa.ec.commonfeature.model.PinFlow
+import eu.europa.ec.corelogic.controller.WalletCoreDocumentsController
+import eu.europa.ec.resourceslogic.R
+import eu.europa.ec.resourceslogic.provider.ResourceProvider
+import eu.europa.ec.uilogic.config.ConfigNavigation
+import eu.europa.ec.uilogic.config.NavigationType
+import eu.europa.ec.uilogic.navigation.CommonScreens
+import eu.europa.ec.uilogic.navigation.DashboardScreens
+import eu.europa.ec.uilogic.navigation.IssuanceScreens
+import eu.europa.ec.uilogic.navigation.helper.generateComposableArguments
+import eu.europa.ec.uilogic.navigation.helper.generateComposableNavigationLink
+import eu.europa.ec.uilogic.serializer.UiSerializer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+sealed interface SplashRoutePartialState {
+    data class Success(val route: String) : SplashRoutePartialState
+    data class Failure(val error: String) : SplashRoutePartialState
+}
+
+interface SplashInteractor {
+    suspend fun getAfterSplashRoute(): SplashRoutePartialState
+}
+
+class SplashInteractorImpl(
+    private val quickPinInteractor: QuickPinInteractor,
+    private val uiSerializer: UiSerializer,
+    private val resourceProvider: ResourceProvider,
+    private val walletCoreDocumentsController: WalletCoreDocumentsController,
+    private val configLogic: ConfigLogic,
+    private val prefKeys: PrefKeys,
+) : SplashInteractor {
+
+    private val hasDocuments: Boolean
+        get() = walletCoreDocumentsController.getAllDocuments().isNotEmpty()
+
+    private val shouldActivateWithPid: Boolean
+        get() = configLogic.forcePidActivation && !hasDocuments
+
+    override suspend fun getAfterSplashRoute(): SplashRoutePartialState =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val continuationRoute = if (quickPinInteractor.hasPin()) {
+                    getBiometricsConfig()
+                } else {
+                    getQuickPinConfig()
+                }
+                val route = if (prefKeys.getTrustMarkIntroductionCompleted()) {
+                    continuationRoute
+                } else {
+                    val config = uiSerializer.toBase64(
+                        model = TrustMarkUiConfig(
+                            mode = TrustMarkMode.Welcome(continuationRoute = continuationRoute)
+                        ),
+                        parser = TrustMarkUiConfig.Parser,
+                    )
+                    if (config.isNullOrBlank()) {
+                        return@runCatching SplashRoutePartialState.Failure(
+                            error = resourceProvider.genericErrorMessage()
+                        )
+                    }
+                    generateComposableNavigationLink(
+                        screen = CommonScreens.TrustMark,
+                        arguments = generateComposableArguments(
+                            mapOf(TrustMarkUiConfig.serializedKeyName to config)
+                        ),
+                    )
+                }
+                SplashRoutePartialState.Success(route = route)
+            }.getOrElse {
+                SplashRoutePartialState.Failure(error = resourceProvider.genericErrorMessage())
+            }
+        }
+
+    private fun getQuickPinConfig(): String {
+        return generateComposableNavigationLink(
+            screen = CommonScreens.QuickPin,
+            arguments = generateComposableArguments(
+                mapOf(
+                    "pinFlow" to if (shouldActivateWithPid) {
+                        PinFlow.CREATE_WITH_ACTIVATION
+                    } else {
+                        PinFlow.CREATE_WITHOUT_ACTIVATION
+                    }
+                )
+            )
+        )
+    }
+
+    private fun getBiometricsConfig(): String {
+
+        val shouldActivateWithPid = configLogic.forcePidActivation && !hasDocuments
+
+        return generateComposableNavigationLink(
+            screen = CommonScreens.Biometric,
+            arguments = generateComposableArguments(
+                mapOf(
+                    BiometricUiConfig.serializedKeyName to uiSerializer.toBase64(
+                        BiometricUiConfig(
+                            mode = BiometricMode.Login(
+                                title = resourceProvider.getString(R.string.biometric_login_title),
+                                subTitleWhenBiometricsEnabled = resourceProvider.getString(R.string.biometric_login_biometrics_enabled_subtitle),
+                                subTitleWhenBiometricsNotEnabled = resourceProvider.getString(R.string.biometric_login_biometrics_not_enabled_subtitle),
+                            ),
+                            isPreAuthorization = true,
+                            shouldInitializeBiometricAuthOnCreate = true,
+                            onSuccessNavigation = ConfigNavigation(
+                                navigationType = NavigationType.PushScreen(
+                                    screen = if (!shouldActivateWithPid) {
+                                        DashboardScreens.Dashboard
+                                    } else {
+                                        IssuanceScreens.AddDocument
+                                    },
+                                    arguments = if (shouldActivateWithPid) {
+                                        mapOf(
+                                            IssuanceUiConfig.serializedKeyName to uiSerializer.toBase64(
+                                                model = IssuanceUiConfig(
+                                                    flowType = IssuanceFlowType.NoDocument
+                                                ),
+                                                parser = IssuanceUiConfig.Parser
+                                            )
+                                        )
+                                    } else {
+                                        emptyMap()
+                                    }
+                                )
+                            ),
+                            onBackNavigationConfig = OnBackNavigationConfig(
+                                onBackNavigation = ConfigNavigation(
+                                    navigationType = NavigationType.Finish
+                                ),
+                                hasToolbarBackIcon = false
+                            )
+                        ),
+                        BiometricUiConfig.Parser
+                    ).orEmpty()
+                )
+            )
+        )
+    }
+}

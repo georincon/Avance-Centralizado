@@ -1,0 +1,704 @@
+{
+  "openapi": "3.1.2",
+  "info": {
+    "title": "EUDI Wallet Provider",
+    "description": "A microservice acting as a Wallet Provider",
+    "version": "0.0.1"
+  },
+  "paths": {
+    "/challenge": {
+      "post": {
+        "tags": [
+          "challenge"
+        ],
+        "operationId": "generateChallenge",
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChallengeResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/wallet-instance-attestation/platform-key-attestation/android": {
+      "post": {
+        "tags": [
+          "wallet-instance-attestation"
+        ],
+        "operationId": "issueAndroidPlatformKeyAttestationWalletInstanceAttestation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AndroidPlatformKeyAttestationWalletInstanceAttestationIssuanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletInstanceAttestationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletInstanceAttestationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/wallet-instance-attestation/platform-key-attestation/ios": {
+      "post": {
+        "tags": [
+          "wallet-instance-attestation"
+        ],
+        "operationId": "issueIosPlatformKeyAttestationWalletInstanceAttestation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IosPlatformKeyAttestationWalletInstanceAttestationIssuanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletInstanceAttestationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletInstanceAttestationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/wallet-instance-attestation/jwk": {
+      "post": {
+        "tags": [
+          "wallet-instance-attestation"
+        ],
+        "operationId": "issueJwkWalletInstanceAttestation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JwkWalletInstanceAttestationIssuanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletInstanceAttestationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletInstanceAttestationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/key-attestation/platform-key-attestation/android": {
+      "post": {
+        "tags": [
+          "key-attestation"
+        ],
+        "operationId": "issueAndroidPlatformKeyAttestationKeyAttestation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AndroidPlatformKeyAttestationKeyAttestationIssuanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyAttestationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyAttestationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/key-attestation/platform-key-attestation/ios": {
+      "post": {
+        "tags": [
+          "key-attestation"
+        ],
+        "operationId": "issueIosPlatformKeyAttestationKeyAttestation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IosPlatformKeyAttestationKeyAttestationIssuanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyAttestationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyAttestationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/key-attestation/jwk-set": {
+      "post": {
+        "tags": [
+          "key-attestation"
+        ],
+        "operationId": "issueJwkSetKeyAttestation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JwkSetKeyAttestationIssuanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyAttestationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeyAttestationErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Challenge": {
+        "type": "string",
+        "format": "base64url"
+      },
+      "ChallengeResponse": {
+        "type": "object",
+        "properties": {
+          "challenge": {
+            "$ref": "#/components/schemas/Challenge"
+          }
+        },
+        "required": [
+          "challenge"
+        ],
+        "additionalProperties": false
+      },
+      "Certificate": {
+        "description": "A Base64 Url-Safe DER encoded X509Certificate",
+        "type": "string",
+        "format": "base64url"
+      },
+      "CertificateChain": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Certificate"
+        },
+        "minItems": 1
+      },
+      "AndroidKeystoreAttestation": {
+        "type": "object",
+        "properties": {
+          "x5c": {
+            "$ref": "#/components/schemas/CertificateChain"
+          }
+        },
+        "required": [
+          "x5c"
+        ],
+        "additionalProperties": false
+      },
+      "JsonWebAlgorithm": {
+        "type": "string"
+      },
+      "SecondsDuration": {
+        "type": "number",
+        "format": "int64",
+        "description": "Duration in seconds"
+      },
+      "Any": {
+        "description": "Any valid JSON value (object, array, string, number, boolean, or null)"
+      },
+      "WalletMetadata": {
+        "$ref": "#/components/schemas/Any"
+      },
+      "AndroidPlatformKeyAttestationWalletInstanceAttestationIssuanceRequest": {
+        "type": "object",
+        "properties": {
+          "platformKeyAttestation": {
+            "$ref": "#/components/schemas/AndroidKeystoreAttestation"
+          },
+          "challenge": {
+            "$ref": "#/components/schemas/Challenge"
+          },
+          "supportedSigningAlgorithms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JsonWebAlgorithm"
+            },
+            "minItems": 1
+          },
+          "walletMetadata": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WalletMetadata"
+              },
+              {
+                "description": "Custom metadata provided by the Wallet to be included in the issued Wallet Instance Attestation"
+              }
+            ]
+          },
+          "preferredClientStatusPeriod": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SecondsDuration"
+              },
+              {
+                "description": "A PID or Attestation Provider's preference for the remaining status maintenance period"
+              }
+            ]
+          }
+        },
+        "required": [
+          "platformKeyAttestation",
+          "challenge"
+        ],
+        "additionalProperties": false
+      },
+      "IosHomebrewAttestation": {
+        "type": "object",
+        "properties": {
+          "attestation": {
+            "type": "string",
+            "format": "base64url"
+          },
+          "clientDataJSON": {
+            "type": "string",
+            "format": "base64url"
+          }
+        },
+        "required": [
+          "attestation",
+          "clientDataJSON"
+        ],
+        "additionalProperties": false
+      },
+      "IosPlatformKeyAttestationWalletInstanceAttestationIssuanceRequest": {
+        "type": "object",
+        "properties": {
+          "platformKeyAttestation": {
+            "$ref": "#/components/schemas/IosHomebrewAttestation"
+          },
+          "challenge": {
+            "$ref": "#/components/schemas/Challenge"
+          },
+          "supportedSigningAlgorithms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JsonWebAlgorithm"
+            },
+            "minItems": 1
+          },
+          "walletMetadata": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WalletMetadata"
+              },
+              {
+                "description": "Custom metadata provided by the Wallet to be included in the issued Wallet Instance Attestation"
+              }
+            ]
+          },
+          "preferredClientStatusPeriod": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SecondsDuration"
+              },
+              {
+                "description": "A PID or Attestation Provider's preference for the remaining status maintenance period"
+              }
+            ]
+          }
+        },
+        "required": [
+          "platformKeyAttestation",
+          "challenge"
+        ],
+        "additionalProperties": false
+      },
+      "Jwk": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "JwkWalletInstanceAttestationIssuanceRequest": {
+        "type": "object",
+        "properties": {
+          "jwk": {
+            "$ref": "#/components/schemas/Jwk"
+          },
+          "supportedSigningAlgorithms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JsonWebAlgorithm"
+            },
+            "minItems": 1
+          },
+          "walletMetadata": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WalletMetadata"
+              },
+              {
+                "description": "Custom metadata provided by the Wallet to be included in the issued Wallet Instance Attestation"
+              }
+            ]
+          },
+          "preferredClientStatusPeriod": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SecondsDuration"
+              },
+              {
+                "description": "A PID or Attestation Provider's preference for the remaining status maintenance period"
+              }
+            ]
+          }
+        },
+        "required": [
+          "jwk"
+        ],
+        "additionalProperties": false
+      },
+      "WalletInstanceAttestationResponse": {
+        "type": "object",
+        "properties": {
+          "walletInstanceAttestation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "walletInstanceAttestation"
+        ],
+        "additionalProperties": false
+      },
+      "WalletInstanceAttestationError": {
+        "type": "string",
+        "enum": [
+          "unsupported_signing_algorithms",
+          "invalid_challenge",
+          "invalid_platform_key_attestation",
+          "unsupported_platform_attested_key",
+          "unsupported_platform_attested_key_curve"
+        ]
+      },
+      "WalletInstanceAttestationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/WalletInstanceAttestationError"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "additionalProperties": false
+      },
+      "Nonce": {
+        "type": "string"
+      },
+      "AndroidPlatformKeyAttestationKeyAttestationIssuanceRequest": {
+        "type": "object",
+        "properties": {
+          "nonce": {
+            "$ref": "#/components/schemas/Nonce"
+          },
+          "platformKeyAttestations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AndroidKeystoreAttestation"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "challenge": {
+            "$ref": "#/components/schemas/Challenge"
+          },
+          "supportedSigningAlgorithms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JsonWebAlgorithm"
+            },
+            "minItems": 1
+          },
+          "preferredKeyStorageStatusPeriod": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SecondsDuration"
+              },
+              {
+                "description": "A PID or Attestation Provider's preference for the remaining status maintenance period"
+              }
+            ]
+          }
+        },
+        "required": [
+          "platformKeyAttestations",
+          "challenge"
+        ],
+        "additionalProperties": false
+      },
+      "KeyAttestationResponse": {
+        "type": "object",
+        "properties": {
+          "keyAttestation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "keyAttestation"
+        ],
+        "additionalProperties": false
+      },
+      "KeyAttestationError": {
+        "type": "string",
+        "enum": [
+          "unsupported_signing_algorithms",
+          "invalid_challenge",
+          "invalid_platform_key_attestation",
+          "unsupported_platform_attested_key",
+          "non_unique_platform_attested_keys",
+          "unsupported_platform_attested_key_curve"
+        ]
+      },
+      "KeyAttestationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KeyAttestationError"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "errors"
+        ],
+        "additionalProperties": false
+      },
+      "IosPlatformKeyAttestationKeyAttestationIssuanceRequest": {
+        "type": "object",
+        "properties": {
+          "nonce": {
+            "$ref": "#/components/schemas/Nonce"
+          },
+          "platformKeyAttestations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IosHomebrewAttestation"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "challenge": {
+            "$ref": "#/components/schemas/Challenge"
+          },
+          "supportedSigningAlgorithms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JsonWebAlgorithm"
+            },
+            "minItems": 1
+          },
+          "preferredKeyStorageStatusPeriod": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SecondsDuration"
+              },
+              {
+                "description": "A PID or Attestation Provider's preference for the remaining status maintenance period"
+              }
+            ]
+          }
+        },
+        "required": [
+          "platformKeyAttestations",
+          "challenge"
+        ],
+        "additionalProperties": false
+      },
+      "JwkSet": {
+        "type": "object",
+        "properties": {
+          "keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Jwk"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "keys"
+        ],
+        "additionalProperties": false
+      },
+      "JwkSetKeyAttestationIssuanceRequest": {
+        "type": "object",
+        "properties": {
+          "nonce": {
+            "$ref": "#/components/schemas/Nonce"
+          },
+          "jwkSet": {
+            "$ref": "#/components/schemas/JwkSet"
+          },
+          "supportedSigningAlgorithms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JsonWebAlgorithm"
+            },
+            "minItems": 1
+          },
+          "preferredKeyStorageStatusPeriod": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SecondsDuration"
+              },
+              {
+                "description": "A PID or Attestation Provider's preference for the remaining status maintenance period"
+              }
+            ]
+          }
+        },
+        "required": [
+          "jwkSet"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+}

@@ -1,0 +1,335 @@
+<!--
+  Código propio de este fork (emulador de la Dirección de Tránsito de Bucaramanga).
+  No es parte del eudi-srv-pid-issuer original de la Comisión Europea.
+  Datos de la licencia de conducción: titular (cédula), expedición, estado y categorías A1..C3
+  (Ley 769 de 2002, art. 19).
+-->
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/main.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/transito-theme.css}">
+    <link rel="icon" type="image/png" th:href="@{/public/img/transito/favicon.png}">
+    <title>Dirección de Tránsito de Bucaramanga :: Ciudadano</title>
+</head>
+<body>
+<div class="dtb-header">
+    <img th:src="@{/public/img/transito/logo-itt.png}" alt="Logo Dirección de Tránsito de Bucaramanga">
+    <div>
+        <h1>Dirección de Tránsito de Bucaramanga</h1>
+    </div>
+</div>
+<th:block th:replace="~{transito-admin-nav :: nav('licencias')}"/>
+<main class="container p-4" style="max-width: 900px;">
+    <h2 class="dtb-titulo mb-4" th:text="${isEdit} ? 'Editar licencia' : 'Nueva licencia'">Licencia</h2>
+
+    <div class="alert alert-danger" th:if="${validationError}" th:text="${validationError}">Error</div>
+
+    <div class="card mb-4" th:unless="${isEdit}" id="origen-datos">
+        <div class="card-body">
+            <h5 class="card-title">¿Cómo quieres cargar los datos del titular?</h5>
+            <div class="btn-group mb-2" role="group">
+                <input type="radio" class="btn-check" name="origen" id="origen-manual" autocomplete="off" checked>
+                <label class="btn btn-outline-success" for="origen-manual">Manualmente</label>
+                <input type="radio" class="btn-check" name="origen" id="origen-qr" autocomplete="off">
+                <label class="btn btn-outline-success" for="origen-qr">Leer el PID de la wallet (QR)</label>
+            </div>
+            <div id="panel-qr" style="display:none">
+                <p class="form-text mb-2">
+                    Se llenan solos la cédula (que será el número de la licencia), nombres, apellidos, fecha, ciudad y departamento
+                    de nacimiento, sexo, estatura, grupo sanguíneo y la fotografía. Escanea el QR con la wallet del ciudadano y acepta compartir su PID.
+                </p>
+                <button type="button" class="btn btn-success btn-sm" id="pedir-qr">Generar QR</button>
+                <div id="qr-zona" class="mt-3 d-flex align-items-center gap-3"></div>
+                <div id="qr-estado" class="form-text mt-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <form class="dtb-card" method="post" th:action="@{/transito/admin/ciudadanos}" enctype="multipart/form-data">
+        <input type="hidden" id="fotoBase64" name="fotoBase64">
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label for="documentNumber" class="form-label">Número de cédula (= número de licencia)</label>
+                <input type="text" class="form-control" id="documentNumber" name="documentNumber"
+                       th:value="${licencia != null ? licencia.documentNumber : ''}"
+                       th:readonly="${isEdit}" required>
+            </div>
+            <div class="col-md-4">
+                <label for="apellidos" class="form-label">Apellidos</label>
+                <input type="text" class="form-control" id="apellidos" name="apellidos"
+                       th:value="${licencia != null ? licencia.apellidos : ''}" required>
+            </div>
+            <div class="col-md-4">
+                <label for="nombres" class="form-label">Nombres</label>
+                <input type="text" class="form-control" id="nombres" name="nombres"
+                       th:value="${licencia != null ? licencia.nombres : ''}" required>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label for="fechaNacimiento" class="form-label">Fecha de nacimiento</label>
+                <input type="date" class="form-control" id="fechaNacimiento" name="fechaNacimiento"
+                       th:value="${licencia != null ? licencia.fechaNacimiento : ''}" required>
+            </div>
+            <div class="col-md-4">
+                <label for="edadActual" class="form-label">Edad (hoy)</label>
+                <input type="text" class="form-control" id="edadActual" readonly tabindex="-1" placeholder="Se calcula con la fecha de nacimiento">
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label for="lugarNacimientoCiudad" class="form-label">Ciudad de nacimiento</label>
+                <input type="text" class="form-control" id="lugarNacimientoCiudad" name="lugarNacimientoCiudad"
+                       th:value="${licencia != null ? licencia.lugarNacimientoCiudad : ''}" required>
+            </div>
+            <div class="col-md-4">
+                <label for="lugarNacimientoDepartamento" class="form-label">Departamento de nacimiento</label>
+                <input type="text" class="form-control" id="lugarNacimientoDepartamento"
+                       name="lugarNacimientoDepartamento"
+                       th:value="${licencia != null ? licencia.lugarNacimientoDepartamento : ''}">
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <label for="sexo" class="form-label">Sexo</label>
+                <select class="form-select" id="sexo" name="sexo" required>
+                    <option value="">—</option>
+                    <option value="M" th:selected="${licencia != null and licencia.sexo.name() == 'M'}">M</option>
+                    <option value="F" th:selected="${licencia != null and licencia.sexo.name() == 'F'}">F</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="estaturaCm" class="form-label">Estatura (cm)</label>
+                <input type="number" class="form-control" id="estaturaCm" name="estaturaCm" min="50" max="250"
+                       th:value="${licencia != null ? licencia.estaturaCm : ''}">
+            </div>
+            <div class="col-md-3">
+                <label for="grupoSanguineo" class="form-label">Grupo sanguíneo / RH</label>
+                <select class="form-select" id="grupoSanguineo" name="grupoSanguineo">
+                    <option value="">—</option>
+                    <option th:each="g : ${gruposSanguineos}"
+                            th:value="${g}" th:text="${g}"
+                            th:selected="${licencia != null and licencia.grupoSanguineo != null and licencia.grupoSanguineo.etiqueta == g}">
+                        B+
+                    </option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="nacionalidad" class="form-label">Nacionalidad</label>
+                <input type="text" class="form-control" id="nacionalidad" name="nacionalidad" maxlength="2"
+                       th:value="${licencia != null ? licencia.nacionalidad : 'CO'}">
+            </div>
+        </div>
+
+        <h5 class="mt-4">Licencia</h5>
+        <div class="row mb-3">
+            <div class="col-md-5">
+                <label for="organismoTransito" class="form-label">Organismo de tránsito</label>
+                <input type="text" class="form-control" id="organismoTransito" name="organismoTransito" maxlength="150"
+                       th:value="${licencia != null ? licencia.organismoTransito : 'Dirección de Tránsito de Bucaramanga'}" required>
+            </div>
+            <div class="col-md-3">
+                <label for="fechaExpedicion" class="form-label">Fecha de expedición</label>
+                <input type="date" class="form-control" id="fechaExpedicion" name="fechaExpedicion"
+                       th:value="${licencia != null ? licencia.fechaExpedicion : ''}" required>
+            </div>
+            <div class="col-md-2">
+                <label for="estado" class="form-label">Estado</label>
+                <select class="form-select" id="estado" name="estado">
+                    <option th:each="e : ${estados}" th:value="${e.name()}" th:text="${e.etiqueta}"
+                            th:selected="${licencia != null and licencia.estado == e}">Activa</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="usaLentes" name="usaLentes" value="on"
+                           th:checked="${licencia != null and licencia.usaLentes}">
+                    <label class="form-check-label" for="usaLentes">Usa lentes</label>
+                </div>
+            </div>
+        </div>
+
+        <h5 class="mt-4">Categorías</h5>
+        <p class="form-text">
+            Marca las categorías habilitadas. Al marcar una categoría, la expedición es la fecha de hoy y el vencimiento se calcula solo
+            (puedes cambiar ambas fechas); si dejas vacío el vencimiento, se calcula con la vigencia legal (servicio público: 3 años; particular: 10 años si es menor de
+            60, 5 entre 60 y 80, y 1 año si es mayor de 80).
+        </p>
+        <table class="table table-sm align-middle dtb-categorias">
+            <thead>
+            <tr><th></th><th>Cat.</th><th>Vehículos</th><th>Edad mín.</th><th>Expedición</th><th>Vencimiento</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="c : ${categoriasCatalogo}" th:attr="data-cat=${c.codigo},data-publico=${c.servicio == 'Servicio público'},data-edadmin=${c.edadMinima}">
+                <td><input class="form-check-input" type="checkbox" th:id="'cat_' + ${c.codigo}" th:name="'cat_' + ${c.codigo}"
+                           value="on" th:checked="${c.marcada}" th:aria-label="'Categoría ' + ${c.codigo}"></td>
+                <td><strong th:text="${c.codigo}">B1</strong></td>
+                <td><span th:text="${c.descripcion}">Automóviles</span> <small class="text-body-secondary" th:text="'· ' + ${c.servicio}"></small></td>
+                <td th:text="${c.edadMinima}">16</td>
+                <td><input type="date" class="form-control form-control-sm" th:name="'exp_' + ${c.codigo}" th:value="${c.expedicion}"></td>
+                <td><input type="date" class="form-control form-control-sm" th:name="'venc_' + ${c.codigo}" th:value="${c.vencimiento}"></td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <label for="foto" class="form-label">Fotografía del titular</label>
+                <input type="file" class="form-control" id="foto" name="foto" accept="image/jpeg,image/png">
+                <div class="form-text">
+                    La imagen viaja en el mDL como retrato (JPEG).
+                    <span th:if="${isEdit and licencia.fotoReferencia != null}">Ya hay una foto cargada; sube otra solo si quieres reemplazarla.</span>
+                </div>
+            </div>
+            <div class="col-md-6" th:if="${isEdit and licencia.fotoReferencia != null}">
+                <img class="img-thumbnail" style="max-height: 150px;"
+                     th:src="@{/transito/admin/ciudadanos/{documentNumber}/foto(documentNumber=${licencia.documentNumber})}"
+                     alt="Fotografía actual">
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <a class="btn btn-outline-secondary" th:href="@{/transito/admin/ciudadanos}">Cancelar</a>
+    </form>
+</main>
+<script>
+(function () {
+    var nac = document.getElementById('fechaNacimiento');
+    var exp = document.getElementById('fechaExpedicion');
+    var edadEl = document.getElementById('edadActual');
+    var rows = document.querySelectorAll('.dtb-categorias tbody tr');
+
+    function parse(v) { return v ? new Date(v + 'T00:00:00') : null; }
+    function iso(d) {
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    function edadA(nacimiento, fecha) {
+        var e = fecha.getFullYear() - nacimiento.getFullYear();
+        var m = fecha.getMonth() - nacimiento.getMonth();
+        if (m < 0 || (m === 0 && fecha.getDate() < nacimiento.getDate())) e--;
+        return e;
+    }
+    function vence(publico, nacimiento, desde) {
+        var anios = publico ? 3 : (function (e) { return e < 60 ? 10 : (e <= 80 ? 5 : 1); })(edadA(nacimiento, desde));
+        var d = new Date(desde.getTime());
+        d.setFullYear(d.getFullYear() + anios);
+        return d;
+    }
+    function recalcular(forzar) {
+        var n = parse(nac.value), hoy = new Date();
+        edadEl.value = n ? edadA(n, hoy) + ' años' : '';
+        rows.forEach(function (tr) {
+            var cb = tr.querySelector('input[type=checkbox]');
+            var ie = tr.querySelector('input[name^=exp_]');
+            var iv = tr.querySelector('input[name^=venc_]');
+            var min = parseInt(tr.dataset.edadmin, 10);
+            var joven = n && edadA(n, hoy) < min;
+            cb.disabled = !!joven && !cb.checked;
+            tr.title = joven ? 'El titular no cumple la edad mínima (' + min + ' años)' : '';
+            if (!cb.checked || !n) return;
+            if (forzar || !ie.value || ie.dataset.auto === '1') {
+                ie.value = iso(hoy);
+                ie.dataset.auto = '1';
+            }
+            var desde = parse(ie.value);
+            if (desde && (forzar || !iv.value || iv.dataset.auto === '1')) {
+                iv.value = iso(vence(tr.dataset.publico === 'true', n, desde));
+                iv.dataset.auto = '1';
+            }
+        });
+    }
+    rows.forEach(function (tr) {
+        var cb = tr.querySelector('input[type=checkbox]');
+        var ie = tr.querySelector('input[name^=exp_]');
+        var iv = tr.querySelector('input[name^=venc_]');
+        cb.addEventListener('change', function () {
+            if (!cb.checked) { ie.value = ''; iv.value = ''; delete ie.dataset.auto; delete iv.dataset.auto; }
+            recalcular(false);
+        });
+        ie.addEventListener('input', function () { delete ie.dataset.auto; iv.dataset.auto = '1'; recalcular(false); });
+        iv.addEventListener('input', function () { delete iv.dataset.auto; });
+    });
+    nac.addEventListener('change', function () { recalcular(true); });
+    if (!exp.value) exp.value = iso(new Date());
+    recalcular(false);
+})();
+</script>
+
+<script>
+(function () {
+    var manual = document.getElementById('origen-manual'), qr = document.getElementById('origen-qr');
+    if (!manual) return;
+    var panel = document.getElementById('panel-qr'), zona = document.getElementById('qr-zona'), estado = document.getElementById('qr-estado');
+    var VERIFIER = location.origin + '/verifier-transito';
+    var timer = null;
+    function mostrar() { panel.style.display = qr.checked ? 'block' : 'none'; if (!qr.checked) parar(); }
+    manual.addEventListener('change', mostrar); qr.addEventListener('change', mostrar);
+    function parar() { if (timer) { clearInterval(timer); timer = null; } }
+    function b64url(t) { t = t.replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '='; return decodeURIComponent(escape(atob(t))); }
+    function divulgados(sdjwt) {
+        var d = {}, partes = sdjwt.split('~');
+        partes.slice(1, -1).forEach(function (p) {
+            if (!p) return;
+            try { var v = JSON.parse(b64url(p)); if (v.length === 3 && !(v[1] in d)) d[v[1]] = v[2]; } catch (e) {}
+        });
+        return d;
+    }
+    function poner(id, v) { var el = document.getElementById(id); if (el && v) { el.value = v; el.dispatchEvent(new Event('change')); } }
+    function llenar(d) {
+        poner('documentNumber', String(d.personal_administrative_number || ''));
+        poner('nombres', d.given_name);
+        poner('apellidos', d.family_name);
+        poner('fechaNacimiento', d.birthdate);
+        poner('lugarNacimientoCiudad', d.locality);
+        poner('lugarNacimientoDepartamento', d.region);
+        poner('sexo', ({ 1: 'M', 2: 'F', '1': 'M', '2': 'F' })[d.sex]);
+        poner('estaturaCm', d.estatura_cm != null ? String(d.estatura_cm) : '');
+        poner('grupoSanguineo', d.grupo_sanguineo_rh);
+        if (d.picture) document.getElementById('fotoBase64').value = d.picture;
+        estado.textContent = 'Datos cargados desde el PID. Revisa, completa las categorías y guarda.' + (d.picture ? ' La fotografía también viene del PID.' : '');
+        estado.className = 'form-text mt-2 text-success';
+    }
+    function error(m) { estado.textContent = m; estado.className = 'form-text mt-2 text-danger'; }
+    document.getElementById('pedir-qr').addEventListener('click', async function () {
+        parar(); zona.innerHTML = ''; estado.className = 'form-text mt-2'; estado.textContent = 'Generando la solicitud…';
+        try {
+            var uso = await (await fetch(VERIFIER + '/ui/intended-uses')).json();
+            var r = await fetch(VERIFIER + '/ui/presentations/v2', {
+                method: 'POST', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    dcql_query: { credentials: [{ id: 'doc', format: 'dc+sd-jwt', meta: { vct_values: ['urn:eudi:pid:1'] },
+                        claims: [ ['personal_administrative_number'], ['given_name'], ['family_name'], ['birthdate'], ['picture'], ['place_of_birth', 'locality'], ['place_of_birth', 'region'], ['sex'], ['estatura_cm'], ['grupo_sanguineo_rh']].map(function (c) { return { path: c }; }) }] },
+                    nonce: Math.random().toString(36).slice(2) + Date.now().toString(36), profile: 'haip',
+                    intended_use_id: uso.intended_uses[0].intended_use_id, request_uri_method: 'get'
+                })
+            });
+            var t = await r.json();
+            if (!r.ok) throw new Error('el verificador respondió ' + r.status);
+            zona.innerHTML = '<img alt="QR para la wallet" width="240" height="240" src="' + location.pathname.replace(/\/ciudadanos.*$/, '') + '/qr?data=' + encodeURIComponent(t.authorization_request_uri) + '">'
+                + '<a class="btn btn-outline-secondary btn-sm" href="' + t.authorization_request_uri + '">Abrir en la wallet de este dispositivo</a>';
+            estado.textContent = 'Esperando a que la wallet comparta el PID…';
+            var inicio = Date.now();
+            timer = setInterval(async function () {
+                if (Date.now() - inicio > 5 * 60 * 1000) { parar(); return error('La solicitud venció. Genera otro QR.'); }
+                try {
+                    var q = await fetch(VERIFIER + '/ui/presentations/' + encodeURIComponent(t.transaction_id));
+                    if (q.status !== 200) return;
+                    var c = await q.json();
+                    if (c.error) { parar(); return error(c.error === 'access_denied' ? 'El ciudadano no aceptó compartir los datos.' : (c.error_description || c.error)); }
+                    var vp = [].concat((c.vp_token || {}).doc || [])[0];
+                    if (typeof vp !== 'string') return;
+                    parar(); zona.innerHTML = ''; llenar(divulgados(vp));
+                } catch (e) {}
+            }, 2000);
+        } catch (e) { error('No se pudo generar el QR: ' + e.message); }
+    });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+# Portal del empleador (verificación académica). Se une a la red compartida "avance-eudi" con el alias
+# app-contratacion (srv-nw-nginx le pasa /contratacion/… con la ruta completa) y habla con su verifier
+# (../_comun, instancia VERIFIER_INSTANCIA) por la misma red, usando el alias de su haproxy.
+# No guarda nada en disco. Solo monta, de solo lectura, el certificado de acceso (firma la solicitud de firma) y la raíz de confianza.
+#
+#   ./levantar.sh, o ya creado: docker compose -p contratacion --env-file .env logs -f
+name: contratacion
+
+services:
+  contratacion:
+    build: .
+    restart: unless-stopped
+    read_only: true
+    # El dueño de ./datos (quien ejecutó levantar.sh): ahí se escribe el historial local (historial.jsonl).
+    user: ${UID_GID:-1000:1000}
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      # Base de datos PROPIA del historial (emisiones y verificaciones de este portal): ver el servicio postgres-verif.
+      HISTORIAL_DB_URL: postgres://verif_contratacion:verif_contratacion@postgres-verif:5432/verif_contratacion
+      URL_PUBLICA: https://${DOMINIO}/${PREFIJO}
+      VERIFIER_API: http://verifier-${VERIFIER_INSTANCIA}/verifier-${VERIFIER_INSTANCIA}
+      NOMBRE_EMPLEADOR: ${NOMBRE_EMPLEADOR}
+      PUERTO: "80"
+      # Certificado de acceso del empleador (el de su verifier): firma la solicitud de firma que lee la wallet.
+      CLAVE_ACCESO: /secretos/acceso.key
+      CADENA_ACCESO: /secretos/cadena.pem
+      # Raíz con la que se comprueban las firmas y los sellos de tiempo que devuelve la wallet.
+      RAIZ_CONFIANZA: /pki/root.crt
+      # Autoridad de sellado de tiempo (srv-andes-scd, por la red interna): el portal sella las firmas que recibe.
+      TSA_URL: ${TSA_URL:-http://app-andes-scd/andes-scd/tsa}
+    volumes:
+      - ./datos:/datos
+      - ../_comun/instancias/${VERIFIER_INSTANCIA}/secretos/acceso.key:/secretos/acceso.key:ro
+      - ../_comun/instancias/${VERIFIER_INSTANCIA}/secretos/cadena.pem:/secretos/cadena.pem:ro
+      - ../../srv-tl-publisher/pki/publico/ca/root.crt:/pki/root.crt:ro
+    # El contenedor es de solo lectura: openssl necesita un /tmp para los archivos de cada comprobación.
+    tmpfs:
+      - /tmp
+    networks:
+      default: {}   # red del proyecto: por aquí llega a su base de datos
+      avance-eudi:
+        aliases: ["app-${PREFIJO}"]
+
+  # Base de datos PROPIA de este portal (historial de emisiones y verificaciones). Solo la ve su portal (red del proyecto); para DBeaver
+  # se publica únicamente en 127.0.0.1:5466. Va en este mismo compose: si el portal se instala en otro servidor, se lleva su base.
+  postgres-verif:
+    image: postgres:17-alpine
+    container_name: postgres-verif-contratacion
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: verif_contratacion
+      POSTGRES_USER: verif_contratacion
+      POSTGRES_PASSWORD: verif_contratacion
+      TZ: America/Bogota
+    ports: ["127.0.0.1:5466:5432"]
+    volumes:
+      - postgres_verif:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U verif_contratacion -d verif_contratacion"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  postgres_verif:
+    name: contratacion_postgres_verif
+
+networks:
+  # Red privada del proyecto (portal + su base). Subred pequeña y fija: Docker ya agotó sus rangos automáticos con tantos proyectos.
+  default:
+    ipam:
+      config:
+        - subnet: 172.16.103.0/28
+  avance-eudi:
+    name: avance-eudi
+    external: true

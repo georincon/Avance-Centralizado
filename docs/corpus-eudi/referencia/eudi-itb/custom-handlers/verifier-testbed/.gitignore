@@ -1,0 +1,60 @@
+# =============================
+# Java
+# =============================
+*.class
+*.log
+*.ctxt
+
+# Archives and packaged artifacts (usually don’t commit build outputs)
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Keep the Maven Wrapper JAR even though *.jar is ignored
+!.mvn/wrapper/maven-wrapper.jar
+
+# =============================
+# Maven
+# =============================
+/target/
+
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+
+# =============================
+# Spring Boot
+# =============================
+# Default log file
+spring.log
+
+# Common local-only config overrides (keep base application.properties/yml tracked)
+application-*.local.properties
+application-*.local.yml
+application-local.properties
+application-local.yml
+application-*.dev.properties
+application-*.dev.yml
+
+# Environment files (if you use them for local/dev)
+.env
+.env.*
+
+# =============================
+# IDEs and editors
+# =============================
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/

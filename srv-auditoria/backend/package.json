@@ -1,0 +1,10 @@
+{
+  "name": "srv-auditoria",
+  "version": "1.0.0",
+  "description": "Centro de auditoría centralizado de las wallets del ecosistema Avance",
+  "type": "module",
+  "main": "src/servidor.js",
+  "scripts": { "start": "node src/servidor.js", "prueba": "node --test src/" },
+  "dependencies": { "pg": "8.13.1",
+    "qrcode": "1.5.4" }
+}

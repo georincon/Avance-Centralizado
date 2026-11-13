@@ -1,0 +1,56 @@
+[
+  {
+    "documento": "1020304050",
+    "nombres": "María Fernanda",
+    "apellidos": "Gómez Restrepo",
+    "fecha_nacimiento": "1992-03-14",
+    "afiliacion": {
+      "numero": "EPS-482913",
+      "regimen": "Contributivo",
+      "tipo": "Cotizante",
+      "plan": "Plan de Beneficios en Salud (PBS)",
+      "ips": "IPS Avance Centro",
+      "estado": "Activo",
+      "desde": "2018-02-01"
+    },
+    "historia": {
+      "grupo_sanguineo": "O+",
+      "alergias": ["Penicilina", "Mariscos"],
+      "condiciones": ["Asma leve intermitente"],
+      "medicamentos": ["Salbutamol inhalador 100 mcg, si hay crisis"],
+      "vacunas": ["Influenza 2026", "COVID-19 (refuerzo 2024)", "Tétanos (2021)"],
+      "ultima_consulta": { "fecha": "2026-09-22", "servicio": "Medicina general", "motivo": "Control de asma", "diagnostico": "J45.2 Asma leve intermitente" },
+      "observaciones": "Datos de ejemplo: paciente ficticia.",
+      "version": 1,
+      "actualizada": "2026-09-22T15:00:00Z",
+      "actualizada_por": "Dra. Paula Rincón (ficticia)"
+    }
+  },
+  {
+    "documento": "79876543",
+    "nombres": "Carlos Andrés",
+    "apellidos": "Pérez Rodríguez",
+    "fecha_nacimiento": "1985-11-02",
+    "afiliacion": {
+      "numero": "EPS-119204",
+      "regimen": "Subsidiado",
+      "tipo": "Cabeza de familia",
+      "plan": "Plan de Beneficios en Salud (PBS)",
+      "ips": "IPS Avance Norte",
+      "estado": "Activo",
+      "desde": "2020-07-15"
+    },
+    "historia": {
+      "grupo_sanguineo": "A+",
+      "alergias": [],
+      "condiciones": ["Hipertensión arterial", "Diabetes tipo 2"],
+      "medicamentos": ["Losartán 50 mg cada 12 h", "Metformina 850 mg con el almuerzo"],
+      "vacunas": ["Influenza 2026", "Neumococo (2025)"],
+      "ultima_consulta": { "fecha": "2026-10-03", "servicio": "Medicina interna", "motivo": "Control crónicos", "diagnostico": "I10 Hipertensión esencial" },
+      "observaciones": "Datos de ejemplo: paciente ficticio.",
+      "version": 1,
+      "actualizada": "2026-10-03T14:00:00Z",
+      "actualizada_por": "Dr. Andrés Mejía (ficticio)"
+    }
+  }
+]

@@ -1,0 +1,702 @@
+| 
+
+ | 
+
+Official Journal 
+of the European Union
+
+ | 
+
+EN
+
+L series
+
+ | 
+ | 
+
+2025/2164
+
+ | 
+
+28.10.2025
+
+ COMMISSION IMPLEMENTING DECISION (EU) 2025/2164
+
+of 27 October 2025
+
+amending Implementing Decision (EU) 2015/1505 as regards the version of the standard on which the common template for the trusted lists is based
+
+THE EUROPEAN COMMISSION,
+
+Having regard to the Treaty on the Functioning of the European Union,
+
+Having regard to Regulation (EU) No 910/2014 of the European Parliament and of the Council of 23 July 2014 on electronic identification and trust services for electronic transactions in the internal market and repealing Directive 1999/93/EC (1), and in particular Article 22(5) thereof,
+
+Whereas:
+
+ | 
+
+(1)
+
+ | 
+
+Trusted lists provided for in Article 22(1) of Regulation (EU) No 910/2014 are essential for building trust among market operators as they allow a validation of the qualified status of the trust service providers and of the trust services they provide. Therefore, qualified trust service providers are only to begin to provide a qualified trust service after the qualified status has been indicated in the trusted lists.
+
+ | 
+
+(2)
+
+ | 
+
+Commission Implementing Decision (EU) 2015/1505 (2) lays down technical specifications and formats relating to trusted lists. Those specifications and formats leverage the specifications and requirements set out in standard ETSI TS 119 612 version 2.1.1.
+
+ | 
+
+(3)
+
+ | 
+
+Regulation (EU) 2024/1183 of the European Parliament and of the Council (3) amended Regulation (EU) No 910/2014 by introducing new qualified trust services, namely the management of remote qualified electronic signature creation devices, the management of remote qualified electronic seal creation devices, the issuance of qualified electronic attestation of attributes, the provision of qualified electronic archiving services, and the recording of electronic data in a qualified electronic ledger. Standard ETSI TS 119 612 has been updated to version 2.4.1, and now contains specifications that allow trusted lists to include and indicate the status of those new qualified trust services. The updated version 2.4.1 has also amended the specifications for the format of signatures or seals to be used by Member States to sign or seal their national trusted lists.
+
+ | 
+
+(4)
+
+ | 
+
+Therefore, Commission Implementing Decision (EU) 2015/1505 should be amended to update the reference to standard ETSI TS 119 612 to its newer version 2.4.1. As a result of this amendment, certain additional changes to that Implementing Decision are also required. Firstly, the information, to be referred to in the trusted lists, as regards the interpretation of the content of such lists, should be clarified to allow relying parties to interpret the information in the trusted lists. Secondly, the specifications related to the creation of the electronic signatures or seals that are to be applied to the trusted lists should be adapted to prevent certain known and reported vulnerabilities.
+
+ | 
+
+(5)
+
+ | 
+
+To ensure that relying parties have sufficient time to adapt to the specifications set out in the Annex, the application of this Decision should be delayed.
+
+ | 
+
+(6)
+
+ | 
+
+Regulation (EU) 2016/679 of the European Parliament and of the Council (4) and, where relevant, Directive 2002/58/EC of the European Parliament and of the Council (5) apply to all personal data processing activities under this Decision.
+
+ | 
+
+(7)
+
+ | 
+
+The European Data Protection Supervisor was consulted in accordance with Article 42(1) of Regulation (EU) 2018/1725 of the European Parliament and of the Council (6) and delivered its opinion on 8 August 2025 (7).
+
+ | 
+
+(8)
+
+ | 
+
+The measures provided for in this Decision are in accordance with the opinion of the committee established by Article 48 of Regulation (EU) No 910/2014,
+
+HAS ADOPTED THIS DECISION:
+
+Article 1
+
+Annex I to Implementing Decision (EU) 2015/1505 is amended as set out in the Annex to this Decision.
+
+Article 2
+
+This Decision shall enter into force on the twentieth day following that of its publication in the Official Journal of the European Union.
+
+This Implementing Decision shall apply from 29 April 2026.
+
+Done at Brussels, 27 October 2025.
+
+ For the Commission
+
+ The President
+
+Ursula VON DER LEYEN
+
+ (1) 
+ OJ L 257, 28.8.2014, p. 73, ELI: http://data.europa.eu/eli/reg/2014/910/oj.
+
+ (2) Commission Implementing Decision (EU) 2015/1505 of 8 September 2015 laying down technical specifications and formats relating to trusted lists pursuant to Article 22(5) of Regulation (EU) No 910/2014 of the European Parliament and of the Council on electronic identification and trust services for electronic transactions in the internal market (OJ L 235, 9.9.2015, p. 26, ELI: http://data.europa.eu/eli/dec_impl/2015/1505/oj).
+
+ (3) Regulation (EU) 2024/1183 of the European Parliament and of the Council of 11 April 2024 amending Regulation (EU) No 910/2014 as regards establishing the European Digital Identity Framework (OJ L, 2024/1183, 30.4.2024, ELI: http://data.europa.eu/eli/reg/2024/1183/oj).
+
+ (4) Regulation (EU) 2016/679 of the European Parliament and of the Council of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and on the free movement of such data, and repealing Directive 95/46/EC (General Data Protection Regulation) (OJ L 119, 4.5.2016, p. 1, ELI: http://data.europa.eu/eli/reg/2016/679/oj).
+
+ (5) Directive 2002/58/EC of the European Parliament and of the Council of 12 July 2002 concerning the processing of personal data and the protection of privacy in the electronic communications sector (Directive on privacy and electronic communications) (OJ L 201, 31.7.2002, p. 37, ELI: http://data.europa.eu/eli/dir/2002/58/oj).
+
+ (6) Regulation (EU) 2018/1725 of the European Parliament and of the Council of 23 October 2018 on the protection of natural persons with regard to the processing of personal data by the Union institutions, bodies, offices and agencies and on the free movement of such data, and repealing Regulation (EC) No 45/2001 and Decision No 1247/2002/EC (OJ L 295, 21.11.2018, p. 39, ELI: http://data.europa.eu/eli/reg/2018/1725/oj).
+
+ (7) 
+ EDPS Formal comments on the draft regarding the version of the standard on which the common template of the trusted lists is based | European Data Protection Supervisor.
+
+ANNEX
+
+Annex I to Implementing Decision (EU) 2015/1505 is amended as follows:
+
+ | 
+
+(1)
+
+ | 
+
+In Chapter II, the first paragraph is replaced by the following:
+
+ ‘The present specifications leverage the specifications and requirements set in ETSI TS 119 612 v2.4.1 (hereinafter referred to as ETSI TS 119 612).’.
+
+ | 
+
+(2)
+
+ | 
+
+In Chapter II, the section under the title ‘Scheme type/community/rules (clause 5.3.9)’ is replaced by the following:
+
+ ‘
+ Scheme type/community/rules (clause 5.3.9)
+
+This field shall be mandatory and shall comply with the specifications from ETSI TS 119 612 clause 5.3.9.
+
+This field shall only include UK English URIs.
+
+This field shall include at least two URIs:
+
+ | 
+
+(1)
+
+ | 
+
+A URI common to all Member States’ Trusted Lists pointing towards a descriptive text that shall be applicable to all Trusted Lists, as follows:
+
+ | 
+
+—
+
+ | 
+
+URI: http://uri.etsi.org/TrstSvc/TrustedList/schemerules/EUcommon
+
+ | 
+
+—
+
+ | 
+
+Descriptive text:
+
+‘A. 
+ Participation in a scheme
+
+Each Member State must create a trusted list including information related to the qualified trust service providers that are under supervision, together with information related to the qualified trust services they provide, in accordance with the relevant provisions laid down in Regulation (EU) No 910/2014.
+
+The present implementation of such trusted lists is also to be referred to in the list of links (pointers) towards each Member State’s trusted list, compiled by the European Commission.
+
+B. 
+ Policy/rules for the assessment of the listed services
+
+Member States must supervise qualified trust service providers established in the territory of the designating Member State as laid down in Chapter III of Regulation (EU) No 910/2014 to ensure that those qualified trust service providers and the qualified trust services they provide meet the requirements laid down in that Regulation.
+
+The trusted lists of Member States include, as a minimum, information specified in Articles 1 and 2 of Implementing Decision (EU) 2015/1505.
+
+The trusted lists include both current and historical information about the status of listed trust services.
+
+Each Member State’s trusted list must provide information on the national supervisory scheme and, where applicable, national approval, including through accreditation scheme(s) under which the trust service providers and the trust services they provide are listed.
+
+C. 
+ Interpretation of the trusted list
+
+The general user guidelines for applications, services or products relying on a trusted list published in accordance with Regulation (EU) No 910/2014 are as follows:
+
+C.1 
+ Qualified status of a trust service
+
+The qualified status of a trust service is indicated by the combination of:
+
+ | 
+
+—
+
+ | 
+
+the “Service type identifier” (“Sti”) value in a service entry;
+
+ | 
+
+—
+
+ | 
+
+where applicable, the presence of one of the following values in all the fields “additionalServiceInformation extension” in the service entry:
+
+ | 
+
+—
+
+ | 
+
+ "
+ http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/ForeSignatures
+ ": further specifying the "Sti" identified service as being provided for electronic signatures;
+
+ | 
+
+—
+
+ | 
+
+ "
+ http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/ForeSeals
+ ": further specifying the "Sti" identified service as being provided for electronic seals; or
+
+ | 
+
+—
+
+ | 
+
+ "
+ http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/ForWebSiteAuthentication
+ ": further specifying the "Sti" identified service as being provided for website authentication; and
+
+ | 
+
+—
+
+ | 
+
+the status according to the “Service current status” field value as from the date indicated in the “Current status starting date and time”.
+
+Historical information about such a qualified status is similarly provided when applicable.
+
+C.1.1 
+ Service status under Regulation (EU) No 910/2014
+
+Including and after 1 July 2016 (UTC+2), the value of the “Service current status” field used by the Supervisory Body designated in a Member State to indicate that a trust service entry is representing a qualified trust service is the URI “
+ http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/granted
+ ”.
+
+C.1.2 
+ Service status under Directive 1999/93/EC
+
+Strictly before 1 July 2016 (UTC+2), the value of the “Service current status” field used by the Supervisory Body designated in a Member State to indicate that a trust service entry is representing a certification-service-provider issuing qualified certificates is one of the following URIs:
+
+ | 
+
+—
+
+ | 
+
+ “
+ http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/undersupervision
+ ”;
+
+ | 
+
+—
+
+ | 
+
+ “
+ http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/supervisionincessation
+ ”; or
+
+ | 
+
+—
+
+ | 
+
+ “
+ http://uri.etsi.org/TrstSvc/TrustedList/Svcstatus/accredited
+ ”.
+
+C.2 
+ Qualified status of a certificate
+
+Regarding qualified trust service providers issuing qualified certificates for electronic signatures, for electronic seals and/or for website authentication, a “CA/QC”
+ “Service type identifier” (“Sti”) entry indicates that any end-entity certificate issued by or under the CA represented by the CA’s public key and CA’s name (both CA data to be considered as trust anchor input) present in the “Service digital identifier” (“Sdi”), is or was a qualified certificate (QC) at a certain date and time provided that the trust service entry indicates a granted qualified status (see clause C.1) and that the below requirements are met with reference to that date and time.
+
+C.2.1 
+ Default rules
+
+C.2.1.1 Certificate status standardised rule
+
+The end-entity certificate contains the ETSI standardised QcStatements extension as specified in standard ETSI EN 319 412-5 with the following requirements:
+
+ | 
+
+—
+
+ | 
+
+the id-etsi-qcs-QcCompliance (urn:oid:0.4.0.1862.1.1) QcStatement is present; and
+
+ | 
+
+—
+
+ | 
+
+where present, the id-etsi-qcs-QcType (urn:oid:0.4.0.1862.1.6) QcStatement contains exactly one of the following values:
+
+ | 
+
+—
+
+ | 
+
+the id-etsi-qct-esign (urn:oid:0.4.0.1862.6.1) ETSI defined QC type identifier;
+
+ | 
+
+—
+
+ | 
+
+the id-etsi-qct-eseal (urn:oid:0.4.0.1862.6.2) ETSI defined QC type identifier; or
+
+ | 
+
+—
+
+ | 
+
+the id-etsi-qct-web (urn:oid:0.4.0.1862.6.3) ETSI defined QC type identifier.
+
+Optionally, the id-etsi-qct-QcSSCD (urn:oid:0.4.0.1862.4) QcStatement may be present.
+
+C.2.1.2 Certificate status under Directive 1999/93/EC
+
+Restricted to the context of Directive 1999/93/EC and as a legacy alternative to the above standardised rule, the end-entity certificate contains:
+
+ | 
+
+—
+
+ | 
+
+the ETSI standardised QcStatements extension (as specified in ETSI EN 319 412-5) with the id-etsi-qcs-QcCompliance (urn:oid:0.4.0.1862.1.1) QcStatement being present;
+
+ | 
+
+—
+
+ | 
+
+the legacy QCP+ (urn:oid:0.4.0.1456.1.1) ETSI defined certificate policy OID; or
+
+ | 
+
+—
+
+ | 
+
+the legacy QCP (urn:oid:0.4.0.1456.1.2) ETSI defined certificate policy OID.
+
+C.2.2 
+ Additional rules: Presence of Qualifications Extension
+
+If “Sie”
+ “Qualifications Extension” information as specified in clause 5.5.9.2 of standard ETSI TS 119 612 is present, then in addition to the above default rules, those certificates that are identified through the use of “Sie”
+ “Qualifications Extension” information must be considered according to the associated qualifiers. Those qualifiers are used when necessary to compensate for a lack of standardised machine processable information in the corresponding certificate content. They are not to be used to compensate for a lack of machine processable information in certificates issued after 1 July 2016 where that lack would result in a non-compliance with Annex I, III or IV of Regulation (EU) No 910/2014. However, they can be used to provide further machine processable information when the information provided in the certificate, while compliant with the Regulation, does not align with the above default interpretation rules. Where used, they provide additional information regarding:
+
+ | 
+
+—
+
+ | 
+
+their qualified status:
+
+ | 
+
+—
+
+ | 
+
+ “QCStatement” ("
+ http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCStatement
+ ") meaning the identified certificates are qualified under Directive 1999/93/EC or under Regulation (EU) No 910/2014; or
+
+ | 
+
+—
+
+ | 
+
+ “NotQualified” ("
+ http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/NotQualified
+ ") meaning the identified certificates are not to be considered as qualified.
+
+ | 
+
+—
+
+ | 
+
+the nature of their qualification:
+
+ | 
+
+—
+
+ | 
+
+ “QCForESig” ("
+ http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCForESig
+ ") meaning the identified certificates, when claimed or stated as qualified, are qualified certificates for electronic signature under Regulation (EU) No 910/2014;
+
+ | 
+
+—
+
+ | 
+
+ “QCForESeal” ("
+ http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCForESeal
+ ") meaning the identified certificates, when claimed or stated as qualified, are qualified certificates for electronic seal under Regulation (EU) No 910/2014; or
+
+ | 
+
+—
+
+ | 
+
+ “QCForWSA” ("
+ http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCForWSA
+ ") meaning the identified certificates, when claimed or stated as qualified, are qualified certificates for website authentication under Regulation (EU) No 910/2014.
+
+ | 
+
+—
+
+ | 
+
+whether or not the private key resides in a qualified signature or qualified seal creation device (QSCD) and the nature thereof:
+
+ | 
+
+—
+
+ | 
+
+ “QCWithQSCD” ("
+ http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCWithQSCD
+ ") meaning the identified certificates, when claimed or stated as qualified, have their private key residing in a QSCD;
+
+ | 
+
+—
+
+ | 
+
+ “QCNoQSCD” ("
+ http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCNoQSCD
+ ") meaning the identified certificates, when claimed or stated as qualified, have not their private key residing in a QSCD;
+
+ | 
+
+—
+
+ | 
+
+ “QCQSCDStatusAsInCert” ("
+ http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCQSCDStatusAsInCert
+ ") meaning the identified certificates, when claimed or stated as qualified, do contain proper machine processable information about whether or not their private key is residing in a QSCD; or
+
+ | 
+
+—
+
+ | 
+
+ “QCQSCDManagedOnBehalf” ("
+ http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCQSCDManagedOnBehalf
+ ") meaning the identified certificates, when they are claimed or stated as qualified, have their private key is residing in a QSCD for which the generation and management of that private key is done by a qualified TSP on behalf of the entity whose identity is certified in the certificate;
+
+Restricted to the context of certificates issued under Directive 1999/93/EC, the following qualifiers are defined and provide additional information regarding:
+
+ | 
+
+—
+
+ | 
+
+whether or not the private key resides in a secure signature creation device (SSCD):
+
+ | 
+
+—
+
+ | 
+
+ “QCWithSSCD” ("
+ http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCWithSSCD
+ ") meaning the identified certificates, when claimed or stated as qualified, have their private key residing in an SSCD;
+
+ | 
+
+—
+
+ | 
+
+ “QCNoSSCD” ("
+ http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCNoSSCD
+ ") meaning the identified certificates, when claimed or stated as qualified, do not have their private key residing in an SSCD; or
+
+ | 
+
+—
+
+ | 
+
+ “QCSSCDStatusAsInCert” ("
+ http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCSSCDStatusAsInCert
+ ") meaning the identified certificates, when claimed or stated as qualified, do contain proper machine processable information about whether or not their private key is residing in an SSCD.
+
+ | 
+
+—
+
+ | 
+
+the issuance to a Legal Person:
+
+ | 
+
+—
+
+ | 
+
+ “QCForLegalPerson” ("
+ http://uri.etsi.org/TrstSvc/TrustedList/SvcInfoExt/QCForLegalPerson
+ ") meaning the identified certificates, when claimed or stated as qualified, are issued to a Legal Person under Directive 1999/93/EC.
+
+ | 
+
+ Note:
+
+ | 
+ The information provided in the trusted list is to be considered as accurate meaning that the certificate is not to be considered as qualified if the end-entity certificate does not follow any of the default rules defined above, and:
+
+ | 
+
+—
+
+ | 
+
+if no “Sie”
+ “Qualifications Extension” information is present for the trust anchor CA/QC corresponding service entry to qualify the certificate with a “QCStatement” qualifier, or
+
+ | 
+
+—
+
+ | 
+
+a “Sie”
+ “Qualifications Extension” information is present for the trust anchor CA/QC corresponding service entry to qualify the certificate with a “NotQualified” qualifier.
+
+C.3 
+ Trust anchors
+
+ “Service digital identifiers” are to be used as Trust Anchors in the context of validating electronic signatures or seals for which signer’s or seal creator’s certificate is to be validated against information in the trusted list, hence only the public key and the associated subject name are needed as Trust Anchor information. When more than one certificate represents the public key identifying the service, they are to be considered as Trust Anchor certificates conveying identical information with regard to the information strictly required as Trust Anchor information.
+
+C.4 
+ General rule for the interpretation of trust service entries
+
+The general rule for interpretation of any “Sti” type entry, possibly further specified through a “Sie”
+ “additionalServiceInformation”, not corresponding to qualified trust services is that, for that “Sti” identified service type, and possibly in combination with a “Sie”
+ “additionalServiceInformation” URI, the listed service named according to the “Service name” field value and uniquely identified by the “Service digital identity” field value has the current approval status according to the “Service current status” field value as from the date indicated in the “Current status starting date and time”.
+
+Specific interpretation rules for any additional information with regard to a listed service (e.g. “Service information extensions” field) may be found, when applicable, in the Member State specific URI as part of the present “Scheme type/community/rules” field.
+
+Please refer to the implementing acts adopted pursuant to Article 22(5) of Regulation (EU) No 910/2014 for further details on the specifications of the fields of the Member States’ trusted lists.’
+
+ | 
+
+(2)
+
+ | 
+
+A URI specific to each Member State’s trusted list pointing towards a descriptive text that shall be applicable to this Member State trusted list:
+
+ | 
+
+(a)
+
+ | 
+
+ http://uri.etsi.org/TrstSvc/TrustedList/schemerules/CC where CC = the ISO 3166-1 (1) alpha-2 Country Code used in the ‘Scheme territory’ field (clause 5.3.10)
+
+ | 
+
+—
+
+ | 
+
+where users can obtain the referenced Member State’s specific policies/rules against which trust services included in the list are assessed, in compliance with the Member State’s supervisory regime and where applicable, approval scheme.
+
+ | 
+
+—
+
+ | 
+
+where users can obtain a referenced Member State’s specific description about how to use and interpret the content of the trusted list with regard to the listed non-qualified trust services and/or to nationally defined trust services. This may be used to indicate a potential granularity in the national approval system related to CSPs / TSPs not issuing QCs and how the ‘Scheme service definition URI’ (clause 5.5.6) and the ‘Service information extension’ field (clause 5.5.9) are used for this purpose.
+
+ | 
+
+(b)
+
+ | 
+
+Member States may define and use additional URIs expanding the above Member State specific URI (i.e. URIs defined from this hierarchical specific URI).’
+
+ | 
+
+(3)
+
+ | 
+
+In Chapter II, after the section under the title ‘Service current status (clause 5.5.4)’, the following section is added:
+
+ ‘
+ The Signature element (clause B.1), General (clause B.1.0)
+
+This clause shall be mandatory and shall comply with the specifications from TS 119 612 clause B.1.0, where point (2) is replaced by the following:
+
+ | 
+
+‘2)
+
+ | 
+
+Its ds:SignedInfo element shall contain a ds:Reference element with the URI attribute set to an empty string (i.e. URI=""), so as to refer to the entire document. This ds:Reference element shall satisfy the following requirements:
+
+ | 
+
+(a)
+
+ | 
+
+It shall contain only one ds:Transforms element;
+
+ | 
+
+(b)
+
+ | 
+
+This ds:Transforms element shall contain two ds:Transform elements. The first one will be one whose Algorithm attribute indicates the enveloped transformation with the value: "http://www.w3.org/2000/09/xmldsig#enveloped-signature". The second one will be one whose Algorithm attribute instructs to perform the exclusive canonicalization "http://www.w3.org/2001/10/xml-exc-c14n#".’’
+
+ (1) ISO 3166-1:2006: ‘Codes for the representation of names of countries and their subdivisions Part 1: Country codes’.
+
+ELI: http://data.europa.eu/eli/dec_impl/2025/2164/oj
+
+ISSN 1977-0677 (electronic edition)

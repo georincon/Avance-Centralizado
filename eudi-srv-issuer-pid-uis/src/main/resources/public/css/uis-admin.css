@@ -1,0 +1,56 @@
+/* Panel de estudiantes de la UIS: mismo lenguaje visual del emisor (verde institucional, azul, franja dorada). */
+body.uis-admin { background: var(--uis-gray); color: var(--uis-text); }
+.uis-admin .uis-topbar {
+    background: linear-gradient(135deg, var(--uis-green) 0%, var(--uis-blue) 100%);
+    color: #fff; box-shadow: 0 2px 8px rgba(0, 104, 55, .25);
+}
+.uis-admin .uis-topbar .inner { max-width: 1140px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; gap: 16px; }
+.uis-admin .uis-topbar img { height: 52px; width: auto; }
+.uis-admin .uis-topbar h1 { font-size: 1.15rem; margin: 0; font-weight: 700; letter-spacing: .2px; }
+.uis-admin .uis-topbar small { display: block; opacity: .85; font-weight: 400; font-size: .8rem; }
+.uis-admin .uis-topbar .acciones { margin-left: auto; display: flex; gap: 8px; }
+.uis-admin .accent { height: 4px; background: linear-gradient(90deg, var(--uis-green) 0%, var(--uis-blue) 50%, var(--uis-gold) 100%); }
+.uis-admin main { max-width: 1140px; margin: 0 auto; padding: 24px; }
+.uis-admin .tarjeta { background: #fff; border: 1px solid var(--uis-border); border-radius: 8px; padding: 20px 22px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0, 0, 0, .05); }
+.uis-admin .tarjeta h2 { font-size: 1.05rem; color: var(--uis-green-dark); border-bottom: 2px solid var(--uis-green-light); padding-bottom: 8px; margin-bottom: 16px; font-weight: 700; }
+.uis-admin h1.titulo { font-size: 1.5rem; color: var(--uis-green-dark); font-weight: 700; }
+.uis-admin .table thead th { background: var(--uis-green-light); color: var(--uis-green-dark); border-bottom: 2px solid var(--uis-green); font-weight: 600; font-size: .85rem; text-transform: uppercase; letter-spacing: .3px; }
+.uis-admin .table tbody tr:hover { background: #f1f8f4; }
+.uis-admin .btn-primary { background: var(--uis-green); border-color: var(--uis-green); }
+.uis-admin .btn-primary:hover, .uis-admin .btn-primary:focus { background: var(--uis-green-dark); border-color: var(--uis-green-dark); }
+.uis-admin .btn-outline-primary { color: var(--uis-blue); border-color: var(--uis-blue); }
+.uis-admin .btn-outline-primary:hover { background: var(--uis-blue); border-color: var(--uis-blue); color: #fff; }
+.uis-admin .btn-claro { background: rgba(255, 255, 255, .15); border: 1px solid rgba(255, 255, 255, .6); color: #fff; }
+.uis-admin .btn-claro:hover { background: #fff; color: var(--uis-green-dark); }
+.uis-admin .form-control:focus, .uis-admin .form-select:focus { border-color: var(--uis-green); box-shadow: 0 0 0 .2rem rgba(0, 104, 55, .15); }
+.uis-admin .form-label { font-weight: 600; font-size: .85rem; color: var(--uis-text); }
+.uis-admin .etiqueta { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: .75rem; font-weight: 600; }
+.uis-admin .etiqueta-pid { background: var(--uis-blue-light); color: var(--uis-blue-dark); }
+.uis-admin .etiqueta-codigo { background: #fff3cd; color: #7a5b00; }
+.uis-admin .estado-ACTIVO { background: var(--uis-green-light); color: var(--uis-green-dark); }
+.uis-admin .estado-GRADUADO { background: var(--uis-blue-light); color: var(--uis-blue-dark); }
+.uis-admin .estado-PAUSA { background: #fff3cd; color: #7a5b00; }
+.uis-admin .estado-RETIRADO { background: #fdecea; color: var(--uis-danger); }
+.uis-admin .codigo { font-size: 1.9rem; letter-spacing: 4px; font-weight: 700; color: var(--uis-navy); }
+.uis-admin .pie { text-align: center; color: var(--uis-text-light); font-size: .8rem; padding: 12px 0 28px; }
+/* Pantalla de acceso */
+.uis-admin.acceso { min-height: 100vh; display: flex; flex-direction: column; }
+.uis-admin.acceso .caja { max-width: 420px; margin: 8vh auto; background: #fff; border-radius: 10px; border: 1px solid var(--uis-border); box-shadow: 0 8px 24px rgba(0, 0, 0, .08); overflow: hidden; }
+.uis-admin.acceso .caja .cabeza { background: linear-gradient(135deg, var(--uis-green) 0%, var(--uis-blue) 100%); padding: 24px; text-align: center; color: #fff; }
+.uis-admin.acceso .caja .cabeza img { height: 70px; margin-bottom: 8px; }
+.uis-admin.acceso .caja .cuerpo { padding: 24px; }
+
+/* Barra de navegación (Estudiantes · Historial de emisiones · Avisos de revocación) */
+.uis-admin .uis-nav { background: #fff; border-bottom: 1px solid var(--uis-border); }
+.uis-admin .uis-nav .inner { max-width: 1140px; margin: 0 auto; padding: 0 24px; display: flex; gap: 4px; flex-wrap: wrap; }
+.uis-admin .uis-nav a { padding: .8rem 1rem; color: var(--uis-green-dark); font-weight: 600; font-size: .92rem; text-decoration: none; border-bottom: 3px solid transparent; }
+.uis-admin .uis-nav a:hover { background: var(--uis-green-light); }
+.uis-admin .uis-nav a.activo { border-bottom-color: var(--uis-gold); background: var(--uis-green-light); }
+/* Totales del historial de emisiones */
+.uis-admin .kpi-uis { background: #fff; border: 1px solid var(--uis-border); border-left: 6px solid var(--c); border-radius: 8px; padding: .8rem 1rem; box-shadow: 0 1px 3px rgba(0, 77, 44, .08); }
+.uis-admin .kpi-uis .etq { color: var(--uis-text-light); font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+.uis-admin .kpi-uis .n { font-size: 2rem; font-weight: 700; line-height: 1.15; color: var(--t); }
+.uis-admin .kpi-uis-total { --c: var(--uis-green-dark); --t: var(--uis-green-dark); }
+.uis-admin .kpi-uis-vigente { --c: var(--uis-green); --t: var(--uis-green); }
+.uis-admin .kpi-uis-revocada { --c: var(--uis-danger); --t: var(--uis-danger); }
+.uis-admin .kpi-uis-vencida { --c: var(--uis-gold); --t: #8a6100; }

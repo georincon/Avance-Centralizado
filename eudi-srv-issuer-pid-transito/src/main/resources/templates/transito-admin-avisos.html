@@ -1,0 +1,103 @@
+<!--
+  Código propio de este fork (emulador de la Dirección de Tránsito de Bucaramanga).
+  No es parte del eudi-srv-pid-issuer original de la Comisión Europea.
+-->
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/main.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/transito-theme.css}">
+    <link rel="icon" type="image/png" th:href="@{/public/img/transito/favicon.png}">
+    <title>Dirección de Tránsito de Bucaramanga :: Avisos de revocación</title>
+</head>
+<body>
+<div class="dtb-header">
+    <img th:src="@{/public/img/transito/logo-itt.png}" alt="Logo Dirección de Tránsito de Bucaramanga">
+    <div>
+        <h1>Dirección de Tránsito de Bucaramanga</h1>
+        <p class="dtb-subtitle mb-0">Emulador — datos de prueba. No uses datos reales.</p>
+    </div>
+</div>
+<th:block th:replace="~{transito-admin-nav :: nav('avisos')}"/>
+<main class="container p-4">
+    <div class="row mb-3 align-items-center">
+        <div class="col">
+            <h2 class="dtb-titulo mb-0">Avisos de revocación</h2>
+        </div>
+        <div class="col-auto">
+            <a class="btn btn-outline-secondary btn-sm" th:href="@{/transito/admin/ciudadanos}">Volver a ciudadanos</a>
+        </div>
+    </div>
+
+    <p class="dtb-card text-muted">
+        Cuando se revoca una credencial hay que <strong>informar al titular, con el motivo, dentro de las 24 horas
+        siguientes</strong> (CIR 2024/2977, art. 5(3)). La Tránsito no guarda datos de contacto de los ciudadanos, así que
+        estos avisos quedan <strong>pendientes</strong>: avísale por tu cuenta (correo, llamada, en persona) con el texto
+        indicado y marca el aviso como hecho.
+    </p>
+
+    <div class="alert alert-danger" role="alert" th:if="${abiertos > 0}">
+        <span th:text="${abiertos} + ' aviso(s) sin entregar.'">0 aviso(s) sin entregar.</span>
+    </div>
+    <div class="alert alert-success" role="alert" th:if="${abiertos == 0}">No hay avisos pendientes.</div>
+
+    <div class="dtb-card p-0 dtb-tabla-marco"><table class="table align-middle table-hover dtb-tabla mb-0">
+        <thead>
+        <tr>
+            <th>Ciudadano</th>
+            <th>Credenciales</th>
+            <th>Motivo</th>
+            <th>Revocada</th>
+            <th>Plazo para avisar</th>
+            <th>Estado</th>
+            <th>Texto del aviso</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="aviso : ${avisos}">
+            <td th:text="${aviso.subject}">cédula</td>
+            <td th:text="${aviso.credentials}">credenciales</td>
+            <td th:text="${aviso.reason}">motivo</td>
+            <td th:text="${aviso.revokedAt}">fecha</td>
+            <td>
+                <span th:text="${aviso.deadlineAt}">fecha</span>
+                <span class="badge bg-danger" th:if="${aviso.overdue}">VENCIDO</span>
+            </td>
+            <td>
+                <span class="badge" th:classappend="${aviso.open} ? 'bg-warning text-dark' : 'bg-success'"
+                      th:text="${aviso.status == 'PENDING' ? 'Pendiente' : aviso.status == 'FAILED' ? 'Falló la entrega' : aviso.status == 'SENT' ? 'Enviado' : 'Hecho a mano'}">estado</span>
+                <div class="small text-muted" th:if="${aviso.detail != null}" th:text="${aviso.detail}"></div>
+            </td>
+            <td class="small" style="max-width: 28rem;" th:text="${aviso.message}">texto</td>
+            <td class="text-end">
+                <form method="post" class="d-inline js-confirm-form" th:if="${aviso.open}"
+                      th:action="@{/transito/admin/avisos/{id}/notificado(id=${aviso.id})}"
+                      th:attr="data-title='Marcar como avisado',
+                               data-yes='SÍ, ya le avisé',
+                               data-text='¿Confirmas que ya informaste al ciudadano ' + ${aviso.subject} + ' de la revocación y de su motivo?'">
+                    <button type="button" class="btn btn-outline-success btn-sm js-confirm-open">Ya le avisé</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table></div>
+</main>
+
+<dialog id="confirm-dialog" class="dtb-confirm" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+    <h2 id="confirm-title" class="h5">Confirmar</h2>
+    <p id="confirm-text" class="mb-3"></p>
+    <div class="d-flex justify-content-end gap-2">
+        <button type="button" id="confirm-no" class="btn btn-secondary" autofocus>NO</button>
+        <button type="button" id="confirm-yes" class="btn btn-danger">SÍ</button>
+    </div>
+</dialog>
+<noscript>
+    <div class="container p-4"><div class="alert alert-warning">Esta pantalla necesita JavaScript para confirmar.</div></div>
+</noscript>
+<script type="application/javascript" th:src="@{/public/js/transito-admin-list.js}"></script>
+</body>
+</html>

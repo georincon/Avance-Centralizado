@@ -1,0 +1,664 @@
+<!--
+  ~ Copyright (c) 2026 European Commission
+  ~
+  ~ Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
+  ~ Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
+  ~ except in compliance with the Licence.
+  ~
+  ~ You may obtain a copy of the Licence at:
+  ~ https://joinup.ec.europa.eu/software/page/eupl
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software distributed under
+  ~ the Licence is distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF
+  ~ ANY KIND, either express or implied. See the Licence for the specific language
+  ~ governing permissions and limitations under the Licence.
+  -->
+
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- region Genérico -->
+    <string name="generic_error_message">¡Vaya! Algo salió mal</string>
+    <string name="generic_error_description">Si el problema persiste, póngase en contacto con atención al cliente</string>
+    <string name="generic_error_button_retry">INTENTAR DE NUEVO</string>
+    <string name="generic_network_error_message">No estás conectado a internet</string>
+    <string name="generic_error_retry">Inténtalo de nuevo</string>
+    <string name="generic_cancel">Cancelar</string>
+    <string name="generic_cancel_capitalized" tools:ignore="ButtonCase">CANCELAR</string>
+    <string name="generic_continue">Continuar</string>
+    <string name="generic_continue_capitalized" tools:ignore="ButtonCase">CONTINUAR</string>
+    <string name="generic_enable_capitalized" tools:ignore="ButtonCase">ACTIVAR</string>
+    <string name="generic_success">Éxito</string>
+    <string name="generic_close">Cerrar</string>
+    <string name="generic_ok">Aceptar</string>
+    <string name="generic_dash">-</string>
+    <string name="generic_default_relying_party_name">Parte receptora desconocida</string>
+    <string name="generic_default_issuer_name">Entidad emisora</string>
+    <string name="generic_view_details">Ver detalles</string>
+    <string name="generic_deferred_success_text">¡En curso!</string>
+    <string name="generic_bottom_sheet_delete_title">¿Eliminar documento?</string>
+    <string name="generic_bottom_sheet_delete_subtitle">Este documento se eliminará de tu wallet y podría afectar el acceso a servicios.</string>
+    <string name="generic_bottom_sheet_delete_primary_button_text">Eliminar</string>
+    <string name="generic_bottom_sheet_delete_secondary_button_text">Cancelar</string>
+    <string name="generic_scan_qr">Escanear QR</string>
+    <string name="generic_or">O</string>
+    <string name="generic_filters_apply">Aplicar</string>
+    <string name="generic_filters_reset">Restablecer todo</string>
+    <string name="generic_filters_title">Filtrar por</string>
+    <string name="generic_filters_sort_by">Ordenar por</string>
+    <string name="generic_search">Buscar</string>
+    <string name="generic_unknown_issuer">Desconocido</string>
+    <!--endregion-->
+
+    <!-- region Descripción de contenido -->
+    <string name="content_description_image_or_placeholder_icon">Imagen o icono de marcador de posición</string>
+    <string name="content_description_user_signature_icon">Firma del usuario</string>
+    <string name="content_description_qr_code_icon">Código QR</string>
+    <string name="content_description_more_vert_icon">Más elementos</string>
+    <string name="content_description_arrow_back_icon">Volver</string>
+    <string name="content_description_close_icon">Cerrar</string>
+    <string name="content_description_warning_icon">Advertencia</string>
+    <string name="content_description_error_icon">Error</string>
+    <string name="content_description_error_filled_icon">Error</string>
+    <string name="content_description_delete_icon">Eliminar</string>
+    <string name="content_description_touch_id_icon">Touch ID</string>
+    <string name="content_description_qr_icon">QR</string>
+    <string name="content_description_qr_scanner_icon">Escáner de QR</string>
+    <string name="content_description_nfc_icon">NFC</string>
+    <string name="content_description_user_icon">Usuario</string>
+    <string name="content_description_id_icon">ID</string>
+    <string name="content_description_id_stroke_icon">Contorno de ID</string>
+    <string name="content_description_logo_icon">Icono de logotipo</string>
+    <string name="content_description_logo_icon_and_text">Icono de logotipo y texto</string>
+    <string name="content_description_arrow_up_icon">Flecha arriba</string>
+    <string name="content_description_arrow_down_icon">Flecha abajo</string>
+    <string name="content_description_visibility_icon">Mostrar</string>
+    <string name="content_description_visibility_off_icon">Ocultar</string>
+    <string name="content_description_add_icon">Añadir</string>
+    <string name="content_description_edit_icon">Editar</string>
+    <string name="content_description_verified_icon">Verificado</string>
+    <string name="content_description_message_icon">Mensaje</string>
+    <string name="content_description_success_icon">Éxito</string>
+    <string name="content_description_clock_timer_icon">Temporizador</string>
+    <string name="content_description_arrow_right_icon">Flecha derecha</string>
+    <string name="content_description_open_new_icon">Abrir en nueva ventana</string>
+    <string name="content_description_handle_bar_icon">Barra de agarre</string>
+    <string name="content_description_search_icon">Buscar</string>
+    <string name="content_description_present_document_same_device_icon">Presentar documento en persona</string>
+    <string name="content_description_present_document_cross_device_icon">Presentar documento en línea</string>
+    <string name="content_description_add_document_from_list_icon">Añadir documento desde la lista</string>
+    <string name="content_description_add_document_from_qr_icon">Añadir documento desde QR</string>
+    <string name="content_description_authenticate_in_person_icon">Autenticar en persona</string>
+    <string name="content_description_authenticate_online_icon">Autenticar en línea</string>
+    <string name="content_description_sign_document_from_device_icon">Firmar documento desde el dispositivo</string>
+    <string name="content_description_sign_document_from_qr_icon">Firmar documento desde QR</string>
+    <string name="content_description_view_extended_icon">Vista de tarjeta extendida</string>
+    <string name="content_description_view_compact_icon">Vista de lista compacta</string>
+
+    <string name="content_description_bookmark_icon">Favorito</string>
+    <string name="content_description_bookmark_filled_icon">Favorito rellenado</string>
+    <string name="content_description_certified_icon">Certificado</string>
+    <string name="content_description_documents_icon">Documentos</string>
+    <string name="content_description_download_icon">Descargar</string>
+    <string name="content_description_filters_icon">Filtros</string>
+    <string name="content_description_home_icon">Inicio</string>
+    <string name="content_description_in_progress_icon">En curso</string>
+    <string name="content_description_notifications_icon">Notificaciones</string>
+    <string name="content_description_transactions_icon">Historial</string>
+    <string name="content_description_connections_icon">Conexiones</string>
+    <string name="content_description_share_out_icon">Datos compartidos</string>
+    <string name="content_description_share_in_icon">Datos recibidos</string>
+    <string name="content_description_wallet_activated_icon">Wallet activada</string>
+    <string name="content_description_wallet_secured_icon">Wallet protegida</string>
+    <string name="content_description_info_icon">Información</string>
+    <string name="content_description_issuer_icon">Entidad emisora</string>
+    <string name="content_description_issuer_logo_icon">Logotipo de la entidad emisora</string>
+    <string name="content_description_menu_icon">Menú</string>
+    <string name="content_description_signature_icon">Firma</string>
+    <string name="content_description_authenticate_icon">Autenticar con documentos de identidad</string>
+    <string name="content_description_change_pin_icon">Cambiar PIN</string>
+    <string name="content_description_check_icon">Comprobar</string>
+    <string name="content_description_open_in_browser_icon">Abrir en el navegador</string>
+    <string name="content_description_date_range_icon">Seleccionar rango de fechas del filtro</string>
+    <string name="content_description_settings_icon">Ajustes</string>
+    <string name="content_description_batch_issuance_counter_icon">Contador de emisión por lotes</string>
+    <!--endregion-->
+
+    <!-- region Prompt biométrico -->
+    <string name="biometric_prompt_title">Autenticación biométrica</string>
+    <string name="biometric_prompt_subtitle">Autentícate con tus datos biométricos</string>
+    <string name="biometric_login_title">Bienvenido de nuevo</string>
+    <string name="biometric_login_biometrics_enabled_subtitle">Usa tus datos biométricos para acceder a New Wallet.</string>
+    <string name="biometric_login_biometrics_not_enabled_subtitle">Para acceder a New Wallet necesitas introducir tu PIN.</string>
+    <string name="nfc_engagement_service_desc">New Wallet: conexión NFC</string>
+    <!--endregion-->
+
+    <!-- region Biometría -->
+    <string name="biometric_no_hardware">Tu dispositivo no admite autenticación biométrica</string>
+    <string name="biometric_unknown_error">Algo salió mal al inicializar la autenticación biométrica. Inténtalo de nuevo</string>
+    <string name="biometric_strong_required">Tu método biométrico actual no cumple los requisitos de seguridad para esta acción. Configura un método admitido, como la huella dactilar, en los ajustes de tu dispositivo</string>
+    <string name="biometric_authentication_error">La autenticación biométrica ha fallado. Inténtalo de nuevo</string>
+    <string name="biometric_default_mode_text_above_pin_field">PIN</string>
+    <!--endregion-->
+
+    <!-- region Éxito del documento -->
+    <string name="document_success_banner_text">Autenticación correcta</string>
+    <string name="document_success_header_description">Has compartido correctamente la siguiente información con</string>
+    <string name="document_success_header_description_when_error">Has compartido correctamente la información con</string>
+    <string name="document_success_relying_party_default_name">@string/generic_default_relying_party_name</string>
+    <string name="document_success_collapsed_supporting_text">@string/generic_view_details</string>
+    <string name="document_success_sticky_button_text">@string/generic_close</string>
+    <!--endregion-->
+
+    <!-- region PIN rápido -->
+    <string name="quick_pin_invalid_error">PIN no válido</string>
+    <string name="quick_pin_non_match">Los PIN no coinciden</string>
+    <string name="quick_pin_locked_out">Has introducido el PIN incorrecto %1$d veces seguidas.\nEspera %2$s antes de volver a intentarlo.</string>
+
+    <string name="quick_pin_create_title">Bienvenido a tu Wallet</string>
+    <string name="quick_pin_create_subtitle">Protege tu wallet con un código PIN y conéctate a tu Sistema Nacional.</string>
+    <string name="quick_pin_create_enter_pin_input_label">Introduce un PIN</string>
+    <string name="quick_pin_create_reenter_pin_input_label">Confirmar PIN</string>
+
+    <string name="quick_pin_change_title">Cambiar PIN</string>
+    <string name="quick_pin_change_validate_current_subtitle">Introduce tu PIN actual</string>
+    <string name="quick_pin_change_enter_new_subtitle">Selecciona un PIN para próximos inicios de sesión</string>
+    <string name="quick_pin_change_reenter_new_subtitle">Vuelve a introducir el nuevo PIN</string>
+
+    <string name="quick_pin_create_success_text">¡Tu wallet está protegida!</string>
+    <string name="quick_pin_create_success_description">Para activar tu wallet, conéctate a tu Sistema Nacional para añadir tu Identidad Digital.</string>
+    <string name="quick_pin_create_success_no_activation_description">Tu wallet está lista para usar.</string>
+    <string name="quick_pin_create_success_btn">Añadir mi Identidad Digital</string>
+    <string name="quick_pin_create_success_no_activation_btn">IR AL INICIO</string>
+    <string name="quick_pin_change_success_text">@string/generic_success</string>
+    <string name="quick_pin_change_success_description">Has cambiado el PIN correctamente</string>
+    <string name="quick_pin_change_success_btn">VOLVER AL INICIO</string>
+
+    <string name="quick_pin_bottom_sheet_cancel_title">¿Cancelar el cambio de PIN?</string>
+    <string name="quick_pin_bottom_sheet_cancel_subtitle">Cancelar te redirigirá al inicio sin cambiar el PIN</string>
+    <string name="quick_pin_bottom_sheet_cancel_primary_button_text">@string/generic_continue_capitalized</string>
+    <string name="quick_pin_bottom_sheet_cancel_secondary_button_text">@string/generic_cancel_capitalized</string>
+    <!--endregion-->
+
+    <!-- region Pantalla de solicitud -->
+    <string name="request_screen_title">Solicitud de compartir datos</string>
+    <string name="request_relying_party_default_name">@string/generic_default_relying_party_name</string>
+    <string name="request_relying_party_id_format">(ID: %1$s)</string>
+    <string name="request_privacy_policy_section_title">Política de privacidad</string>
+    <string name="request_intended_use_section_title">Uso previsto</string>
+    <string name="request_requested_data_section_title">Datos solicitados</string>
+    <string name="request_cancel_button_text">@string/generic_cancel</string>
+    <string name="request_registration_not_verified_warning_text">Advertencia: No se pudo obtener la información registrada sobre la entidad. Revísala con detenimiento antes de compartir tus datos.</string>
+    <string name="request_registration_overasked_warning_text">Advertencia: Algunos de los datos solicitados no están registrados para esta parte interlocutora. Revísala con detenimiento antes de compartir tus datos.</string>
+    <string name="request_registration_acknowledge_text">Entiendo los riesgos y acepto compartir mis datos</string>
+    <string name="request_claim_not_registered_supporting_text">Datos no registrados</string>
+    <string name="request_collapsed_supporting_text">@string/generic_view_details</string>
+    <string name="request_combination_option_title">Opción %1$d de %2$d</string>
+    <string name="request_no_data">El documento solicitado no está disponible en New Wallet.
+        Ponte en contacto con la entidad emisora autorizada para obtener más información.</string>
+    <string name="request_sticky_button_text">Compartir</string>
+    <string name="request_bottom_sheet_warning_title">Advertencia</string>
+    <string name="request_bottom_sheet_warning_subtitle">Si eliges no compartir ciertos datos, es posible que no se pueda emitir el documento solicitado.</string>
+    <string name="request_blocked_bottom_sheet_title">Presentación bloqueada</string>
+    <string name="request_blocked_bottom_sheet_message">Esta solicitud de presentación ha sido bloqueada porque tu Wallet no pudo verificar a la parte receptora.\n\nTu información personal u otros datos no han sido compartidos con esta parte receptora.</string>
+    <string name="request_blocked_bottom_sheet_primary_button_text">@string/generic_close</string>
+    <string name="request_gender_male">Masculino</string>
+    <string name="request_gender_female">Femenino</string>
+    <string name="request_gender_not_known">No se conoce</string>
+    <string name="request_gender_not_applicable">No aplicable</string>
+    <!--endregion-->
+
+    <!-- region Pantalla de carga -->
+    <string name="loading_header_description">Espera…</string>
+    <string name="loading_biometry_biometrics_enabled_description">Usa tus datos biométricos para aprobar la transacción.</string>
+    <string name="loading_biometry_biometrics_not_enabled_description">Para aprobar la transacción necesitas verificar tu identidad.</string>
+    <!--endregion-->
+
+    <!-- region Panel principal -->
+    <string name="dashboard_document_has_not_expired">Válido hasta:\ %1$s</string>
+    <string name="dashboard_document_has_expired">Caducado</string>
+    <string name="dashboard_document_deferred_pending">Pendiente</string>
+    <string name="dashboard_document_deferred_failed">Error en la emisión</string>
+    <string name="dashboard_document_revoked">Revocado</string>
+    <string name="dashboard_document_credentials_info_text">%d/%d</string>
+
+    <string name="dashboard_bottom_sheet_bluetooth_title">¿Activar Bluetooth?</string>
+    <string name="dashboard_bottom_sheet_bluetooth_subtitle">Activa el Bluetooth para compartir tu información con la opción Autenticar en persona o en línea</string>
+    <string name="dashboard_bottom_sheet_bluetooth_primary_button_text">@string/generic_enable_capitalized</string>
+    <string name="dashboard_bottom_sheet_bluetooth_secondary_button_text">@string/generic_cancel_capitalized</string>
+
+    <string name="dashboard_bottom_sheet_deferred_document_pressed_title">@string/generic_bottom_sheet_delete_title</string>
+    <string name="dashboard_bottom_sheet_deferred_document_pressed_subtitle">@string/generic_bottom_sheet_delete_subtitle</string>
+    <string name="dashboard_bottom_sheet_deferred_document_pressed_primary_button_text">@string/generic_bottom_sheet_delete_primary_button_text</string>
+    <string name="dashboard_bottom_sheet_deferred_document_pressed_secondary_button_text">@string/generic_bottom_sheet_delete_secondary_button_text</string>
+
+    <string name="dashboard_bottom_sheet_deferred_documents_ready_title">Documentos emitidos</string>
+    <string name="dashboard_bottom_sheet_deferred_documents_ready_subtitle">Se han añadido nuevos documentos a tu wallet.</string>
+
+    <string name="dashboard_bottom_sheet_revoked_document_dialog_title">Documentos revocados</string>
+    <string name="dashboard_bottom_sheet_revoked_document_dialog_subtitle">Los siguientes documentos han sido revocados.</string>
+    <!--endregion-->
+
+    <!-- region Menú lateral del panel -->
+    <string name="dashboard_side_menu_title">Mi New Wallet</string>
+    <string name="dashboard_side_menu_option_change_pin">Cambiar PIN</string>
+    <string name="dashboard_side_menu_option_settings">Ajustes</string>
+    <string name="dashboard_side_menu_section_personal_info">Info Personal</string>
+    <string name="dashboard_side_menu_option_personal_data">Datos de mi cédula</string>
+    <string name="dashboard_side_menu_option_other_data">Otros datos</string>
+    <!--endregion-->
+
+    <!-- region Pantalla de ajustes -->
+    <string name="settings_screen_title">Ajustes</string>
+    <string name="settings_screen_option_biometrics_authentication">Autenticar con datos biométricos</string>
+    <string name="settings_screen_option_show_batch_issuance_counter">Contador de emisión por lotes</string>
+    <string name="settings_screen_option_retrieve_logs">Recuperar registros</string>
+    <string name="settings_screen_option_changelog">Historial de cambios</string>
+    <string name="settings_screen_option_appearance">Apariencia</string>
+    <string name="appearance_dialog_title">Apariencia</string>
+    <string name="appearance_dialog_message">Elige el color de fondo de la wallet.</string>
+    <string name="appearance_option_blue">Azul (predeterminado)</string>
+    <string name="appearance_option_white">Blanco</string>
+    <string name="appearance_option_black">Negro</string>
+    <string name="appearance_dialog_close">Cerrar</string>
+    <string name="settings_screen_option_registration_check">Comprobar certificados de registro</string>
+    <string name="settings_screen_option_registration_check_restart">Reinicia la aplicación para aplicar este cambio</string>
+    <string name="settings_intent_chooser_logs_share_title">Compartir registros</string>
+    <string name="migration_option_export">Exportar copia de migración</string>
+    <string name="migration_option_import">Importar copia de migración</string>
+    <string name="migration_passphrase_label">Frase de paso</string>
+    <string name="migration_passphrase_confirm_label">Repite la frase de paso</string>
+    <string name="migration_passphrase_hint">Mínimo 8 caracteres. Sin ella no se podrá abrir la copia.</string>
+    <string name="migration_export_title">Exportar copia de migración</string>
+    <string name="migration_export_message">La copia solo guarda qué documentos tienes y de qué emisor, no sus datos ni tus claves. Se cifra con la frase que elijas.</string>
+    <string name="migration_import_title">Importar copia de migración</string>
+    <string name="migration_import_message">Escribe la frase de paso con la que se creó la copia.</string>
+    <string name="migration_action_continue">Continuar</string>
+    <string name="migration_action_cancel">Cancelar</string>
+    <string name="migration_action_close">Cerrar</string>
+    <string name="migration_error_passphrase_short">La frase debe tener al menos 8 caracteres.</string>
+    <string name="migration_error_passphrase_mismatch">Las frases no coinciden.</string>
+    <string name="migration_export_success">Copia de migración guardada.</string>
+    <string name="migration_export_empty">No hay documentos que se puedan volver a pedir; no se creó la copia.</string>
+    <string name="migration_export_error">No se pudo guardar la copia de migración.</string>
+    <string name="migration_import_wrong_passphrase">No se pudo abrir la copia: la frase es incorrecta o el archivo está alterado.</string>
+    <string name="migration_import_invalid_file">El archivo no es una copia de migración válida.</string>
+    <string name="migration_import_read_error">No se pudo leer el archivo.</string>
+    <string name="migration_restore_title">Documentos a volver a pedir</string>
+    <string name="migration_restore_message">Marca los que quieras volver a pedir. Esta lista es un recordatorio: «Volver a pedir» te lleva a agregar documento, donde debes elegir cada emisor y tipo (el PID primero). Cada emisión es nueva y puede pedirte identificarte.</string>
+    <string name="migration_restore_empty">La copia no contiene documentos.</string>
+    <string name="migration_restore_pid_tag">PID</string>
+    <string name="migration_restore_entry_detail">%1$s · %2$s</string>
+    <string name="migration_restore_action">Volver a pedir</string>
+    <!--endregion-->
+
+    <!-- region Pantalla de inicio -->
+    <string name="home_screen_title">Inicio</string>
+    <string name="home_screen_welcome">Bienvenido</string>
+    <string name="home_screen_welcome_user_message">Bienvenido, %1$s</string>
+    <string name="home_screen_generic_user_label">Usuario</string>
+    <string name="home_screen_add_credential_button">Add</string>
+    <string name="home_screen_authentication_card_title">Autentícate, autoriza transacciones y comparte tus documentos digitales en persona o en línea.</string>
+    <string name="home_screen_sign_card_title">Firma documentos electrónicos con tu wallet eligiendo un archivo de tu dispositivo.</string>
+    <string name="home_screen_authenticate">Autenticar</string>
+    <string name="home_screen_authenticate_description">Autentícate compartiendo tus datos en persona (muy cerca) o en línea (sitio web/servicio).</string>
+    <string name="home_screen_sign">Firmar</string>
+    <string name="home_screen_learn_more">Saber más</string>
+    <string name="home_screen_authenticate_option_in_person">En persona</string>
+    <string name="home_screen_add_document_option_online">En línea</string>
+
+    <string name="home_screen_sign_document">Firmar documento</string>
+    <string name="home_screen_sign_document_description">Firma un documento digitalmente eligiendo un archivo de tu dispositivo o escaneando un código QR.</string>
+    <string name="home_screen_sign_document_option_from_device">Desde el dispositivo</string>
+    <string name="home_screen_sign_document_option_scan_qr">Escanear QR</string>
+    <!--endregion-->
+
+    <!-- region Contenido de las ventanas emergentes de "Saber más" -->
+    <string name="home_screen_authenticate_learn_more_inner_title">Firma documentos de forma segura</string>
+    <string name="home_screen_authenticate_learn_more_description">Firma documentos solo con tu wallet. Proporcionar una firma electrónica legalmente vinculante será más rápido y sencillo que nunca, permitiéndote hacer negocios estés donde estés.</string>
+    <string name="home_screen_sign_learn_more_inner_title">Accede a servicios en línea</string>
+    <string name="home_screen_sign_learn_more_description">Identifícate ante una amplia gama de servicios en línea públicos y privados mientras proteges tu privacidad. Demuestra quién eres con solo unos toques: sin necesidad de gestionar incontables contraseñas.</string>
+    <!--endregion-->
+
+    <!-- region Pantalla de documentos -->
+    <string name="documents_screen_title">Credenciales</string>
+    <string name="documents_screen_top_bar_title">Mis Credenciales</string>
+    <string name="documents_screen_search_label">@string/generic_search</string>
+    <string name="documents_screen_search_no_results">Ningún documento coincide con tu búsqueda. Prueba a cambiar la consulta o los filtros.</string>
+    <string name="documents_screen_add_document_title">Añadir documento</string>
+    <string name="documents_screen_add_document_description">Añade documentos a tu wallet eligiendo de una lista o escaneando un código QR proporcionado.</string>
+    <string name="signed_documents_saved">Documento firmado y sellado en el tiempo guardado en Documents/Signed</string>
+    <string name="signed_documents_saved_no_timestamp">Documento firmado guardado en Documents/Signed, sin sello de tiempo (sin conexión con el servicio de sellado)</string>
+    <string name="documents_screen_add_document_fab">Añadir credencial</string>
+    <string name="documents_screen_add_document_option_list">Desde la lista</string>
+    <string name="documents_screen_add_document_option_qr">@string/generic_scan_qr</string>
+    <string name="documents_screen_add_document_option_or">@string/generic_or</string>
+    <string name="documents_screen_filters_title">@string/generic_filters_title</string>
+    <string name="documents_screen_filters_sort_by">@string/generic_filters_sort_by</string>
+    <string name="documents_screen_filters_sort_default">Predeterminado</string>
+    <string name="documents_screen_filters_filter_by_issuer">Entidad emisora</string>
+    <string name="documents_screen_filters_filter_by_category">Categoría</string>
+    <string name="documents_screen_filters_filter_by_state">Estado</string>
+    <string name="documents_screen_filters_filter_by_state_revoked">Revocado</string>
+    <string name="documents_screen_filters_filter_by_state_valid">Válido</string>
+    <string name="documents_screen_filters_filter_by_state_expired">Caducado</string>
+    <string name="documents_screen_filters_filter_by_expiry_period">Periodo de caducidad</string>
+    <string name="documents_screen_filters_filter_by_expiry_period_1">Próximos 7 días</string>
+    <string name="documents_screen_filters_filter_by_expiry_period_2">Próximos 30 días</string>
+    <string name="documents_screen_filters_filter_by_expiry_period_3">Más allá de 30 días</string>
+    <string name="documents_screen_filters_filter_by_expiry_period_4">Antes de hoy (caducado)</string>
+    <string name="documents_screen_filters_apply">@string/generic_filters_apply</string>
+    <string name="documents_screen_filters_reset">@string/generic_filters_reset</string>
+    <string name="documents_screen_filters_unknown_issuer">@string/generic_unknown_issuer</string>
+    <!--endregion-->
+
+    <!-- region Barra de navegación inferior -->
+    <string name="bottom_navigation_scan_qr_title">Escanear</string>
+    <!--endregion-->
+
+    <!-- region Pantalla de historial -->
+    <string name="transactions_screen_title">Conexiones</string>
+    <string name="transactions_screen_top_bar_title">Mis Conexiones</string>
+    <string name="transactions_screen_search_label">@string/generic_search</string>
+    <string name="transactions_screen_search_no_results">No se encontraron transacciones. Prueba a cambiar la consulta o los filtros.</string>
+    <string name="transactions_screen_0_minutes_ago_message">Justo ahora</string>
+    <plurals name="transactions_screen_some_minutes_ago_message">
+        <item quantity="one">%d minuto atrás</item>
+        <item quantity="other">%d minutos atrás</item>
+    </plurals>
+    <string name="transactions_screen_text_field_date_pattern">dd/mm/aaaa</string>
+    <!--endregion-->
+
+    <!-- region Historial: filtro por sentido de la conexión -->
+    <string name="transactions_screen_direction_filter_all">Todo</string>
+    <string name="transactions_screen_direction_filter_shared">Compartido</string>
+    <string name="transactions_screen_direction_filter_received">Recibido</string>
+    <plurals name="transactions_screen_shared_data_count">
+        <item quantity="one">Compartiste %d dato</item>
+        <item quantity="other">Compartiste %d datos</item>
+    </plurals>
+    <plurals name="transactions_screen_received_data_count">
+        <item quantity="one">Recibiste %d dato</item>
+        <item quantity="other">Recibiste %d datos</item>
+    </plurals>
+    <string name="transactions_screen_direction_icon_shared">Lo que compartiste</string>
+    <string name="transactions_screen_footer_hint">Abre cualquier registro para ver qué se compartió, pedir que borren tus datos o presentar una queja.</string>
+    <string name="transactions_screen_direction_icon_received">Lo que recibiste</string>
+    <!--endregion-->
+
+    <!-- region Historial: etiquetas de filtros -->
+    <string name="transactions_screen_filters_title">@string/generic_filters_title</string>
+    <string name="transactions_screen_filters_sort_by">@string/generic_filters_sort_by</string>
+    <string name="transactions_screen_filters_sort_transaction_date">Fecha de la transacción</string>
+    <string name="transactions_screen_filter_by_date_period">Fecha</string>
+    <string name="transactions_screen_filter_by_status">Estado</string>
+    <string name="transactions_screen_filters_filter_by_relying_party">Parte receptora</string>
+    <string name="transactions_screen_filters_filter_by_transaction_type">Tipo de transacción</string>
+    <string name="transactions_screen_filters_filter_by_transaction_type_presentation">Presentación</string>
+    <string name="transactions_screen_filters_filter_by_transaction_type_issuance">Emisión</string>
+    <string name="transactions_screen_filters_filter_by_transaction_type_signing">Firma</string>
+    <string name="transactions_screen_filters_date_from">Fecha desde</string>
+    <string name="transactions_screen_filters_date_to">Fecha hasta</string>
+    <string name="transactions_filter_item_status_completed">Completada</string>
+    <string name="transactions_filter_item_status_failed">Fallida</string>
+    <string name="transactions_filter_item_no_relying_party_transactions">Sin parte receptora</string>
+    <string name="transactions_screen_filters_apply">@string/generic_filters_apply</string>
+    <string name="transactions_screen_filters_reset">@string/generic_filters_reset</string>
+    <!--endregion-->
+
+    <!-- region Firma de documento -->
+    <string name="document_sign_title">Firmar documento</string>
+    <string name="document_sign_subtitle">Selecciona un documento de tu dispositivo para firmarlo electrónicamente.</string>
+    <string name="document_sign_select_document">Seleccionar documento</string>
+    <!--endregion-->
+
+    <!-- region Escaneo de QR -->
+    <string name="qr_scan_permission_not_granted">Permiso de cámara no concedido\nAbrir ajustes de la aplicación</string>
+    <string name="qr_scan_informative_text_presentation_flow">¿Tienes problemas para escanear el código QR?\nPrueba con un método alternativo</string>
+    <string name="qr_scan_informative_text_issuance_flow">¿Tienes problemas para escanear el código QR?\nPrueba con un método alternativo</string>
+    <string name="qr_scan_informative_text_auto_flow">¿Tienes problemas para escanear el código QR?\nPrueba con un método alternativo</string>
+    <string name="qr_scan_informative_text_signature_flow">¿Tienes problemas para escanear el código QR?\nPrueba con un método alternativo</string>
+    <!--endregion-->
+
+    <!-- region Detalles del documento -->
+    <string name="document_details_boolean_item_true_readable_value">sí</string>
+    <string name="document_details_boolean_item_false_readable_value">no</string>
+
+    <!-- Etiquetas en español para los campos (claims) del documento. El emisor solo envía
+         nombres de campo en inglés, así que se usan estas como prioridad sobre el texto
+         del emisor; si un campo no está aquí, se muestra el texto en inglés del emisor. -->
+    <string name="document_claim_family_name">Apellido(s)</string>
+    <string name="document_claim_given_name">Nombre(s)</string>
+    <string name="document_claim_birth_family_name">Apellido(s) de nacimiento</string>
+    <string name="document_claim_birth_given_name">Nombre(s) de nacimiento</string>
+    <string name="document_claim_birth_date">Fecha de nacimiento</string>
+    <string name="document_claim_birthdate">Fecha de nacimiento</string>
+    <string name="document_claim_age_over_18">Mayor de 18 años</string>
+    <string name="document_claim_age_in_years">Edad en años</string>
+    <string name="document_claim_age_birth_year">Año de nacimiento</string>
+    <string name="document_claim_age_over_21">Mayor de 21 años</string>
+    <string name="document_claim_age_equal_or_over">Verificación de edad</string>
+    <string name="document_claim_height_cm">Estatura (cm)</string>
+    <string name="document_claim_blood_type_rh">Grupo sanguíneo y RH</string>
+    <string name="document_claim_document_issue_date">Fecha de expedición</string>
+    <string name="document_claim_document_issue_place">Lugar de expedición</string>
+    <string name="document_claim_age_over_65">Mayor de 65 años</string>
+    <string name="document_claim_birth_city">Ciudad de nacimiento</string>
+    <string name="document_claim_nationality">Nacionalidad</string>
+    <string name="document_claim_nationalities">Nacionalidad(es)</string>
+    <string name="document_claim_gender">Sexo</string>
+    <string name="document_claim_sex">Sexo</string>
+    <string name="document_claim_portrait">Retrato</string>
+    <string name="document_claim_picture">Foto</string>
+    <string name="document_claim_signature_usual_mark">Firma habitual</string>
+    <string name="document_claim_place_of_birth">Lugar de nacimiento</string>
+    <string name="document_claim_locality">Localidad</string>
+    <string name="document_claim_region">Región</string>
+    <string name="document_claim_country">País</string>
+    <string name="document_claim_address">Dirección</string>
+    <string name="document_claim_street_address">Calle y número</string>
+    <string name="document_claim_formatted">Dirección completa</string>
+    <string name="document_claim_postal_code">Código postal</string>
+    <string name="document_claim_resident_address">Dirección de residencia</string>
+    <string name="document_claim_resident_country">País de residencia</string>
+    <string name="document_claim_resident_state">Provincia/Estado de residencia</string>
+    <string name="document_claim_resident_city">Ciudad de residencia</string>
+    <string name="document_claim_resident_postal_code">Código postal de residencia</string>
+    <string name="document_claim_resident_street">Calle de residencia</string>
+    <string name="document_claim_resident_house_number">Número de vivienda</string>
+    <string name="document_claim_document_number">Número de documento</string>
+    <string name="document_claim_administrative_number">Número administrativo</string>
+    <string name="document_claim_personal_administrative_number">Número administrativo personal</string>
+    <string name="document_claim_issuing_country">País emisor</string>
+    <string name="document_claim_issuing_authority">Autoridad emisora</string>
+    <string name="document_claim_issuing_jurisdiction">Jurisdicción emisora</string>
+    <string name="document_claim_issuance_date">Fecha de emisión</string>
+    <string name="document_claim_expiry_date">Fecha de caducidad</string>
+    <string name="document_claim_email_address">Correo electrónico</string>
+    <string name="document_claim_email">Correo electrónico</string>
+    <string name="document_claim_phone_number">Número de teléfono</string>
+    <string name="document_claim_issue_date">Fecha de expedición</string>
+    <string name="document_claim_height">Estatura (cm)</string>
+    <string name="document_claim_weight">Peso (kg)</string>
+    <string name="document_claim_eye_colour">Color de ojos</string>
+    <string name="document_claim_hair_colour">Color de cabello</string>
+    <string name="document_claim_portrait_capture_date">Fecha de la fotografía</string>
+    <string name="document_claim_vehicle_category_code">Categoría</string>
+    <string name="document_claim_codes">Restricciones</string>
+    <string name="document_claim_code">Código de restricción</string>
+    <string name="document_claim_value">Valor</string>
+    <string name="document_claim_sign">Signo</string>
+    <string name="document_claim_driving_privileges">Categorías de conducción</string>
+    <string name="document_claim_un_distinguishing_sign">Signo distintivo de la ONU</string>
+    <string name="document_claim_user_pseudonym">Seudónimo</string>
+    <string name="document_claim_attestation_legal_category">Categoría legal de la certificación</string>
+
+    <!-- Campos (claims) de credenciales académicas (ej. "Academic Credential"). -->
+    <string name="document_claim_academic_level">Nivel Académico</string>
+    <string name="document_claim_academic_program_code">Código del Programa</string>
+    <string name="document_claim_academic_program_name">Nombre del Programa</string>
+    <string name="document_claim_academic_status">Estado Académico</string>
+    <string name="document_claim_academic_unit">Unidad Académica</string>
+    <string name="document_claim_accumulated_average">Promedio Acumulado</string>
+    <string name="document_claim_approved_credits">Créditos Aprobados</string>
+    <string name="document_claim_awarded_title">Título Otorgado</string>
+    <string name="document_claim_enrollment_date">Fecha de Ingreso</string>
+    <string name="document_claim_faculty">Facultad</string>
+    <string name="document_claim_graduation_date">Fecha de Grado</string>
+    <string name="document_claim_identification_type">Tipo de Identificación</string>
+    <string name="document_claim_issuing_institution_name">Nombre de la Institución</string>
+    <string name="document_claim_program_duration_semesters">Duración del Programa (Semestres)</string>
+    <string name="document_claim_program_modality">Modalidad del Programa</string>
+    <string name="document_claim_semesters_completed">Semestres Cursados</string>
+    <string name="document_claim_student_identification_number">Número de Identificación Estudiantil</string>
+    <string name="document_claim_total_credits">Créditos Totales</string>
+
+    <string name="document_details_bottom_sheet_delete_title">@string/generic_bottom_sheet_delete_title</string>
+    <string name="document_details_bottom_sheet_delete_subtitle">@string/generic_bottom_sheet_delete_subtitle</string>
+    <string name="document_details_bottom_sheet_delete_primary_button_text">@string/generic_bottom_sheet_delete_primary_button_text</string>
+    <string name="document_details_bottom_sheet_delete_secondary_button_text">@string/generic_bottom_sheet_delete_secondary_button_text</string>
+
+    <string name="document_details_toolbar_action_reissue">Reemitir</string>
+    <string name="document_details_toolbar_action_remove">Eliminar</string>
+
+    <string name="document_details_document_credentials_info_text">Instancias restantes %d/%d</string>
+    <string name="document_details_main_section_text">DATOS DEL DOCUMENTO</string>
+    <string name="document_details_share_button_text">Compartir</string>
+    <string name="document_details_share_button_content_description">Escanear el código QR del verificador para compartir esta credencial</string>
+    <string name="document_details_qr_scan_title">Compartir credencial</string>
+    <string name="document_details_qr_scan_subtitle">Escanea el código QR del verificador para compartirle la información que solicita.</string>
+    <string name="document_details_issuer_section_text">DETALLES DE LA ENTIDAD EMISORA</string>
+    <string name="document_details_issuer_card_unknown_issuer">@string/generic_unknown_issuer</string>
+    <string name="document_details_issuer_card_expires_on_text">Caduca el:\ %1$s</string>
+    <string name="document_details_issuer_card_revoked_text">Documento revocado</string>
+    <string name="document_details_issuer_card_issued_on_text">Emitido el:\ %1$s</string>
+    <string name="document_details_issuer_card_issued_message_text">Puedes reemitir este documento en cualquier momento.</string>
+    <string name="document_details_issuer_card_issued_action_btn_text">Reemitir documento</string>
+    <string name="document_details_issuer_card_revoked_message_text">Este documento no puede utilizarse para la verificación.</string>
+    <string name="document_details_issuer_card_expired_action_btn_text">@string/document_details_issuer_card_issued_action_btn_text</string>
+    <string name="document_details_issuer_card_expired_on_text">Caducó el:\ %1$s</string>
+    <string name="document_details_issuer_card_expired_text">Caducado</string>
+    <string name="document_details_issuer_card_expired_message_text">Este documento ha caducado. Puedes reemitirlo.</string>
+    <string name="document_details_secondary_button_text">Eliminar de la wallet</string>
+
+    <string name="document_details_bottom_sheet_bookmark_info_title">Guardado en favoritos</string>
+    <string name="document_details_bottom_sheet_bookmark_info_message">El documento se ha añadido correctamente a tu lista de favoritos.</string>
+    <string name="document_details_bottom_sheet_bookmark_removed_info_title">Eliminado de favoritos</string>
+    <string name="document_details_bottom_sheet_bookmark_removed_info_message">El documento se ha eliminado correctamente de tu lista de favoritos.</string>
+
+    <string name="document_details_bottom_sheet_badge_title">Parte receptora de confianza</string>
+    <string name="document_details_bottom_sheet_badge_subtitle">Una parte receptora se considera de confianza cuando cumple
+        criterios predefinidos de seguridad, protección de datos, cumplimiento y gestión responsable de los datos.</string>
+    <!--endregion-->
+
+    <!-- region Detalles de la transacción -->
+    <string name="transaction_details_screen_title">Información de la transacción</string>
+    <string name="transaction_details_screen_card_date_label">Fecha</string>
+    <string name="transaction_details_request_deletion_message">Puedes solicitar que se detenga el tratamiento de datos personales vinculados a esta transacción. Esto podría afectar tu acceso a servicios.</string>
+    <string name="transaction_details_report_transaction_message">Si consideras que esta parte receptora ha solicitado datos personales de forma ilícita, puedes denunciar esta transacción a las autoridades.</string>
+    <string name="transaction_details_request_deletion_button">Solicitar eliminación de datos</string>
+    <string name="transaction_details_report_transaction_button">Denunciar transacción sospechosa</string>
+    <string name="transaction_details_data_shared_section_title">DATOS COMPARTIDOS</string>
+    <!-- Etiqueta de cada dato compartido en el detalle de una presentación -->
+    <string name="transaction_details_shared_data_sent">Enviado</string>
+    <string name="transaction_details_received_credential_section_title">CREDENCIAL RECIBIDA</string>
+    <string name="transaction_details_data_signed_section_title">DATOS FIRMADOS</string>
+    <string name="transaction_details_collapsed_supporting_text">@string/generic_view_details</string>
+    <!--endregion-->
+
+    <!-- region QR de proximidad -->
+    <string name="proximity_qr_title">Autenticar mi identidad</string>
+    <string name="proximity_qr_subtitle">Muestra este código QR a una parte interlocutora muy cercana para autenticar tu identidad.</string>
+    <string name="proximity_qr_use_nfc">Conectar mediante NFC</string>
+    <string name="proximity_qr_hold_near_reader">Acerca el teléfono al lector para escanear.</string>
+    <!--endregion-->
+
+    <!-- region Escaneo de QR de presentación -->
+    <string name="presentation_qr_scan_title">Autenticar mi identidad</string>
+    <string name="presentation_qr_scan_subtitle">Escanea un código QR proporcionado por una parte interlocutora para autenticar tu identidad.</string>
+    <!--endregion-->
+
+    <!-- region Escaneo de QR de firma -->
+    <string name="auto_qr_scan_title">Escanea, añade y comparte con confianza</string>
+    <string name="auto_qr_scan_subtitle">Escanea el código QR de una entidad emisora para añadir un documento, o el de una parte interlocutora de confianza para compartir tus datos.</string>
+    <string name="signature_qr_scan_title">Firmar documento</string>
+    <string name="signature_qr_scan_subtitle">Escanea un código QR para firmar electrónicamente un documento.</string>
+    <!--endregion-->
+
+    <!-- region Emisión: pantalla para añadir documento -->
+    <string name="issuance_add_document_title">Añadir documento desde la lista</string>
+    <string name="issuance_add_document_subtitle">Elige un documento digital de la lista siguiente para añadirlo a tu wallet. Puedes añadir más documentos escaneando el código QR que te ha proporcionado un servicio de emisión autorizado.</string>
+    <string name="issuance_add_document_no_options">No hay documentos disponibles</string>
+    <string name="issuance_add_document_deferred_success_text">@string/generic_deferred_success_text</string>
+    <string name="issuance_add_document_deferred_success_description">Se ha solicitado tu documento. Recibirás una notificación cuando se haya emitido en tu wallet.</string>
+    <string name="issuance_add_document_deferred_success_primary_button_text">@string/generic_ok</string>
+    <string name="issuance_add_document_pid_combined">PID combinado</string>
+    <!--endregion-->
+
+    <!-- region Emisión: pantalla de éxito -->
+    <string name="issuance_success_banner_text">Documento emitido</string>
+    <string name="issuance_success_header_description">Has añadido correctamente lo siguiente a tu wallet</string>
+    <string name="issuance_success_header_description_when_error">Has añadido correctamente el/los documento(s) a tu wallet</string>
+    <string name="issuance_success_header_issuer_default_name">@string/generic_default_issuer_name</string>
+    <!--endregion-->
+
+    <!-- region Emisión: escaneo de QR -->
+    <string name="issuance_qr_scan_title">Añadir documento desde QR</string>
+    <string name="issuance_qr_scan_subtitle">Escanea un código QR proporcionado por una entidad emisora para añadir un documento digital a tu wallet.</string>
+    <!--endregion-->
+
+    <!-- region Emisión: oferta de documento -->
+    <string name="issuance_document_offer_screen_title">Solicitud de emisión</string>
+    <string name="issuance_document_offer_accept_button_text">Aceptar</string>
+    <string name="issuance_document_offer_cancel_button_text">@string/generic_cancel</string>
+    <string name="issuance_document_offer_deferred_success_text">@string/generic_deferred_success_text</string>
+    <string name="issuance_document_offer_deferred_success_description">Se han solicitado tus documentos de %1$s. Recibirás una notificación cuando se hayan emitido en tu wallet.</string>
+    <string name="issuance_document_offer_deferred_success_primary_button_text">@string/generic_ok</string>
+    <string name="issuance_document_offer_error_missing_pid_text">La wallet necesita activarse primero con un documento de identidad nacional</string>
+    <string name="issuance_document_offer_error_invalid_txcode_format">Formato de código de transacción no válido. La longitud debe estar entre %1$d y %2$d dígitos y solo se permiten caracteres numéricos.</string>
+    <string name="issuance_document_offer_error_no_document">No se pudo obtener y procesar la oferta de credencial</string>
+
+    <string name="issuance_document_offer_relying_party_default_name">@string/generic_default_issuer_name</string>
+    <!--endregion-->
+
+    <!-- region Emisión: código de oferta de documento -->
+    <string name="issuance_code_title">%1$s requiere verificación</string>
+    <string name="issuance_code_caption">Introduce el código de transacción de %1$d dígitos que has recibido.</string>
+    <!--endregion-->
+
+    <!-- region Emisión: errores -->
+    <string name="issuance_generic_error">Algo salió mal al emitir tu(s) documento(s)</string>
+    <string name="issuance_blocked_bottom_sheet_title">Emisión bloqueada</string>
+    <string name="issuance_blocked_bottom_sheet_message">Esta solicitud de emisión ha sido bloqueada porque tu Wallet no pudo verificar al proveedor.\n\nTu información personal u otros datos no han sido compartidos con este proveedor.</string>
+    <string name="issuance_blocked_bottom_sheet_primary_button_text">@string/generic_close</string>
+    <string name="issuance_partially_blocked_bottom_sheet_title">No se añadieron todos los documentos</string>
+    <string name="issuance_partially_blocked_bottom_sheet_message">Algunos documentos se han añadido a tu Wallet. El resto fue bloqueado porque no se pudo verificar a su proveedor, y no se compartió ningún dato para ellos.</string>
+    <string name="issuance_partially_blocked_bottom_sheet_primary_button_text">@string/generic_continue</string>
+    <string name="issuance_duplicate_document_bottom_sheet_title">Ya tienes esta credencial</string>
+    <string name="issuance_duplicate_document_bottom_sheet_message">La credencial que acabas de añadir ya existe en tu Wallet (mismo tipo y mismo programa/detalle). ¿Deseas conservarla de todas formas o descartar esta nueva?</string>
+    <string name="issuance_duplicate_document_bottom_sheet_positive_button_text">Conservar de todas formas</string>
+    <string name="issuance_duplicate_document_bottom_sheet_negative_button_text">Descartar la nueva</string>
+    <!--endregion-->
+
+    <!-- region Categorías de documentos -->
+    <string name="document_category_government">Gobierno de Colombia</string>
+    <string name="document_category_travel">VIAJES</string>
+    <string name="document_category_finance">FINANZAS</string>
+    <string name="document_category_education">EDUCACIÓN</string>
+    <string name="document_category_health">SALUD</string>
+    <string name="document_category_social_security">SEGURIDAD SOCIAL</string>
+    <string name="document_category_retail">COMERCIO</string>
+    <string name="document_category_other">OTROS</string>
+    <!-- Tarjeta de una credencial dirigida a una entidad (fe de vida, convivencia): %1$s = EPS, Fondo de pensiones, Empleador… -->
+    <string name="document_card_destination">Dirigida a: %1$s</string>
+    <!-- Tarjeta del tiquete aéreo: %1$s origen, %2$s destino, %3$s vuelo (p. ej. «BGA - BOG · Vuelo PMO 4862»). -->
+    <string name="document_card_flight">%1$s - %2$s · Vuelo %3$s</string>
+    <!--endregion-->
+
+    <!-- region Categorías de transacciones -->
+    <string name="transaction_category_today">HOY</string>
+    <string name="transaction_category_this_week">ESTA SEMANA</string>
+    <string name="transaction_category_month_year">MES</string>
+    <string name="transaction_category_day">DÍA</string>
+    <!--endregion-->
+
+</resources>

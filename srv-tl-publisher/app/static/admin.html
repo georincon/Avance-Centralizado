@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administración · tl-publisher</title>
+<style>
+  :root {
+    /* Tamano de la raiz: 16px = 16px siempre, en cualquier navegador.
+       El CSS mide casi todo en rem; si el <html> cogiese el tamano de fuente
+       del navegador, la interfaz cambiaria de tamano de una maquina a otra. */
+    font-size: 16px; --fondo: #f4f5f7; --tinta: #1d2433; --apagado: #5b6475; --borde: #d6dae2; --acento: #1f4fa3; --ok: #17784a;
+          --ok-suave: #e3f3ea; --aviso: #8a5a00; --aviso-suave: #fff3d6; --mal: #a3141f; --mal-suave: #fbe4e6; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { font-family: system-ui, sans-serif; background: var(--fondo); color: var(--tinta); margin: 0; font-size: 15px; }
+  header { background: #15213a; color: #fff; padding: 16px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  header h1 { font-size: 18.4px; margin: 0; flex: 1; }
+  header small { opacity: .75; }
+  main { max-width: 1440px; margin: 24px auto; padding: 0 16px; }
+  .tarjeta { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px #0002; padding: 19.2px; margin-bottom: 16px; }
+  h2 { font-size: 16.8px; margin: 0 0 12.8px; }
+  h3 { font-size: 15.2px; margin: 19.2px 0 8px; }
+  p { line-height: 1.5; }
+  .ayuda { color: var(--apagado); font-size: 14.08px; margin: 3.2px 0 12.8px; }
+  button, .boton { font: inherit; padding: 8px 14.4px; border-radius: 8px; border: 0; cursor: pointer; background: var(--acento); color: #fff; text-decoration: none; display: inline-block; }
+  button.secundario, .boton.secundario { background: #e6e9ef; color: var(--tinta); }
+  button.peligro { background: var(--mal); }
+  button.chico { padding: 4.8px 9.6px; font-size: 13.6px; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  input, select, textarea { font: inherit; width: 100%; padding: 8px 9.6px; border: 1px solid var(--borde); border-radius: 7px; background: #fff; }
+  textarea { font-family: ui-monospace, monospace; font-size: 12.8px; min-height: 96px; }
+  label { display: block; font-size: 14.08px; margin: 11.2px 0 4px; font-weight: 600; }
+  label small { font-weight: 400; color: var(--apagado); }
+  .fila { display: flex; gap: 9.6px; flex-wrap: wrap; align-items: center; }
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(224px, 1fr)); gap: 9.6px 16px; }
+  .pestanas { display: flex; gap: 4.8px; margin-bottom: 16px; }
+  .pestanas button { background: #e6e9ef; color: var(--tinta); }
+  .pestanas button[aria-selected=true] { background: var(--acento); color: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 14.4px; }
+  th, td { text-align: left; padding: 8.8px 8px; border-bottom: 1px solid #eef0f4; vertical-align: top; }
+  th { font-size: 12.8px; color: var(--apagado); font-weight: 600; }
+  tbody tr.clic { cursor: pointer; }
+  tbody tr.clic:hover { background: #f7f9fc; }
+  .chip { display: inline-block; padding: 1.92px 8px; border-radius: 6px; font-size: 12.48px; font-weight: 700; background: #e6e9ef; }
+  .chip.PID { background: #e0ebff; color: #1f4fa3; } .chip.QEAA { background: #efe3ff; color: #5b2aa3; }
+  .chip.PUBEAA { background: #e3f3ea; color: #17784a; } .chip.WP { background: #fff0db; color: #8a5a00; }
+  .chip.RPREG { background: #e8eaee; color: #3a4252; }
+  .estado-retirado { color: var(--apagado); text-decoration: line-through; }
+  .mono { font-family: ui-monospace, monospace; font-size: 12.8px; word-break: break-all; }
+  .aviso { border-radius: 8px; padding: 9.6px 12.8px; font-size: 14.08px; margin: 8px 0; }
+  .aviso.ok { background: var(--ok-suave); color: var(--ok); } .aviso.alerta { background: var(--aviso-suave); color: var(--aviso); }
+  .aviso.mal { background: var(--mal-suave); color: var(--mal); } .aviso.info { background: #e8eefb; color: #1f3d73; }
+  .aviso ul { margin: 4.8px 0 0; padding-left: 17.6px; }
+  .roles { display: grid; grid-template-columns: repeat(auto-fit, minmax(208px, 1fr)); gap: 8px; }
+  .roles label { margin: 0; border: 1.5px solid var(--borde); border-radius: 9px; padding: 9.6px 11.2px; cursor: pointer; font-weight: 400; }
+  .roles label:has(input:checked) { border-color: var(--acento); background: #eef3fc; }
+  .roles input { width: auto; margin-right: 4.8px; }
+  .roles b { display: block; }
+  .roles span { font-size: 12.8px; color: var(--apagado); }
+  dialog { border: 0; border-radius: 14px; padding: 0; width: min(736px, 96vw); max-height: 92vh; box-shadow: 0 20px 60px #0005; }
+  dialog::backdrop { background: #0008; }
+  dialog form, dialog .cuerpo { padding: 20.8px; }
+  .pie { display: flex; justify-content: flex-end; gap: 8px; margin-top: 19.2px; }
+  .cert { border: 1px solid var(--borde); border-radius: 8px; padding: 9.6px 12.8px; margin: 8px 0; font-size: 13.6px; }
+  .cert .fila { justify-content: space-between; }
+  #toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: #15213a; color: #fff; padding: 11.2px 17.6px;
+           border-radius: 9px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90vw; }
+  #toast.visible { opacity: 1; } #toast.error { background: var(--mal); }
+  .entrada { max-width: 416px; margin: 64px auto; }
+  code { background: #eef0f4; padding: 1.6px 5.6px; border-radius: 5px; font-size: .85em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>tl-publisher · Administración <small id="operador"></small></h1>
+  <button class="secundario chico" id="salir" hidden>Salir</button>
+</header>
+
+<!-- Entrada ------------------------------------------------------------------>
+<main id="pantalla-entrada" class="entrada">
+  <form class="tarjeta" id="form-entrada">
+    <h2>Clave del operador</h2>
+    <p class="ayuda">Es <code>CLAVE_OPERADOR</code> del <code>.env</code> del tl-publisher. Se guarda solo en esta pestaña.</p>
+    <input type="password" id="clave" autocomplete="current-password" required autofocus>
+    <div class="aviso mal" id="error-entrada" hidden></div>
+    <div class="pie"><button type="submit">Entrar</button></div>
+  </form>
+</main>
+
+<!-- Aplicación --------------------------------------------------------------->
+<main id="pantalla-app" hidden>
+  <div class="pestanas" role="tablist">
+    <button role="tab" aria-selected="true" data-pestana="actores">Actores</button>
+    <button role="tab" aria-selected="false" data-pestana="listas">Listas</button>
+  </div>
+
+  <section id="pestana-actores">
+    <div class="tarjeta">
+      <div class="fila" style="justify-content: space-between">
+        <h2 style="margin: 0">Actores registrados</h2>
+        <div class="fila">
+          <select id="filtro" style="width: auto">
+            <option value="">Todos</option><option value="pid">PID</option><option value="qeaa">QEAA</option>
+            <option value="pub-eaa">PUBEAA</option><option value="wallet-provider">Wallet-providers</option>
+            <option value="verifier">Verifiers</option><option value="ca-acceso">CA de acceso</option>
+          </select>
+          <label class="fila" style="margin: 0; font-weight: 400"><input type="checkbox" id="ver-retirados" style="width: auto"> retirados</label>
+          <button id="nuevo-actor">Agregar emisor o wallet-provider</button>
+          <button class="secundario" id="nuevo-verifier">Registrar verifier</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Nombre</th><th>Lista</th><th>Estado</th><th>Certificados</th><th>URL / supply points</th></tr></thead>
+        <tbody id="filas"></tbody>
+      </table>
+      <p class="ayuda" id="vacio" hidden>No hay actores con ese filtro.</p>
+    </div>
+    <div class="aviso info" id="recordatorio" hidden></div>
+  </section>
+
+  <section id="pestana-listas" hidden>
+    <div class="tarjeta">
+      <div class="fila" style="justify-content: space-between">
+        <h2 style="margin: 0">Listas publicadas</h2>
+        <button class="secundario" id="republicar">Republicar todo ahora</button>
+      </div>
+      <p class="ayuda">Se republican solas antes de vencer y con cada alta, baja o rotación.</p>
+      <table>
+        <thead><tr><th>Lista</th><th>Secuencia</th><th>Emitida</th><th>Próxima actualización</th><th>Descargar</th></tr></thead>
+        <tbody id="listas"></tbody>
+      </table>
+    </div>
+    <div class="tarjeta">
+      <h2>Que el trust-validator vea los cambios</h2>
+      <p>El trust-validator vuelve a descargar las listas solo, cada pocos minutos (<code>CACHE_LISTAS_MINUTOS</code>
+        en su <code>.env</code>, 10 por defecto): una alta o una baja le llega en unos minutos. Para que la vea al instante,
+        en la máquina (el tl-publisher no tiene acceso a Docker, a propósito):</p>
+      <p><code>cd eudi-srv-trust-validator/docker-compose &amp;&amp; ./up.sh</code></p>
+      <p class="ayuda">La wallet las vuelve a descargar sola una vez al día, o en <i>Ajustes › Listas de confianza › Actualizar</i>.</p>
+    </div>
+  </section>
+</main>
+
+<!-- Alta de emisor o wallet-provider ----------------------------------------->
+<dialog id="dlg-actor">
+  <form id="form-actor" method="dialog">
+    <h2>Agregar a la lista de confianza</h2>
+    <label>¿Qué es?</label>
+    <div class="roles">
+      <label><input type="radio" name="rol" value="pid" checked><b>Emisor de PID</b><span>Emite la identidad digital (PID). Lista PID.</span></label>
+      <label><input type="radio" name="rol" value="qeaa"><b>Emisor de QEAA</b><span>Atestaciones cualificadas (títulos, licencias…). Lista QEAA.</span></label>
+      <label><input type="radio" name="rol" value="pub-eaa"><b>Emisor de Pub-EAA</b><span>Atestaciones de un organismo público. Lista PUBEAA.</span></label>
+      <label><input type="radio" name="rol" value="wallet-provider"><b>Wallet-provider</b><span>Da las WIA y key attestations de una wallet. Lista WP.</span></label>
+    </div>
+    <p class="ayuda">La wallet solo acepta un PID de la lista PID; cualquier otro documento, de QEAA o PUBEAA.</p>
+
+    <div class="rejilla">
+      <div><label>Nombre</label><input name="nombre" required placeholder="PID Issuer de Bogotá"></div>
+      <div><label>País <small>(2 letras)</small></label><input name="pais" value="CO" maxlength="2"></div>
+      <div><label>Correo <small>(opcional)</small></label><input name="correo" type="email"></div>
+      <div><label>Página informativa <small>(opcional)</small></label><input name="url_info" type="url" placeholder="https://"></div>
+    </div>
+
+    <div id="bloque-url">
+      <label>URL OpenID4VCI del emisor <small>(su <code>credential_issuer</code>; con ella la wallet lo ofrece en «Pedir un documento»)</small></label>
+      <div class="fila"><input name="url" type="url" placeholder="https://dominio/emisor" style="flex: 1"><button type="button" class="secundario" id="comprobar-url">Comprobar</button></div>
+      <div id="resultado-url"></div>
+    </div>
+
+    <label>Certificado <small>(su CA raíz o IACA, en PEM; o el certificado con que firma)</small></label>
+    <div class="fila"><input type="file" id="archivo-cert" accept=".pem,.crt,.cer,application/x-pem-file" style="flex: 1"></div>
+    <textarea name="certificados_pem" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+    <div id="resultado-cert"></div>
+
+    <div class="aviso mal" id="error-actor" hidden></div>
+    <div class="pie">
+      <button type="button" class="secundario" data-cerrar>Cancelar</button>
+      <button type="submit" id="registrar-actor">Registrar y publicar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Alta de verifier -------------------------------------------------------->
+<dialog id="dlg-verifier">
+  <form id="form-verifier" method="dialog">
+    <h2>Registrar un verifier</h2>
+    <p class="ayuda">La PKI le emite su certificado de acceso a partir de su CSR (su clave privada no sale de su servidor).
+      La lista RPREG no cambia: ya lleva la CA de acceso.</p>
+    <div class="rejilla">
+      <div><label>Nombre</label><input name="nombre" required placeholder="Banco Ejemplo"></div>
+      <div><label>País</label><input name="pais" value="CO" maxlength="2"></div>
+    </div>
+    <label>Dominios <small>(separados por comas: van en el SAN DNS y son su <code>client_id</code> con x509_san_dns)</small></label>
+    <input name="dominios" required placeholder="verifier.banco.example">
+    <label>CSR <small>(PEM)</small></label>
+    <input type="file" id="archivo-csr" accept=".pem,.csr">
+    <textarea name="csr_pem" required placeholder="-----BEGIN CERTIFICATE REQUEST-----"></textarea>
+    <div class="aviso mal" id="error-verifier" hidden></div>
+    <div id="resultado-verifier"></div>
+    <div class="pie">
+      <button type="button" class="secundario" data-cerrar>Cerrar</button>
+      <button type="submit" id="registrar-verifier">Registrar y emitir certificado</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Detalle de un actor ------------------------------------------------------>
+<dialog id="dlg-detalle"><div class="cuerpo" id="detalle"></div></dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  const BASE = location.pathname.replace(/\/admin\/?$/, '')
+  const API = `${BASE}/api/v1`
+  const $ = (id) => document.getElementById(id)
+  const LISTA = { pid: 'PID', qeaa: 'QEAA', 'pub-eaa': 'PUBEAA', 'wallet-provider': 'WP', 'ca-acceso': 'RPREG', verifier: 'RPREG' }
+  const ESCRITURA = { pid: true, qeaa: true, 'pub-eaa': true }
+  let clave = sessionStorage.getItem('tl-clave') || ''
+  let actores = []
+
+  const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
+  const fecha = (iso) => (iso ? new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' }) : '—')
+  const fechaHora = (iso) => (iso ? new Date(iso).toLocaleString('es', { dateStyle: 'medium', timeStyle: 'short' }) : '—')
+
+  async function api(metodo, ruta, cuerpo) {
+    const r = await fetch(`${API}${ruta}`, {
+      method: metodo,
+      headers: { 'X-Api-Key': clave, ...(cuerpo ? { 'Content-Type': 'application/json' } : {}) },
+      body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+    })
+    const datos = await r.json().catch(() => null)
+    if (r.status === 401) { salir(); throw new Error('La clave del operador no es correcta') }
+    if (!r.ok) throw new Error(datos?.detail ?? `Error ${r.status}`)
+    return datos
+  }
+
+  function avisar(texto, error = false) {
+    const t = $('toast')
+    t.textContent = texto
+    t.className = `visible${error ? ' error' : ''}`
+    clearTimeout(avisar.t)
+    avisar.t = setTimeout(() => (t.className = ''), 4000)
+  }
+
+  function recordar(texto) {
+    const r = $('recordatorio')
+    r.innerHTML = `${esc(texto)} El trust-validator lo verá solo en unos minutos; al instante: <code>cd eudi-srv-trust-validator/docker-compose &amp;&amp; ./up.sh</code>.
+      La wallet, en su siguiente actualización diaria o en <i>Ajustes › Listas de confianza › Actualizar</i>.`
+    r.hidden = false
+  }
+
+  // --- Entrada ----------------------------------------------------------------
+  $('form-entrada').onsubmit = async (e) => {
+    e.preventDefault()
+    clave = $('clave').value
+    try {
+      await api('GET', '/actores')
+      sessionStorage.setItem('tl-clave', clave)
+      entrar()
+    } catch (err) {
+      $('error-entrada').textContent = err.message
+      $('error-entrada').hidden = false
+    }
+  }
+  function entrar() {
+    $('pantalla-entrada').hidden = true
+    $('pantalla-app').hidden = false
+    $('salir').hidden = false
+    cargar()
+  }
+  function salir() {
+    sessionStorage.removeItem('tl-clave')
+    clave = ''
+    $('pantalla-app').hidden = true
+    $('pantalla-entrada').hidden = false
+    $('salir').hidden = true
+  }
+  $('salir').onclick = salir
+
+  document.querySelectorAll('[data-pestana]').forEach((b) => (b.onclick = () => {
+    document.querySelectorAll('[data-pestana]').forEach((x) => x.setAttribute('aria-selected', x === b))
+    $('pestana-actores').hidden = b.dataset.pestana !== 'actores'
+    $('pestana-listas').hidden = b.dataset.pestana !== 'listas'
+    if (b.dataset.pestana === 'listas') cargarListas()
+  }))
+
+  // --- Actores ------------------------------------------------------------------
+  async function cargar() {
+    try {
+      actores = await api('GET', '/actores')
+      pintar()
+    } catch (e) { avisar(e.message, true) }
+  }
+
+  function pintar() {
+    const rol = $('filtro').value
+    const retirados = $('ver-retirados').checked
+    const lista = actores.filter((a) => (!rol || a.rol === rol) && (retirados || a.estado === 'activo'))
+    $('filas').replaceChildren(...lista.map((a) => {
+      const tr = document.createElement('tr')
+      tr.className = 'clic'
+      const vigentes = a.certificados.filter((c) => c.estado === 'otorgado')
+      const vence = vigentes.map((c) => c.no_despues).sort()[0]
+      tr.innerHTML = `
+        <td class="${a.estado === 'retirado' ? 'estado-retirado' : ''}"><b>${esc(a.nombre)}</b><br><small class="ayuda">#${a.id} · ${esc(a.rol)}</small></td>
+        <td><span class="chip ${LISTA[a.rol]}">${LISTA[a.rol]}</span></td>
+        <td>${a.estado === 'activo' ? 'Activo' : `Retirado ${fecha(a.retirado_en)}`}</td>
+        <td>${vigentes.length} vigente(s)${vence ? `<br><small class="ayuda">vence ${fecha(vence)}</small>` : ''}</td>
+        <td class="mono">${(a.puntos ?? []).map(esc).join('<br>') || '<span class="ayuda">—</span>'}</td>`
+      tr.onclick = () => detalle(a.id)
+      return tr
+    }))
+    $('vacio').hidden = lista.length > 0
+  }
+  $('filtro').onchange = pintar
+  $('ver-retirados').onchange = pintar
+
+  // --- Comprobaciones previas -------------------------------------------------------
+  async function inspeccionarCertificados(pem, destino) {
+    destino.innerHTML = ''
+    if (!pem.trim()) return null
+    try {
+      const certs = await api('POST', '/certificados/inspeccionar', { certificados_pem: pem })
+      destino.innerHTML = certs.map((c) => `
+        <div class="cert">
+          <div><b>${esc(c.sujeto)}</b></div>
+          <div class="ayuda">${c.autofirmado ? 'Autofirmado' : `Emitido por ${esc(c.emisor)}`} · ${c.es_ca ? 'Es una CA' : 'No es CA'} ·
+            vigente del ${fecha(c.no_antes)} al ${fecha(c.no_despues)}</div>
+          <div class="mono ayuda">sha256 ${esc(c.sha256)}</div>
+          ${c.avisos.length ? `<div class="aviso alerta"><ul>${c.avisos.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>`
+                            : '<div class="aviso ok">Listo para registrar.</div>'}
+        </div>`).join('')
+      return certs
+    } catch (e) {
+      destino.innerHTML = `<div class="aviso mal">${esc(e.message)}</div>`
+      return null
+    }
+  }
+
+  async function comprobarUrl(url, destino) {
+    destino.innerHTML = '<div class="aviso info">Consultando su metadata…</div>'
+    try {
+      const r = await api('GET', `/emisores/comprobar?url=${encodeURIComponent(url)}`)
+      const confs = (r.configuraciones ?? []).map((c) => `<li>${esc(c.nombre ?? c.id)} <span class="ayuda">(${esc(c.formato)}${c.tipo ? `, ${esc(c.tipo)}` : ''})</span></li>`).join('')
+      destino.innerHTML = `<div class="aviso ${r.ok ? 'ok' : 'alerta'}">${r.nombre ? `<b>${esc(r.nombre)}</b>. ` : ''}${esc(r.detalle)}
+        ${confs ? `<div style="margin-top:.3rem">Emite:</div><ul>${confs}</ul>` : ''}</div>`
+      return r
+    } catch (e) {
+      destino.innerHTML = `<div class="aviso mal">${esc(e.message)}</div>`
+      return null
+    }
+  }
+
+  function leerArchivo(input, textarea, alCargar) {
+    input.onchange = async () => {
+      const f = input.files[0]
+      if (!f) return
+      textarea.value = await f.text()
+      alCargar?.()
+    }
+  }
+
+  // --- Alta de emisor / wallet-provider ----------------------------------------------
+  const fa = $('form-actor')
+  $('nuevo-actor').onclick = () => {
+    fa.reset()
+    $('resultado-url').innerHTML = ''
+    $('resultado-cert').innerHTML = ''
+    $('error-actor').hidden = true
+    actualizarRol()
+    $('dlg-actor').showModal()
+  }
+  function actualizarRol() { $('bloque-url').hidden = !ESCRITURA[fa.rol.value] }
+  fa.querySelectorAll('input[name=rol]').forEach((r) => (r.onchange = actualizarRol))
+  leerArchivo($('archivo-cert'), fa.certificados_pem, () => inspeccionarCertificados(fa.certificados_pem.value, $('resultado-cert')))
+  fa.certificados_pem.onchange = () => inspeccionarCertificados(fa.certificados_pem.value, $('resultado-cert'))
+  $('comprobar-url').onclick = () => fa.url.value && comprobarUrl(fa.url.value, $('resultado-url'))
+
+  fa.onsubmit = async (e) => {
+    e.preventDefault()
+    $('error-actor').hidden = true
+    const certs = await inspeccionarCertificados(fa.certificados_pem.value, $('resultado-cert'))
+    if (!certs?.length) { mostrarError('error-actor', 'Falta el certificado (o no es un PEM válido).'); return }
+    const datos = {
+      rol: fa.rol.value, nombre: fa.nombre.value.trim(), certificados_pem: fa.certificados_pem.value,
+      pais: fa.pais.value.trim().toUpperCase() || null, correo: fa.correo.value.trim() || null,
+      url_info: fa.url_info.value.trim() || null,
+      puntos: ESCRITURA[fa.rol.value] && fa.url.value.trim() ? [fa.url.value.trim().replace(/\/+$/, '')] : [],
+    }
+    $('registrar-actor').disabled = true
+    try {
+      const a = await api('POST', '/actores', datos)
+      $('dlg-actor').close()
+      avisar(`${a.nombre} registrado en ${LISTA[a.rol]}`)
+      recordar(`${a.nombre} ya está publicado en la lista ${LISTA[a.rol]}.`)
+      cargar()
+    } catch (err) {
+      mostrarError('error-actor', err.message)
+    } finally {
+      $('registrar-actor').disabled = false
+    }
+  }
+
+  function mostrarError(id, texto) { $(id).textContent = texto; $(id).hidden = false }
+
+  // --- Alta de verifier ------------------------------------------------------------
+  const fv = $('form-verifier')
+  $('nuevo-verifier').onclick = () => {
+    fv.reset()
+    $('error-verifier').hidden = true
+    $('resultado-verifier').innerHTML = ''
+    $('registrar-verifier').hidden = false
+    $('dlg-verifier').showModal()
+  }
+  leerArchivo($('archivo-csr'), fv.csr_pem)
+  fv.onsubmit = async (e) => {
+    e.preventDefault()
+    $('error-verifier').hidden = true
+    $('registrar-verifier').disabled = true
+    try {
+      const r = await api('POST', '/verifiers', {
+        nombre: fv.nombre.value.trim(), pais: fv.pais.value.trim().toUpperCase() || null, csr_pem: fv.csr_pem.value,
+        dominios: fv.dominios.value.split(',').map((d) => d.trim()).filter(Boolean),
+      })
+      const descargar = (texto, nombre) => `<a class="boton secundario" download="${nombre}" href="data:application/x-pem-file;charset=utf-8,${encodeURIComponent(texto)}">${nombre}</a>`
+      $('resultado-verifier').innerHTML = `<div class="aviso ok">Registrado (#${r.actor.id}). Instálale al verifier su certificado de acceso y la cadena:</div>
+        <div class="fila">${descargar(r.certificado_pem, 'acceso.crt')} ${descargar(r.cadena_pem, 'cadena.pem')}</div>`
+      $('registrar-verifier').hidden = true
+      cargar()
+    } catch (err) {
+      mostrarError('error-verifier', err.message)
+    } finally {
+      $('registrar-verifier').disabled = false
+    }
+  }
+
+  // --- Detalle ---------------------------------------------------------------------
+  async function detalle(id) {
+    const a = actores.find((x) => x.id === id)
+    const activo = a.estado === 'activo'
+    const editable = activo && !a.sistema && a.rol !== 'verifier'
+    const d = $('detalle')
+    d.innerHTML = `
+      <h2>${esc(a.nombre)} <span class="chip ${LISTA[a.rol]}">${LISTA[a.rol]}</span></h2>
+      <p class="ayuda">#${a.id} · ${esc(a.rol)} · ${activo ? 'activo' : `retirado el ${fechaHora(a.retirado_en)}`} · alta ${fechaHora(a.creado_en)}
+        ${a.pais ? ` · ${esc(a.pais)}` : ''}${a.correo ? ` · ${esc(a.correo)}` : ''}</p>
+      ${a.sistema ? '<div class="aviso info">La pone el propio servicio: es la CA de acceso de la PKI configurada. No se edita aquí.</div>' : ''}
+
+      ${ESCRITURA[a.rol] ? `
+        <h3>URL OpenID4VCI y supply points</h3>
+        <p class="ayuda">Una URL por línea. La que es el <code>credential_issuer</code> del emisor hace que la wallet lo ofrezca.</p>
+        <textarea id="puntos" ${editable ? '' : 'disabled'}>${esc((a.puntos ?? []).join('\n'))}</textarea>
+        <div id="resultado-puntos"></div>
+        ${editable ? '<div class="fila" style="margin-top:.4rem"><button class="secundario chico" id="comprobar-puntos">Comprobar la primera</button><button class="chico" id="guardar-puntos">Guardar y republicar</button></div>' : ''}
+      ` : (a.puntos?.length ? `<h3>Supply points</h3><div class="mono">${a.puntos.map(esc).join('<br>')}</div>` : '')}
+
+      <h3>Certificados</h3>
+      ${a.certificados.map((c) => `
+        <div class="cert">
+          <div class="fila"><b>${esc(c.sujeto)}</b><span class="chip">${c.estado === 'otorgado' ? 'vigente' : 'retirado'}</span></div>
+          <div class="ayuda">vence ${fecha(c.no_despues)} · ${c.origen === 'pki' ? `emitido por la PKI (serie ${esc(c.serie_pki)})` : 'traído por el actor'} · desde ${fechaHora(c.desde)}</div>
+          <div class="mono ayuda">sha256 ${esc(c.sha256)}</div>
+          ${editable && c.estado === 'otorgado' ? `<button class="peligro chico" data-retirar-cert="${c.id}" style="margin-top:.4rem">Retirar este certificado</button>` : ''}
+        </div>`).join('')}
+
+      ${editable ? `
+        <h3>Agregar un certificado (rotación)</h3>
+        <p class="ayuda">El nuevo convive con el anterior hasta que retires el viejo: así no hay un momento sin confianza.</p>
+        <input type="file" id="archivo-rotacion" accept=".pem,.crt,.cer">
+        <textarea id="pem-rotacion" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+        <div id="resultado-rotacion"></div>
+        <button class="chico" id="agregar-cert" style="margin-top:.4rem">Agregar y republicar</button>` : ''}
+
+      <div class="aviso mal" id="error-detalle" hidden></div>
+      <div class="pie">
+        ${activo && !a.sistema ? `<button class="peligro" id="baja">${a.rol === 'verifier' ? 'Dar de baja (revoca su certificado)' : 'Dar de baja'}</button>` : ''}
+        <button class="secundario" id="cerrar-detalle">Cerrar</button>
+      </div>`
+
+    $('cerrar-detalle').onclick = () => $('dlg-detalle').close()
+    const fallo = (e) => mostrarError('error-detalle', e.message)
+    const tras = async (mensaje) => {
+      avisar(mensaje)
+      recordar(`${a.nombre}: ${mensaje.toLowerCase()}.`)
+      await cargar()
+      detalle(id)
+    }
+
+    if (editable && ESCRITURA[a.rol]) {
+      $('comprobar-puntos').onclick = () => {
+        const primera = $('puntos').value.split('\n').map((s) => s.trim()).find(Boolean)
+        if (primera) comprobarUrl(primera, $('resultado-puntos'))
+      }
+      $('guardar-puntos').onclick = async () => {
+        try {
+          await api('PUT', `/actores/${id}/puntos`, { puntos: $('puntos').value.split('\n').map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean) })
+          tras('URL actualizada')
+        } catch (e) { fallo(e) }
+      }
+    }
+    d.querySelectorAll('[data-retirar-cert]').forEach((b) => (b.onclick = async () => {
+      if (!confirmar(b, 'Seguro: retirar')) return
+      try { await api('POST', `/actores/${id}/certificados/${b.dataset.retirarCert}/retirar`); tras('Certificado retirado') } catch (e) { fallo(e) }
+    }))
+    if (editable) {
+      leerArchivo($('archivo-rotacion'), $('pem-rotacion'), () => inspeccionarCertificados($('pem-rotacion').value, $('resultado-rotacion')))
+      $('pem-rotacion').onchange = () => inspeccionarCertificados($('pem-rotacion').value, $('resultado-rotacion'))
+      $('agregar-cert').onclick = async () => {
+        try { await api('POST', `/actores/${id}/certificados`, { certificados_pem: $('pem-rotacion').value }); tras('Certificado agregado') } catch (e) { fallo(e) }
+      }
+    }
+    if ($('baja')) $('baja').onclick = async () => {
+      if (!confirmar($('baja'), `Seguro: dar de baja a ${a.nombre}`)) return
+      try { await api('POST', `/actores/${id}/retirar`); tras('Dado de baja') } catch (e) { fallo(e) }
+    }
+    if (!$('dlg-detalle').open) $('dlg-detalle').showModal()
+  }
+
+  // Las acciones destructivas piden un segundo clic (sin confirm() del navegador).
+  function confirmar(boton, texto) {
+    if (boton.dataset.armado) return true
+    const original = boton.textContent
+    boton.dataset.armado = '1'
+    boton.textContent = `${texto} (clic de nuevo)`
+    setTimeout(() => { delete boton.dataset.armado; boton.textContent = original }, 4000)
+    return false
+  }
+
+  document.querySelectorAll('[data-cerrar]').forEach((b) => (b.onclick = () => b.closest('dialog').close()))
+
+  // --- Listas --------------------------------------------------------------------
+  async function cargarListas() {
+    try {
+      const l = await api('GET', '/listas')
+      $('listas').replaceChildren(...Object.entries(l).map(([nombre, p]) => {
+        const tr = document.createElement('tr')
+        tr.innerHTML = p
+          ? `<td><span class="chip ${nombre}">${nombre}</span></td><td>${p.secuencia}</td><td>${fechaHora(p.emision)}</td><td>${fechaHora(p.proxima)}</td>
+             <td><a href="${esc(p.xml)}" target="_blank">XML</a> · <a href="${esc(p.jws)}" target="_blank">JWS</a></td>`
+          : `<td><span class="chip">${nombre}</span></td><td colspan="4" class="ayuda">sin publicar</td>`
+        return tr
+      }))
+    } catch (e) { avisar(e.message, true) }
+  }
+  $('republicar').onclick = async () => {
+    try { await api('POST', '/publicar'); avisar('Listas republicadas'); cargarListas() } catch (e) { avisar(e.message, true) }
+  }
+
+  if (clave) api('GET', '/actores').then(entrar, () => salir())
+</script>
+</body>
+</html>

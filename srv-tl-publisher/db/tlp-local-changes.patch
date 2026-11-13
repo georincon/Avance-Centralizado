@@ -1,0 +1,969 @@
+diff --git a/app/RPR_routes.py b/app/RPR_routes.py
+index c39646a..1d1def3 100644
+--- a/app/RPR_routes.py
++++ b/app/RPR_routes.py
+@@ -51,8 +51,46 @@ import urllib.parse
+ from app_config.config import ConfService as cfgserv
+ import segno
+ 
++import secrets
++
+ from app.data_management import oid4vp_requests
+-from app.validate_vp_token import validate_vp_token, cbor2elems
++from app.validate_vp_token import (
++    validate_vp_token,
++    cbor2elems,
++    pid_dcql_query,
++    presentation_of,
++)
++
++
++def _new_oid4vp_nonce():
++    """
++    Genera un nonce nuevo para cada intento de login del operador.
++
++    Antes era la constante `hiCV7lZi5qAeCy7NFzUWSR4iCfSmRb99HfIvCkPaCLc=`
++    escrita en el código y reutilizada en todas las sesiones. Un nonce fijo
++    anula su única función —ligar la respuesta a esta petición concreta— y
++    convierte el login en reproducible con una respuesta capturada. Importa
++    especialmente aquí: el operador del TLP es la cuenta más privilegiada del
++    ecosistema, la que firma las Trusted Lists.
++    """
++    return secrets.token_urlsafe(32)
++
++
++def _nonce_for(session_id=None):
++    """
++    Recupera el nonce de esta sesión.
++
++    Se guarda en dos sitios porque hay dos caminos de recuperación: same-device
++    llega con `session_id` y lee de `oid4vp_requests` (estado de servidor), y
++    cross-device sólo dispone de la cookie de Flask.
++    """
++    if session_id and session_id in oid4vp_requests:
++        stored = oid4vp_requests[session_id].get("nonce")
++        if stored:
++            return stored
++    return session.get("oid4vp_nonce")
++
++
+ 
+ import user as get_hash_user_pid
+ import app.EJBCA_and_DB_func as func
+@@ -109,65 +147,15 @@ def menu_lotl():
+ @rpr.route("/authentication", methods=["GET","POST"])
+ def authentication():
+ 
+-    url = "https://" + cfgserv.url_verifier +"/ui/presentations"
++    url = cfgserv.api_verifier + "/ui/presentations"
++    oid4vp_nonce = _new_oid4vp_nonce()
++    session["oid4vp_nonce"] = oid4vp_nonce
++
+     payload ={
+-        "type": "vp_token",
+-        "nonce": "hiCV7lZi5qAeCy7NFzUWSR4iCfSmRb99HfIvCkPaCLc=",
+-        "presentation_definition": {
+-            "id": "32f54163-7166-48f1-93d8-ff217bdb0653",
+-            "input_descriptors": [
+-            {
+-                "id": "eu.europa.ec.eudi.pid.1",
+-                "format": {
+-                "mso_mdoc": {
+-                    "alg": [
+-                    "ES256",
+-                    "ES384",
+-                    "ES512",
+-                    "EdDSA"
+-                    ]
+-                }
+-                },
+-                "name": "EUDI PID",
+-                "purpose": "We need to verify your identity",
+-                "constraints": {
+-                "fields": [
+-                    {
+-                    "path": [
+-                        "$['eu.europa.ec.eudi.pid.1']['family_name']"
+-                    ],
+-                    "intent_to_retain": False
+-                    },
+-                    {
+-                    "path": [
+-                        "$['eu.europa.ec.eudi.pid.1']['given_name']"
+-                    ],
+-                    "intent_to_retain": False
+-                    },
+-                    {
+-                    "path": [
+-                        "$['eu.europa.ec.eudi.pid.1']['birth_date']"
+-                    ],
+-                    "intent_to_retain": False
+-                    },
+-                    {
+-                    "path": [
+-                        "$['eu.europa.ec.eudi.pid.1']['issuing_authority']"
+-                    ],
+-                    "intent_to_retain": False
+-                    },
+-                    {
+-                    "path": [
+-                        "$['eu.europa.ec.eudi.pid.1']['issuing_country']"
+-                    ],
+-                    "intent_to_retain": False
+-                    }
+-                ]
+-                }
+-            }
+-            ]
+-        }
+-        }
++        "dcql_query": pid_dcql_query(),
++        "nonce": oid4vp_nonce,
++        "response_mode": "direct_post"
++    }
+ 
+ 
+     headers = {
+@@ -199,7 +187,7 @@ def authentication():
+         + response_same_device["request_uri"]
+     )
+ 
+-    oid4vp_requests.update({session["session_id"]:{"response": response_same_device, "expires":datetime.now() + timedelta(minutes=cfgserv.deffered_expiry)}})
++    oid4vp_requests.update({session["session_id"]:{"response": response_same_device, "expires":datetime.now() + timedelta(minutes=cfgserv.deffered_expiry), "nonce": oid4vp_nonce}})
+ 
+ 
+     # Generate QR code
+@@ -233,65 +221,15 @@ def authentication():
+ @rpr.route("/authentication_List", methods=["GET","POST"])
+ def authentication_List():
+ 
+-    url = "https://" + cfgserv.url_verifier +"/ui/presentations"
++    url = cfgserv.api_verifier + "/ui/presentations"
++    oid4vp_nonce = _new_oid4vp_nonce()
++    session["oid4vp_nonce"] = oid4vp_nonce
++
+     payload ={
+-        "type": "vp_token",
+-        "nonce": "hiCV7lZi5qAeCy7NFzUWSR4iCfSmRb99HfIvCkPaCLc=",
+-        "presentation_definition": {
+-            "id": "32f54163-7166-48f1-93d8-ff217bdb0653",
+-            "input_descriptors": [
+-            {
+-                "id": "eu.europa.ec.eudi.pid.1",
+-                "format": {
+-                "mso_mdoc": {
+-                    "alg": [
+-                    "ES256",
+-                    "ES384",
+-                    "ES512",
+-                    "EdDSA"
+-                    ]
+-                }
+-                },
+-                "name": "EUDI PID",
+-                "purpose": "We need to verify your identity",
+-                "constraints": {
+-                "fields": [
+-                    {
+-                    "path": [
+-                        "$['eu.europa.ec.eudi.pid.1']['family_name']"
+-                    ],
+-                    "intent_to_retain": False
+-                    },
+-                    {
+-                    "path": [
+-                        "$['eu.europa.ec.eudi.pid.1']['given_name']"
+-                    ],
+-                    "intent_to_retain": False
+-                    },
+-                    {
+-                    "path": [
+-                        "$['eu.europa.ec.eudi.pid.1']['birth_date']"
+-                    ],
+-                    "intent_to_retain": False
+-                    },
+-                    {
+-                    "path": [
+-                        "$['eu.europa.ec.eudi.pid.1']['issuing_authority']"
+-                    ],
+-                    "intent_to_retain": False
+-                    },
+-                    {
+-                    "path": [
+-                        "$['eu.europa.ec.eudi.pid.1']['issuing_country']"
+-                    ],
+-                    "intent_to_retain": False
+-                    }
+-                ]
+-                }
+-            }
+-            ]
+-        }
+-        }
++        "dcql_query": pid_dcql_query(),
++        "nonce": oid4vp_nonce,
++        "response_mode": "direct_post"
++    }
+ 
+ 
+     headers = {
+@@ -323,7 +261,7 @@ def authentication_List():
+         + response_same_device["request_uri"]
+     )
+ 
+-    oid4vp_requests.update({session["session_id"]:{"response": response_same_device, "expires":datetime.now() + timedelta(minutes=cfgserv.deffered_expiry), "certificate_List":True}})
++    oid4vp_requests.update({session["session_id"]:{"response": response_same_device, "expires":datetime.now() + timedelta(minutes=cfgserv.deffered_expiry), "certificate_List":True, "nonce": oid4vp_nonce}})
+ 
+ 
+     # Generate QR code
+@@ -360,7 +298,7 @@ def pid_authorization_get():
+ 
+     presentation_id= request.args.get("presentation_id")
+ 
+-    url = "https://" + cfgserv.url_verifier+ "/ui/presentations/" + presentation_id + "?nonce=hiCV7lZi5qAeCy7NFzUWSR4iCfSmRb99HfIvCkPaCLc="
++    url = cfgserv.api_verifier + "/ui/presentations/" + presentation_id + "?nonce=" + urllib.parse.quote(_nonce_for() or "")
+     headers = {
+     'Content-Type': 'application/json',
+     }
+@@ -385,15 +323,15 @@ def getpidoid4vp():
+         if oid4vp_requests[request.args.get("session_id")]["certificate_List"] !=None:
+             session["certificate_List"]=True
+         url = (
+-            "https://" + cfgserv.url_verifier+ "/ui/presentations/"
++            cfgserv.api_verifier + "/ui/presentations/"
+             + presentation_id
+-            + "?nonce=hiCV7lZi5qAeCy7NFzUWSR4iCfSmRb99HfIvCkPaCLc="
++            + "?nonce=" + urllib.parse.quote(_nonce_for(request.args.get("session_id")) or "")
+             + "&response_code=" + response_code
+         )
+ 
+     elif "presentation_id" in request.args:
+         presentation_id = request.args.get("presentation_id")
+-        url = "https://" + cfgserv.url_verifier+ "/ui/presentations/" + presentation_id + "?nonce=hiCV7lZi5qAeCy7NFzUWSR4iCfSmRb99HfIvCkPaCLc="
++        url = cfgserv.api_verifier + "/ui/presentations/" + presentation_id + "?nonce=" + urllib.parse.quote(_nonce_for() or "")
+ 
+     headers = {
+     'Content-Type': 'application/json',
+@@ -409,7 +347,7 @@ def getpidoid4vp():
+     if error == True:
+         return error_msg
+     
+-    mdoc_json = cbor2elems(response.json()["vp_token"][0] + "==", pos)
++    mdoc_json = cbor2elems(presentation_of(response.json()), pos)
+ 
+     attributesForm={}
+     
+diff --git a/app/__init__.py b/app/__init__.py
+index cd287f0..5e632aa 100644
+--- a/app/__init__.py
++++ b/app/__init__.py
+@@ -170,16 +170,25 @@ def page_not_found(e):
+         404,
+     )
+ 
++import time
++
+ def initialize_db():
+     with open('./script_db.sql', 'r') as f:
+         sql = f.read()
+ 
+-    connection = pymysql.connect(
+-        host=ConfDataBase.DATABASE['host'],
+-        port=ConfDataBase.DATABASE['port'],
+-        user=ConfDataBase.DATABASE['user'],
+-        password=ConfDataBase.DATABASE['password'],
+-    )
++    for attempt in range(30):
++        try:
++            connection = pymysql.connect(
++                host=ConfDataBase.DATABASE['host'],
++                port=ConfDataBase.DATABASE['port'],
++                user=ConfDataBase.DATABASE['user'],
++                password=ConfDataBase.DATABASE['password'],
++            )
++            break
++        except Exception:
++            if attempt == 29:
++                raise
++            time.sleep(2)
+ 
+     try:
+         with connection.cursor() as cursor:
+diff --git a/app/app_config/config.py b/app/app_config/config.py
+index 43deb90..4c0092a 100644
+--- a/app/app_config/config.py
++++ b/app/app_config/config.py
+@@ -28,6 +28,12 @@ from flask import  session
+ import logging
+ from logging.handlers import TimedRotatingFileHandler
+ 
++from cryptography import x509
++from cryptography.hazmat.backends import default_backend
++from cryptography.hazmat.primitives import serialization
++from cryptography.hazmat.primitives.asymmetric import ec, rsa
++from signxml import algorithms
++
+ 
+ class ConfService:
+     
+@@ -49,6 +55,100 @@ class ConfService:
+     #priv_key_UT = "app/xml_gen/privkey_UT.pem"
+     priv_key_UT = os.getenv("PRIV_KEY", "/etc/eudiw/pid-issuer/privkey/PID-DS-0001_UT.pem")
+ 
++    # ---- Material de firma de la Trusted List -------------------------------
++    #
++    # POR QUE ESTAS TRES FUNCIONES
++    #
++    # El codigo original hacia, en cuatro sitios distintos:
++    #
++    #     der = open(cfgserv.cert_UT, "rb").read()
++    #     cert = x509.load_der_x509_certificate(der).public_bytes(PEM)
++    #     ...
++    #     key = open(cfgserv.priv_key_UT, "rb").read()
++    #
++    # Es decir: daba por hecho que el certificado esta en DER y pasaba la clave
++    # como bytes crudos. signxml hace load_pem_private_key() sobre lo que le
++    # llegue, asi que unos bytes DER fallan ahi. El resultado era que la firma
++    # de la Trusted List no funcionaba, y el fallo aparecia dentro de signxml,
++    # lejos del sitio donde estaba el problema.
++    #
++    # Estas funciones aceptan PEM o DER, dicen que formato encontraron cuando no
++    # pueden con ninguno, y devuelven objetos ya cargados en vez de bytes.
++
++    @staticmethod
++    def _leer(ruta, que):
++        try:
++            with open(ruta, "rb") as f:
++                return f.read()
++        except IOError as e:
++            raise RuntimeError(
++                "no se pudo leer %s en '%s': %s. "
++                "Se emite con ecosistema/scripts/emitir-firmante-tl.sh"
++                % (que, ruta, e)
++            )
++
++    @staticmethod
++    def cargar_cert_firma():
++        """Certificado del firmante de la TSL, en PEM (bytes). Acepta PEM o DER.
++
++        Devuelve SOLO la hoja, nunca la cadena, y eso es deliberado. signxml
++        escribe una entrada <xades:Cert> en SigningCertificateV2 por cada
++        certificado que reciba, pero al verificar compara TODAS esas entradas
++        contra el primer certificado del KeyInfo. Con la cadena metida ahi, la
++        firma que produce este codigo la rechaza su propio verificador.
++
++        Quien valide necesita la sub-CA, claro. La consigue por la extension
++        AIA caIssuers de esta misma hoja, que apunta a /pki/ca/tl.crt. Para eso
++        existe AIA: para no tener que meter la cadena dentro de cada firma.
++        """
++        datos = ConfService._leer(ConfService.cert_UT, "el certificado de firma")
++        try:
++            cert = x509.load_pem_x509_certificate(datos, default_backend())
++        except ValueError:
++            try:
++                cert = x509.load_der_x509_certificate(datos, default_backend())
++            except ValueError:
++                raise RuntimeError(
++                    "'%s' no es un certificado ni en PEM ni en DER"
++                    % ConfService.cert_UT
++                )
++        return cert.public_bytes(encoding=serialization.Encoding.PEM)
++
++    @staticmethod
++    def cargar_clave_firma():
++        """Clave privada del firmante, ya cargada. Acepta PEM o DER."""
++        datos = ConfService._leer(ConfService.priv_key_UT, "la clave de firma")
++        try:
++            return serialization.load_pem_private_key(
++                datos, password=None, backend=default_backend()
++            )
++        except ValueError:
++            try:
++                return serialization.load_der_private_key(
++                    datos, password=None, backend=default_backend()
++                )
++            except ValueError:
++                raise RuntimeError(
++                    "'%s' no es una clave privada ni en PEM ni en DER"
++                    % ConfService.priv_key_UT
++                )
++
++    @staticmethod
++    def metodo_firma(clave):
++        """SignatureMethod que corresponde a la clave, en vez de uno fijo.
++
++        El codigo original pedia ECDSA_SHA256 siempre, aunque la clave
++        instalada fuera RSA. Deducirlo de la clave elimina de raiz esa clase de
++        error: no hay dos sitios que puedan discrepar.
++        """
++        if isinstance(clave, ec.EllipticCurvePrivateKey):
++            return algorithms.SignatureMethod.ECDSA_SHA256
++        if isinstance(clave, rsa.RSAPrivateKey):
++            return algorithms.SignatureMethod.RSA_SHA256
++        raise RuntimeError(
++            "tipo de clave no soportado para firmar la TSL: %s" % type(clave).__name__
++        )
++
+ 
+     roles = {
+       "tsp_op":"TSP Operator",
+@@ -64,6 +164,26 @@ class ConfService:
+ 
+     url_verifier= os.getenv("VERIFIER", "verifier-backend.eudiw.dev")
+ 
++    # URL base con la que el TLP LLAMA al verifier desde el servidor.
++    #
++    # Es distinta de `url_verifier` a proposito. `url_verifier` es la que se
++    # mete dentro del QR `eudi-openid4vp://`, y la abre la WALLET, que esta en
++    # otro dispositivo: tiene que ser la publica. Esta otra la usa el propio
++    # proceso de Flask, que esta en la misma red de Docker que el verifier.
++    #
++    # Antes las dos eran la misma, y por eso el TLP salia a
++    # `https://<dominio-publico>/verifier/...`: daba la vuelta por el gateway
++    # del host y llegaba al 443 de HAProxy, que responde con un autofirmado
++    # `CN=localhost`. De ahi los `verify=False` del upstream, que desactivaban
++    # la validacion TLS justo en la llamada que decide si el operador que va a
++    # firmar la Trusted List es quien dice ser.
++    #
++    # Yendo por la red interna no hay certificado que validar ni verificacion
++    # que desactivar.
++    api_verifier = os.getenv(
++        "VERIFIER_API", "https://" + os.getenv("VERIFIER", "verifier-backend.eudiw.dev")
++    )
++
+ 
+     lang = {
+       "Portugues": "pt", 
+@@ -139,7 +259,12 @@ class ConfService:
+     "bg", "cs", "da", "de", "el", "en", "es", "et", "fi", "fr",
+     "ga", "hr", "hu", "it", "lt", "lv", "mt", "nl", "pl", "pt",
+     "ro", "sk", "sl", "sv"]
++    # Territorios admitidos como SchemeTerritory de una Trusted List.
++    # "CO" no es un Estado miembro: este despliegue es un piloto nacional que
++    # sigue el ARF sin estar dentro del marco de confianza de eIDAS. Sin esta
++    # entrada, el país del PID del operador se rechaza aguas arriba y no se
++    # puede crear ninguna lista.
+     eu_countries = [
+     "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR",
+     "DE", "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL",
+-    "PL", "PT", "RO", "SK", "SI", "ES", "SE","UT", "EU"]
+\ No newline at end of file
++    "PL", "PT", "RO", "SK", "SI", "ES", "SE","UT", "EU", "CO"]
+\ No newline at end of file
+diff --git a/app/requirements.txt b/app/requirements.txt
+index 291d68e..15b5500 100644
+--- a/app/requirements.txt
++++ b/app/requirements.txt
+@@ -9,6 +9,6 @@ pycose
+ pymysql
+ cbor2==5.4.6
+ requests-pkcs12
+-signxml==4.0.3
++signxml==4.4.0
+ lxml
+ python-dateutil
+\ No newline at end of file
+diff --git a/app/script_db.sql b/app/script_db.sql
+index 34a4b93..62c0255 100644
+--- a/app/script_db.sql
++++ b/app/script_db.sql
+@@ -27,6 +27,32 @@ CREATE TABLE IF NOT EXISTS `countries` (
+   PRIMARY KEY (`country_id`)
+ ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+ 
++-- Datos semilla de `countries`.
++--
++-- POR QUÉ: el volcado original excluyó los datos ("Exportação de dados não
++-- seleccionada"), así que la tabla se creaba vacía. `check_country()` busca aquí
++-- el `issuing_country` del PID del operador y, al no encontrarlo, devuelve None:
++-- el login terminaba en "país invalido" y NINGÚN operador podía entrar al TLP.
++-- Sin operador no se puede crear ni firmar una Trusted List, así que esto
++-- bloqueaba toda la capa de confianza del ecosistema.
++--
++-- IDEMPOTENCIA: este script se ejecuta en CADA arranque (app/__init__.py), así
++-- que las inserciones no pueden duplicar filas. Se usa `WHERE NOT EXISTS` en
++-- vez de una clave única con `IF NOT EXISTS`, porque esa forma es de MariaDB y
++-- MySQL 8 la rechaza con un error de sintaxis.
++
++INSERT INTO `countries` (`country_code`, `country_name`)
++SELECT 'CO', 'Colombia' FROM DUAL
++WHERE NOT EXISTS (SELECT 1 FROM `countries` WHERE `country_code` = 'CO');
++
++INSERT INTO `countries` (`country_code`, `country_name`)
++SELECT 'EU', 'European Union' FROM DUAL
++WHERE NOT EXISTS (SELECT 1 FROM `countries` WHERE `country_code` = 'EU');
++
++INSERT INTO `countries` (`country_code`, `country_name`)
++SELECT 'UT', 'Utopia' FROM DUAL
++WHERE NOT EXISTS (SELECT 1 FROM `countries` WHERE `country_code` = 'UT');
++
+ -- Exportação de dados não seleccionada.
+ 
+ -- A despejar estrutura para tabela trusted_lists.lotl_old_certificates
+@@ -155,6 +181,87 @@ CREATE TABLE IF NOT EXISTS `trust_service_providers` (
+ 
+ -- Exportação de dados não seleccionada.
+ 
++-- ===========================================================================
++-- Tablas de PUBLICACION (Fase 1.5)
++--
++-- El TLP es un editor: genera el XML de la lista y lo devuelve como descarga
++-- del navegador. No lo persiste, no lo versiona y no lo sirve. Estas tres
++-- tablas son el estado que necesita el servicio `tl-publisher` para convertir
++-- eso en una publicacion de verdad.
++--
++-- Se crean aqui, y no desde el publicador, para que haya UN solo dueno del
++-- esquema. Dos servicios ejecutando DDL sobre la misma base es una carrera
++-- esperando a pasar.
++-- ===========================================================================
++
++-- Que esquemas de lista existen y que fila de `trusted_lists` los respalda.
++--
++-- POR QUE POR ESQUEMA Y NO POR PAIS: el art. 22a del Reglamento define las
++-- listas por ROL (proveedores de wallet, emisores de PID, QTSPs, organismos
++-- del sector publico, registradores de RP), no por territorio. El modelo del
++-- upstream es por pais, asi que este mapeo es la traduccion entre los dos.
++CREATE TABLE IF NOT EXISTS `tl_schemes` (
++  `scheme_slug` VARCHAR(32) NOT NULL,
++  `tsl_id`      INT(11) NOT NULL,
++  `scheme_name` VARCHAR(255) NOT NULL,
++  `tsl_type`    VARCHAR(255) NOT NULL,
++  `is_lotl`     TINYINT(1) NOT NULL DEFAULT 0,
++  `description` TEXT DEFAULT NULL,
++  PRIMARY KEY (`scheme_slug`),
++  KEY `tl_schemes_tsl` (`tsl_id`),
++  CONSTRAINT `tl_schemes_tsl` FOREIGN KEY (`tsl_id`) REFERENCES `trusted_lists` (`tsl_id`)
++) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
++
++-- A que lista pertenece cada tipo de servicio, y con que URI se publica.
++--
++-- POR QUE `canonical_uri`: tres de los ServiceTypeIdentifier que trae el
++-- upstream NO son URIs de ETSI. Les falta el segmento `TrstSvc`:
++--
++--   http://uri.etsi.org/Svc/Svctype/Provider/Wallet      <- errata del upstream
++--   http://uri.etsi.org/TrstSvc/Svctype/EAA/Q            <- correcto, misma lista
++--
++-- Cambiarlos en `trust_services` romperia las filas que el operador ya haya
++-- dado de alta desde la interfaz del TLP. En vez de eso se guarda aqui la
++-- forma canonica: el TLP sigue viendo lo que escribio, y lo que se PUBLICA es
++-- la forma correcta. Un cambio futuro es una fila, no una migracion.
++CREATE TABLE IF NOT EXISTS `service_type_registry` (
++  `service_type`        VARCHAR(255) NOT NULL,
++  `scheme_slug`         VARCHAR(32) NOT NULL,
++  `canonical_uri`       VARCHAR(255) DEFAULT NULL,
++  `additional_info_uri` VARCHAR(255) DEFAULT NULL,
++  `supply_points`       TEXT DEFAULT NULL,
++  `notes`               TEXT DEFAULT NULL,
++  PRIMARY KEY (`service_type`)
++) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
++
++-- Cada version publicada de cada lista.
++--
++-- `UNIQUE (scheme_slug, sequence_number)` no es higiene: es lo que impide que
++-- dos publicaciones concurrentes calculen el mismo numero y una sobrescriba a
++-- la otra. La segunda falla con clave duplicada, que es el comportamiento
++-- correcto para algo que se promete inmutable.
++CREATE TABLE IF NOT EXISTS `published_lists` (
++  `publication_id`     INT(11) NOT NULL AUTO_INCREMENT,
++  `tsl_id`             INT(11) NOT NULL,
++  `scheme_slug`        VARCHAR(32) NOT NULL,
++  `sequence_number`    INT(11) NOT NULL,
++  `version`            INT(11) NOT NULL DEFAULT 6,
++  `issue_date`         DATETIME NOT NULL,
++  `next_update`        DATETIME NOT NULL,
++  `xml_sha256`         CHAR(64) NOT NULL,
++  `xml_path`           VARCHAR(255) NOT NULL,
++  `signer_cert_sha256` CHAR(64) NOT NULL,
++  `signer_serial`      VARCHAR(64) NOT NULL,
++  `published_by`       INT(11) DEFAULT NULL,
++  `published_at`       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
++  `superseded_at`      TIMESTAMP NULL DEFAULT NULL,
++  PRIMARY KEY (`publication_id`),
++  UNIQUE KEY `uq_scheme_seq` (`scheme_slug`, `sequence_number`),
++  KEY `idx_vigente` (`scheme_slug`, `superseded_at`),
++  KEY `pub_tsl` (`tsl_id`),
++  CONSTRAINT `pub_tsl` FOREIGN KEY (`tsl_id`) REFERENCES `trusted_lists` (`tsl_id`)
++) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
++
+ /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
+ /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
+ /*!40014 SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1) */;
+diff --git a/app/templates/pid_login_qr_code.html b/app/templates/pid_login_qr_code.html
+index 5fd5a75..8bd0637 100644
+--- a/app/templates/pid_login_qr_code.html
++++ b/app/templates/pid_login_qr_code.html
+@@ -108,7 +108,12 @@ function Ajax_request() {
+         data:{"presentation_id": presentation_id },
+         success: function(response) {
+             console.log('Success:', response);
+-            window.location.replace(location.origin + "/getpidoid4vp?presentation_id=" + presentation_id);
++            // `location.origin` es SOLO el dominio, sin la ruta. El upstream lo
++            // escribio dando por hecho que el TLP vive en la raiz; aqui vive
++            // bajo /tlp, asi que redirigia a /getpidoid4vp y HAProxy respondia
++            // 404. Dos lineas mas arriba esta plantilla ya usa {{redirect_url}}
++            // para la llamada AJAX: el upstream arreglo una y se dejo esta.
++            window.location.replace('{{redirect_url}}' + "getpidoid4vp?presentation_id=" + presentation_id);
+             clearInterval(intervalId);
+             
+         },
+diff --git a/app/validate_vp_token.py b/app/validate_vp_token.py
+index 98027fa..bf1a95c 100644
+--- a/app/validate_vp_token.py
++++ b/app/validate_vp_token.py
+@@ -1,4 +1,4 @@
+-# coding: latin-1
++# coding: utf-8
+ ###############################################################################
+ # Copyright (c) 2023 European Commission
+ #
+@@ -37,108 +37,142 @@ import hashlib
+ from . import trusted_CAs
+ 
+ 
+-def validate_vp_token(response_json):
+-    """
+-    Validate VP token, checking document and presentation_submission attributes
+-    """
+-    auth_request_values = {
+-        "definition_id": "32f54163-7166-48f1-93d8-ff217bdb0653",
+-        "id": "eu.europa.ec.eudi.pid.1",
+-        "input_descriptor": [
+-            "family_name",
+-            "given_name",
+-            "birth_date",
+-            "issuing_authority",
+-            "issuing_country",
+-        ],
++# --- Contrato del login OID4VP ----------------------------------------------
++#
++# La peticion y la validacion se construyen AQUI, en el mismo sitio, a
++# proposito. El parche anterior cambio la peticion a DCQL/SD-JWT y dejo la
++# validacion esperando `presentation_submission` y CBOR: el operador no podia
++# entrar, y el fallo no se veia hasta que alguien escaneaba el QR.
++#
++# Por que mso_mdoc y no SD-JWT: todo lo que hay debajo -validate_certificate,
++# cbor2elems- es CBOR/COSE. Aceptar SD-JWT exige un verificador nuevo (firma
++# del emisor, hashes de las disclosures) y una libreria mas. Es trabajo de la
++# fase de endurecimiento, no de arreglar el login.
++#
++# Por que DCQL y no `presentation_definition`: el verifier fijado en el .env lo
++# rechaza con {"error":"MissingPresentationQuery"} (HTTP 400). Comprobado
++# contra la imagen que despliega este repositorio, no supuesto.
++PID_QUERY_ID = "eudi_pid_1"
++PID_DOCTYPE = "eu.europa.ec.eudi.pid.1"
++PID_CLAIMS = [
++    "family_name",
++    "given_name",
++    "birth_date",
++    "issuing_authority",
++    "issuing_country",
++]
++
++
++def pid_dcql_query():
++    """Consulta DCQL del login del operador."""
++    return {
++        "credentials": [
++            {
++                "id": PID_QUERY_ID,
++                "format": "mso_mdoc",
++                "meta": {"doctype_value": PID_DOCTYPE},
++                "claims": [{"path": [PID_DOCTYPE, claim]} for claim in PID_CLAIMS],
++            }
++        ]
+     }
+ 
+-    if (
+-        response_json["presentation_submission"]["definition_id"]
+-        != auth_request_values["definition_id"]
+-    ):
+-
+-        return True, "Definition id received is different from the requested."
+-
+-    elif (
+-        response_json["presentation_submission"]["descriptor_map"][0]["id"]
+-        != auth_request_values["id"]
+-    ):
+ 
+-        return (
+-            True,
+-            "Id from descriptor is not same as the id in the authorization request.",
+-        )
+-
+-    elif response_json["presentation_submission"]["descriptor_map"][0]["path"] == "$":
+-
+-        pos = 0
+-
+-    else:
+-        matcher = re.search(
+-            r"\d+",
+-            response_json["presentation_submission"]["descriptor_map"][0]["path"],
+-        )
+-        if matcher:
+-            pos = int(matcher.group())
+-        else:
+-            pos = -1
++def _b64url(value):
++    """Decodifica base64url tolerando que falte el relleno."""
++    return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
+ 
+-    if pos == -1:
+ 
+-        return True, "The path value from presentation_submission is not valid."
+-
+-    else:
++def presentation_of(response_json):
++    """Devuelve la presentacion mdoc (base64url) del vp_token, o None.
+ 
+-        mdoc = response_json["vp_token"][0]
+-        
+-        mdoc_ver = None
++    Con DCQL el verifier devuelve un OBJETO indexado por el id de la consulta,
++    no la lista que devolvia con `presentation_definition`:
+ 
+-        try:
+-            mdoc_ver = base64.urlsafe_b64decode(mdoc)
+-
+-        except:
+-            mdoc_ver = base64.urlsafe_b64decode(mdoc + "==")
+-
+-        mdoc_cbor = cbor2.decoder.loads(mdoc_ver)
+-
+-        if mdoc_cbor["status"] != 0:
+-
+-            return True, "Status invalid:" + str(mdoc_cbor["status"])
+-
+-        error, errorMsg = validate_certificate(mdoc_cbor["documents"][pos])
+-
+-        if error == False:
+-
+-            return True, errorMsg
+-
+-        # Validate values received are the same values requested
+-        for pos in range(len(mdoc_cbor["documents"])):
+-            namespaces = mdoc_cbor["documents"][pos]["issuerSigned"]["nameSpaces"]
+-            attributes_requested = auth_request_values["input_descriptor"]
+-            attributes_received = []
+-
+-            for n in namespaces.keys():
+-                l = []
+-                for e in namespaces[n]:  # e is a CBORTag
+-                    val = cbor2.decoder.loads(e.value)
+-                    id = val["elementIdentifier"]
+-                    attributes_received.append(id)
+-
+-            if len(attributes_received) != len(attributes_requested):
++        {"vp_token": {"eudi_pid_1": ["<base64url DeviceResponse>"]}}
++    """
++    vp_token = response_json.get("vp_token")
++    if not isinstance(vp_token, dict):
++        return None
++    presentations = vp_token.get(PID_QUERY_ID)
++    if isinstance(presentations, str):
++        presentations = [presentations]
++    if not presentations:
++        return None
++    first = presentations[0]
++    return first if isinstance(first, str) else None
++
++
++def _elements_of(document):
++    """Identificadores de los elementos revelados en un documento mdoc."""
++    received = []
++    for namespace in document["issuerSigned"]["nameSpaces"].values():
++        for entry in namespace:  # entry es un CBORTag
++            received.append(cbor2.decoder.loads(entry.value)["elementIdentifier"])
++    return received
+ 
+-                if set(attributes_received).issubset(set(attributes_requested)):
+ 
+-                    missing_attributes = list(set(attributes_requested) - set(attributes_received))
+-                    # if pos == len(mdoc_cbor["documents"]) - 1:
+-                    #     return True, "Missing attributes: " + str(missing_attributes) + "Received Attributes: " + str(attributes_received)  # missing_attributes
+-                    # else:
+-                    #     return True, "There are values that weren't requested."
+-            if all(x in attributes_requested for x in attributes_received) and all(
+-                x in attributes_received for x in attributes_requested
+-            ):
++def validate_vp_token(response_json):
++    """Valida la presentacion del login.
+ 
+-                return False, "", pos
++    Devuelve SIEMPRE una tripleta `(error, mensaje, pos)`. La version anterior
++    devolvia pares en las ramas de error y `None` si ningun documento encajaba,
++    mientras quien llamaba desempaquetaba tres valores: cualquier respuesta
++    invalida reventaba con un ValueError en vez de explicar que pasaba.
++    """
++    # El verifier responde con `error` cuando la wallet declina o falla, y ese
++    # caso NO es un problema del verifier. Sin esta rama todo acababa en el
++    # mismo mensaje generico, que ademas culpaba al servicio equivocado.
++    error = response_json.get("error")
++    if error:
++        detalle = response_json.get("error_description") or ""
++        if error == "access_denied":
++            return True, (
++                "La wallet rechazo la solicitud. Causas habituales: el usuario "
++                "la denego, o la wallet no tiene un PID en formato mso_mdoc "
++                "(el login del TLP solo acepta ese formato). " + detalle
++            ).strip(), -1
++        return True, "La wallet devolvio un error: " + error + ". " + detalle, -1
++
++    mdoc_b64 = presentation_of(response_json)
++    if mdoc_b64 is None:
++        return True, (
++            "La respuesta del verifier no trae la credencial solicitada "
++            "(se esperaba vp_token['" + PID_QUERY_ID + "'])."
++        ), -1
++
++    try:
++        mdoc_cbor = cbor2.decoder.loads(_b64url(mdoc_b64))
++    except Exception:
++        return True, "No se pudo decodificar la presentacion mdoc.", -1
++
++    if mdoc_cbor.get("status") != 0:
++        return True, "Status invalid:" + str(mdoc_cbor.get("status")), -1
++
++    documents = mdoc_cbor.get("documents") or []
++    requested = set(PID_CLAIMS)
++
++    for pos, document in enumerate(documents):
++        if document.get("docType") != PID_DOCTYPE:
++            continue
++
++        valid, error_msg = validate_certificate(document)
++        if valid is False:
++            return True, error_msg, -1
++
++        received = set(_elements_of(document))
++
++        missing = requested - received
++        if missing:
++            return True, "Faltan atributos solicitados: " + ", ".join(sorted(missing)), -1
++
++        extra = received - requested
++        if extra:
++            # Minimizacion de datos: lo que no se pidio no se acepta.
++            return True, "Se recibieron atributos no solicitados: " + ", ".join(sorted(extra)), -1
++
++        return False, "", pos
++
++    return True, "La respuesta no contiene un PID (" + PID_DOCTYPE + ").", -1
+ 
+ 
+ def validate_certificate(mdoc):
+@@ -285,7 +319,7 @@ def cbor2elems(mdoc, pos):
+     Return: Returns a dict with (element, values) contained in the namespaces of the mdoc. E.g. {'ns1': [('e1', 'v1'), ('e2', 'v2')], 'ns2': [('e3', 'v3')]}
+     """
+     d = {}
+-    namespaces = cbor2.decoder.loads(base64.urlsafe_b64decode(mdoc))["documents"][pos][
++    namespaces = cbor2.decoder.loads(_b64url(mdoc))["documents"][pos][
+         "issuerSigned"
+     ]["nameSpaces"]
+     for n in namespaces.keys():
+diff --git a/app/xml_gen/xmlGen.py b/app/xml_gen/xmlGen.py
+index 32532b6..1b5a7ba 100644
+--- a/app/xml_gen/xmlGen.py
++++ b/app/xml_gen/xmlGen.py
+@@ -49,9 +49,7 @@ def parse_json_field(field):
+ def xml_gen_xml(user_info, dictFromDB_trusted_lists, tsp_data, service_data, tsl_id, log_id):
+     service_data = [service for sublist in service_data for service in sublist]
+ 
+-    der_data=open(cfgserv.cert_UT, "rb").read()
+-    cert_der = x509.load_der_x509_certificate(der_data, backend=default_backend())
+-    cert = cert_der.public_bytes(encoding=serialization.Encoding.PEM)
++    cert = cfgserv.cargar_cert_firma()
+ 
+     pem_str = cert.decode('utf-8')
+     cert_cleaned = ''.join(line for line in pem_str.splitlines() if "CERTIFICATE" not in line)
+@@ -436,7 +434,11 @@ def xml_gen_xml(user_info, dictFromDB_trusted_lists, tsp_data, service_data, tsl
+     # with open ("privkey_UT.pem", "rb") as key_file: 
+     #     key = serialization.load_pem_private_key(key_file.read(),password=None,backend=default_backend())
+         
+-    key=open(cfgserv.priv_key_UT, "rb").read()
++    # La clave sale de app_config/config.py, que acepta PEM o DER y devuelve un
++    # objeto ya cargado. Antes se pasaban a signxml los bytes crudos del fichero,
++    # y signxml hace load_pem_private_key() sobre lo que reciba: con la clave en
++    # DER que traia el repo, la firma reventaba ahi dentro.
++    key = cfgserv.cargar_clave_firma()
+     
+     ET.register_namespace("", "http://uri.etsi.org/02231/v2#")
+ 
+@@ -465,7 +467,7 @@ def xml_gen_xml(user_info, dictFromDB_trusted_lists, tsp_data, service_data, tsl
+         claimed_roles=["signer"],
+         data_object_format=data_object_format,
+         c14n_algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
+-        signature_algorithm=algorithms.SignatureMethod.ECDSA_SHA256,
++        signature_algorithm=cfgserv.metodo_firma(key),
+         method=methods.enveloped
+     )
+ 
+@@ -485,9 +487,7 @@ def xml_gen_xml(user_info, dictFromDB_trusted_lists, tsp_data, service_data, tsl
+ 
+ def xml_gen_lotl_xml(user_info, tsl_list, dict_tsl_mom, log_id):
+ 
+-    der_data=open(cfgserv.cert_UT, "rb").read()
+-    cert_der= x509.load_der_x509_certificate(der_data, backend=default_backend())
+-    cert = cert_der.public_bytes(encoding=serialization.Encoding.PEM)
++    cert = cfgserv.cargar_cert_firma()
+ 
+     pem_str = cert.decode('utf-8')
+     cert_cleaned = ''.join(line for line in pem_str.splitlines() if "CERTIFICATE" not in line)
+@@ -790,7 +790,11 @@ def xml_gen_lotl_xml(user_info, tsl_list, dict_tsl_mom, log_id):
+     # with open ("privkey_UT.pem", "rb") as key_file: 
+     #     key = serialization.load_pem_private_key(key_file.read(),password=None,backend=default_backend())
+         
+-    key=open(cfgserv.priv_key_UT, "rb").read()
++    # La clave sale de app_config/config.py, que acepta PEM o DER y devuelve un
++    # objeto ya cargado. Antes se pasaban a signxml los bytes crudos del fichero,
++    # y signxml hace load_pem_private_key() sobre lo que reciba: con la clave en
++    # DER que traia el repo, la firma reventaba ahi dentro.
++    key = cfgserv.cargar_clave_firma()
+     
+     rootTemp=ET.fromstring(content)
+ 
+@@ -817,7 +821,7 @@ def xml_gen_lotl_xml(user_info, tsl_list, dict_tsl_mom, log_id):
+         claimed_roles=["signer"],
+         data_object_format=data_object_format,
+         c14n_algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
+-        signature_algorithm=algorithms.SignatureMethod.ECDSA_SHA256,
++        signature_algorithm=cfgserv.metodo_firma(key),
+         method=methods.enveloped
+     )
+ 
+diff --git a/app/xml_gen/xmlGen_List.py b/app/xml_gen/xmlGen_List.py
+index e9c501e..d395449 100644
+--- a/app/xml_gen/xmlGen_List.py
++++ b/app/xml_gen/xmlGen_List.py
+@@ -251,9 +251,7 @@ def xml_gen_xml_lotl(user_info, tsl_list):
+     #     cert = file.read()
+     #     cert=x509.load_pem_x509_certificate(cert)
+     
+-    der_data=open(cfgserv.cert_UT, "rb").read()
+-    cert = x509.load_der_x509_certificate(der_data)
+-    cert = cert.public_bytes(encoding=serialization.Encoding.PEM)
++    cert = cfgserv.cargar_cert_firma()
+ 
+     cert_for_hash=x509.load_pem_x509_certificate(cert, default_backend())
+     thumbprint= hashlib.sha256(cert_for_hash.tbs_certificate_bytes).hexdigest()
+@@ -261,7 +259,11 @@ def xml_gen_xml_lotl(user_info, tsl_list):
+     # with open ("privkey_UT.pem", "rb") as key_file: 
+     #     key = serialization.load_pem_private_key(key_file.read(),password=None,backend=default_backend())
+         
+-    key=open(cfgserv.priv_key_UT, "rb").read()
++    # La clave sale de app_config/config.py, que acepta PEM o DER y devuelve un
++    # objeto ya cargado. Antes se pasaban a signxml los bytes crudos del fichero,
++    # y signxml hace load_pem_private_key() sobre lo que reciba: con la clave en
++    # DER que traia el repo, la firma reventaba ahi dentro.
++    key = cfgserv.cargar_clave_firma()
+     xml.register_namespace("","http://uri.etsi.org/02231/v2#")
+     
+     rootTemp=xml.fromstring(xml_string)
+@@ -271,7 +273,7 @@ def xml_gen_xml_lotl(user_info, tsl_list):
+     root_bytes = etree.tostring(root_lxml, method="c14n")
+     xml_hash_before_sign = hashlib.sha256(root_bytes).hexdigest()
+ 
+-    signed_root = XMLSigner(signature_algorithm=algorithms.SignatureMethod.ECDSA_SHA256).sign(data=rootTemp, key=key, cert=cert)
++    signed_root = XMLSigner(signature_algorithm=cfgserv.metodo_firma(key)).sign(data=rootTemp, key=key, cert=cert)
+     #verified_data = XMLVerifier().verify(signed_root)
+ 
+     # with open ("teste.xml", "w") as file: 

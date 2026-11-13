@@ -1,0 +1,20 @@
+{
+  "name": "eps-ejemplo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "EPS de ejemplo: identifica con el PID (verifier) y emite carné de afiliado e historia clínica a la wallet (OpenID4VCI)",
+  "type": "module",
+  "main": "src/servidor.js",
+  "scripts": {
+    "start": "node src/servidor.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "jose": "^6.0.11",
+    "pg": "^8.13.1",
+    "qrcode": "^1.5.4"
+  }
+}

@@ -1,0 +1,190 @@
+/*
+ * Copyright (c) 2023-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.pidissuer.adapter.out.attestation.pid
+
+import arrow.core.nonEmptySetOf
+import eu.europa.ec.eudi.pidissuer.adapter.out.IssuerSigningKey
+import eu.europa.ec.eudi.pidissuer.adapter.out.attestation.IssueMdoc
+import eu.europa.ec.eudi.pidissuer.adapter.out.coseAlgorithm
+import eu.europa.ec.eudi.pidissuer.adapter.out.format.mdoc.encodeAttestationAttributesInMdoc
+import eu.europa.ec.eudi.pidissuer.domain.*
+import eu.europa.ec.eudi.pidissuer.port.out.attestation.GetAttestationAttributes
+import eu.europa.ec.eudi.pidissuer.port.out.persistence.GenerateNotificationId
+import eu.europa.ec.eudi.pidissuer.port.out.persistence.StoreIssuedCredential
+import eu.europa.ec.eudi.pidissuer.port.out.proof.ValidateProof
+import eu.europa.ec.eudi.pidissuer.port.out.status.AllocateStatus
+import id.walt.mdoc.dataelement.DataElement
+import id.walt.mdoc.dataelement.MapKey
+import id.walt.mdoc.dataelement.toDataElement
+import id.walt.mdoc.doc.MDocBuilder
+import java.util.Locale.ENGLISH
+import kotlin.time.Clock
+import kotlin.time.Duration
+
+val PidMsoMdocScope: Scope = Scope("eu.europa.ec.eudi.pid_mso_mdoc")
+
+private const val PID_DOCTYPE = "eu.europa.ec.eudi.pid"
+
+private fun pidDocType(v: Int?): String =
+    if (v == null)
+        PID_DOCTYPE
+    else
+        "$PID_DOCTYPE.$v"
+
+@Suppress("SameParameterValue")
+fun pidNameSpace(v: Int?): MsoNameSpace = pidDocType(v)
+
+@Suppress("UNUSED")
+private fun pidDomesticNameSpace(
+    v: Int?,
+    countryCode: String,
+): MsoNameSpace =
+    if (v == null)
+        "$PID_DOCTYPE.$countryCode"
+    else
+        "$PID_DOCTYPE.$countryCode.$v"
+
+val PidMsoMdocV1CredentialConfigurationId: CredentialConfigurationId = CredentialConfigurationId(PidMsoMdocScope.value)
+
+internal fun pidMsoMdocV1(
+    credentialSigningAlgorithm: CoseAlgorithm,
+    deviceBinding: DeviceBinding.Required,
+    credentialReusePolicy: CredentialReusePolicy = CredentialReusePolicy.None,
+    validity: Duration,
+): MsoMdocCredentialConfiguration =
+    MsoMdocCredentialConfiguration(
+        id = PidMsoMdocV1CredentialConfigurationId,
+        docType = pidDocType(1),
+        display =
+            listOf(
+                CredentialDisplay(
+                    name = DisplayName("PID (MSO MDoc)", ENGLISH),
+                ),
+            ),
+        claims = MsoMdocPidClaims.all(),
+        credentialSigningAlgorithmsSupported = nonEmptySetOf(credentialSigningAlgorithm),
+        scope = PidMsoMdocScope,
+        deviceBinding = deviceBinding,
+        category = AttestationCategory.Pid,
+        reusePolicy = credentialReusePolicy,
+        validity = validity,
+    )
+
+@Suppress("FunctionName")
+fun IssueMsoMdocPid(
+    credentialReusePolicy: CredentialReusePolicy = CredentialReusePolicy.None,
+    deviceBinding: DeviceBinding.Required,
+    validity: Duration,
+    clock: Clock,
+    validateProof: ValidateProof,
+    generateNotificationId: GenerateNotificationId?,
+    storeIssuedCredential: StoreIssuedCredential,
+    getAttestationAttributes: GetAttestationAttributes<PidAttributes>,
+    allocateStatus: AllocateStatus,
+    issuerSigningKey: IssuerSigningKey,
+): IssueMdoc<PidAttributes> {
+    val configuration =
+        pidMsoMdocV1(issuerSigningKey.coseAlgorithm, deviceBinding, credentialReusePolicy, validity)
+    return IssueMdoc(
+        configuration,
+        clock,
+        validateProof,
+        generateNotificationId,
+        storeIssuedCredential,
+        getAttestationAttributes,
+        allocateStatus,
+        encodeAttestationAttributesInMdoc(configuration.docType, issuerSigningKey, { pidAttributes(it) }),
+    )
+}
+
+private fun MDocBuilder.pidAttributes(pidAttributes: PidAttributes) {
+    addItemsToSign(pidAttributes.pid)
+    addItemsToSign(pidAttributes.metaData)
+}
+
+private fun MDocBuilder.addItemsToSign(pid: Pid) {
+    addItemToSign(MsoMdocPidClaims.FamilyName, pid.familyName.value.toDataElement())
+    addItemToSign(MsoMdocPidClaims.GivenName, pid.givenName.value.toDataElement())
+    addItemToSign(MsoMdocPidClaims.BirthDate, pid.birthDate.toDataElement())
+
+    val placeOfBirth =
+        with(pid.placeOfBirth) {
+            buildMap {
+                country?.let { put(MapKey("country"), it.value.toDataElement()) }
+                region?.let { put(MapKey("region"), it.value.toDataElement()) }
+                locality?.let { put(MapKey("locality"), it.value.toDataElement()) }
+            }.toDataElement()
+        }
+    addItemToSign(MsoMdocPidClaims.PlaceOfBirth, placeOfBirth)
+
+    addItemToSign(MsoMdocPidClaims.Nationality, pid.nationalities.map { it.value.toDataElement() }.toDataElement())
+    pid.residentAddress?.let { addItemToSign(MsoMdocPidClaims.ResidenceAddress, it.toDataElement()) }
+    pid.residentCountry?.let { addItemToSign(MsoMdocPidClaims.ResidenceCountry, it.value.toDataElement()) }
+    pid.residentState?.let { addItemToSign(MsoMdocPidClaims.ResidenceState, it.value.toDataElement()) }
+    pid.residentCity?.let { addItemToSign(MsoMdocPidClaims.ResidenceCity, it.value.toDataElement()) }
+    pid.residentPostalCode?.let { addItemToSign(MsoMdocPidClaims.ResidencePostalCode, it.value.toDataElement()) }
+    pid.residentStreet?.let { addItemToSign(MsoMdocPidClaims.ResidenceStreet, it.value.toDataElement()) }
+    pid.residentHouseNumber?.let { addItemToSign(MsoMdocPidClaims.ResidenceHouseNumber, it.toDataElement()) }
+    pid.portrait?.let {
+        val value =
+            when (it) {
+                is PortraitImage.JPEG -> it.value
+                is PortraitImage.JPEG2000 -> it.value
+            }
+        addItemToSign(MsoMdocPidClaims.Portrait, value.toDataElement())
+    }
+    pid.familyNameBirth?.let { addItemToSign(MsoMdocPidClaims.FamilyNameBirth, it.value.toDataElement()) }
+    pid.givenNameBirth?.let { addItemToSign(MsoMdocPidClaims.GivenNameBirth, it.value.toDataElement()) }
+    pid.sex?.let { addItemToSign(MsoMdocPidClaims.Sex, it.value.toDataElement()) }
+    pid.emailAddress?.let { addItemToSign(MsoMdocPidClaims.EmailAddress, it.toDataElement()) }
+    pid.mobilePhoneNumber?.let { addItemToSign(MsoMdocPidClaims.MobilePhoneNumberAttribute, it.value.toDataElement()) }
+    pid.personalAdministrativeNumber?.let {
+        addItemToSign(
+            MsoMdocPidClaims.PersonalAdministrativeNumber,
+            it.value.toDataElement(),
+        )
+    }
+}
+
+private fun MDocBuilder.addItemsToSign(metaData: PidMetaData) {
+    addItemToSign(MsoMdocPidClaims.ExpiryDate, metaData.expiryDate.toDataElement())
+    when (val issuingAuthority = metaData.issuingAuthority) {
+        is IssuingAuthority.MemberState -> {
+            addItemToSign(MsoMdocPidClaims.IssuingAuthority, issuingAuthority.code.value.toDataElement())
+        }
+
+        is IssuingAuthority.AdministrativeAuthority -> {
+            addItemToSign(MsoMdocPidClaims.IssuingAuthority, issuingAuthority.value.toDataElement())
+        }
+    }
+    addItemToSign(MsoMdocPidClaims.IssuingCountry, metaData.issuingCountry.value.toDataElement())
+    metaData.documentNumber?.let { addItemToSign(MsoMdocPidClaims.DocumentNumber, it.value.toDataElement()) }
+    metaData.issuingJurisdiction?.let { addItemToSign(MsoMdocPidClaims.IssuingJurisdiction, it.toDataElement()) }
+    metaData.issuanceDate?.let { addItemToSign(MsoMdocPidClaims.IssuanceDate, it.toDataElement()) }
+    metaData.attestationLegalCategory?.let {
+        addItemToSign(
+            MsoMdocPidClaims.AttestationLegalCategory,
+            it.toDataElement(),
+        )
+    }
+}
+
+private fun MDocBuilder.addItemToSign(
+    claim: ClaimDefinition,
+    value: DataElement,
+) {
+    addItemToSign(MsoMdocPidClaims.nameSpace, claim.name, value)
+}

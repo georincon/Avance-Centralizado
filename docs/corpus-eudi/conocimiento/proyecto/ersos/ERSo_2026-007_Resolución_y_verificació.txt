@@ -1,0 +1,98 @@
+                                                                                    Identificación OID:    1.3.6.1.4.1.31144.3.2.002.1.1
+                                                                                                 Fecha:    02-01-2020
+                                       ESPECIFICACION DE REQUISITOS                            Versión:    1.1
+                                                SOFTWARE                                  Clasificación:   Interno
+                                                  (ERSo)                                       Elaboró:    Arquitecto software
+                                                                                                Revisó:    Líder de proyecto
+                                                                                               Aprobó:     Representante Legal
+
+
+PROYECTO                               Identidad Digital Soberana SSI                               ERSo                 2026-007
+TITULO                                 Resolución y verificación DID como consumidor conforme
+DESARROLLADOR                          Geovani Rincón
+FECHA ERSO                             Viernes, 18 de septiembre de 2026
+FECHA DESARROLLO                       Viernes, 25 de septiembre de 2026 7:30 a.m
+FECHA DE PRUEBA                        Miércoles, 30 de septiembre de 2026 7:30 a.m
+
+
+CAPACIDADES DEL                        Se requiere habilitar de forma opcional la resolución y verificación de DID Documents como
+PROCESO                                consumidor, contra las versiones normativas fijadas, sin alterar el camino base del piloto.
+                                       Entre las capacidades del proceso se encuentran:
+                                            •   Resolver un DID mediante el cliente de resolución del consumidor.
+                                            •   Recuperar el DID Document y comprobar su conformidad estructural con el modelo de
+                                                datos de W3C DIDs.
+                                            •   Validar relaciones y pruebas (authentication, assertionMethod) con la clave pública
+                                                Multikey resuelta.
+                                            •   Rechazar documentos no conformes, con DID inexistente o con claves no autorizadas.
+
+
+CONDICIONES DEL                             •   El método resoluble es did:web; no se integra ION ni anclajes equivalentes.
+PROCESO
+                                            •   La resolución es una operación del consumidor, no un requisito de publicación del
+                                                productor.
+                                            •   El consumidor no realiza operaciones de escritura ni de publicación.
+
+
+
+
+DESCRIPCION DEL PROCESO
+Contexto y propósito funcional. Quien consume un DID necesita obtener el documento asociado y comprobar que es válido
+antes de confiar en una prueba. Conviene distinguir resolver (obtener el DID Document a partir del DID) de dereferenciar (seguir
+una URL concreta dentro del documento). Este componente actúa como consumidor conforme: obtiene el documento, valida su
+estructura y sus relaciones de verificación, y rechaza lo que no cumpla. No emite juicios sobre identidad jurídica ni sobre atributos
+civiles.
+Literatura y temas a consultar. Consultar en la web: W3C DIDs v1.1, W3C Decentralized Identifier Resolution (DID
+Resolution) v1 (incluida la definición de «resolver» frente a «dereferenciar») y el método did:web. Revisar también buenas
+prácticas de caché y control de versión en resolutores.
+Qué debe hacer.
+      1.   Resolver el DID mediante el cliente de resolución del consumidor.
+      2.   Recuperar el DID Document y comprobar su conformidad estructural con el modelo de datos de W3C DIDs.
+      3.   Validar las relaciones y pruebas (authentication, assertionMethod) con la clave pública Multikey resuelta.
+      4.   Rechazar documentos no conformes, con DID inexistente o con claves no autorizadas.
+      5.   Asegurar que el consumidor opera en modo solo lectura, sin escritura ni publicación.
+
+
+FSOF-FO-002 OID 1.3.6.1.4.1.31144.3.2.002.1.1          FORMATO ESPECIFICACION REQUISITOS SOFTWARE                       Página 1 de 2
+                                                                                        Identificación OID:     1.3.6.1.4.1.31144.3.2.002.1.1
+                                                                                                      Fecha:    02-01-2020
+                                       ESPECIFICACION DE REQUISITOS                               Versión:      1.1
+                                                SOFTWARE                                     Clasificación:     Interno
+                                                  (ERSo)                                          Elaboró:      Arquitecto software
+                                                                                                      Revisó:   Líder de proyecto
+                                                                                                  Aprobó:       Representante Legal
+
+
+Criterios de aceptación
+
+
+                                                #            Criterio
+                                                1            Una prueba firmada por la clave resuelta
+                                                             se valida correctamente; evidencia:
+                                                             prueba positiva.
+                                                2            Una prueba firmada por una clave ajena
+                                                             se rechaza; evidencia: prueba negativa.
+                                                3            Un documento no conforme, con id
+                                                             desajustado o inexistente, se rechaza;
+                                                             evidencia: prueba negativa.
+                                                4            El consumidor no realiza operaciones de
+                                                             escritura ni de publicación; evidencia:
+                                                             revisión de interfaz y pruebas de solo
+                                                             lectura.
+
+
+
+
+Actividad                                           Responsable                             Fecha y hora                      Firma
+Análisis y diseño ERSo                              Karen Flórez Madiedo
+Asignar desarrollador ERSo                          Rocío Villamizar
+Implementar ERSo                                    Geovani Rincón
+Aceptar archivos al repositorio central             Rocío Villamizar
+Elaborar plantilla de pruebas                       Luis González
+Realizar pruebas funcionales                        Luis González
+Archivo de ERSo                                     Rocío Villamizar
+
+
+
+
+FSOF-FO-002 OID 1.3.6.1.4.1.31144.3.2.002.1.1              FORMATO ESPECIFICACION REQUISITOS SOFTWARE                        Página 2 de 2
+

@@ -1,0 +1,254 @@
+/*
+ * Copyright (c) 2025-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.walletprovider.port.input.keyattestation
+
+import arrow.core.NonEmptyList
+import arrow.core.nonEmptyListOf
+import arrow.core.raise.context.*
+import arrow.core.serialization.NonEmptyListSerializer
+import arrow.core.toNonEmptyListOrThrow
+import arrow.fx.coroutines.parMapOrAccumulate
+import at.asitplus.signum.indispensable.AndroidKeystoreAttestation
+import at.asitplus.signum.indispensable.Attestation
+import at.asitplus.signum.indispensable.ECCurve
+import at.asitplus.signum.indispensable.IosHomebrewAttestation
+import at.asitplus.signum.indispensable.josef.JsonWebAlgorithm
+import at.asitplus.signum.indispensable.josef.JwsAlgorithm
+import com.eygraber.uri.Url
+import eu.europa.ec.eudi.walletprovider.domain.*
+import eu.europa.ec.eudi.walletprovider.domain.keyattestation.*
+import eu.europa.ec.eudi.walletprovider.domain.specification.TS3
+import eu.europa.ec.eudi.walletprovider.domain.time.Clock
+import eu.europa.ec.eudi.walletprovider.domain.tokenstatuslist.Status
+import eu.europa.ec.eudi.walletprovider.port.output.challenge.ValidateChallenge
+import eu.europa.ec.eudi.walletprovider.port.output.jose.SignJwt
+import eu.europa.ec.eudi.walletprovider.port.output.platformkeyattestation.PlatformKeyAttestationValidationFailure
+import eu.europa.ec.eudi.walletprovider.port.output.platformkeyattestation.ValidatePlatformKeyAttestation
+import eu.europa.ec.eudi.walletprovider.port.output.tokenstatuslist.AllocateStatusListToken
+import eu.europa.ec.eudi.walletprovider.port.output.tokenstatuslist.StatusList
+import kotlinx.coroutines.Dispatchers
+import kotlinx.serialization.Required
+import kotlinx.serialization.Serializable
+import kotlin.time.Duration
+
+fun interface IssueKeyAttestation {
+    context(_: Raise<KeyAttestationIssuanceFailure>)
+    suspend operator fun invoke(request: KeyAttestationIssuanceRequest): KeyAttestation
+}
+
+sealed interface KeyAttestationIssuanceRequest {
+    val nonce: Nonce?
+    val supportedSigningAlgorithms: NonEmptyList<JsonWebAlgorithm>?
+    val preferredKeyStorageStatusPeriod: SecondsDuration?
+
+    sealed interface PlatformKeyAttestation<out PlatformKeyAttestation : Attestation> : KeyAttestationIssuanceRequest {
+        val platformKeyAttestations: NonEmptyList<PlatformKeyAttestation>
+        val challenge: Base64UrlSafeByteArray
+
+        @Serializable
+        data class Android(
+            override val nonce: Nonce? = null,
+            @Required @Serializable(with = NonEmptyListSerializer::class)
+            override val platformKeyAttestations: NonEmptyList<AndroidKeystoreAttestation>,
+            @Required override val challenge: Base64UrlSafeByteArray,
+            @Serializable(
+                with = NonEmptyListSerializer::class,
+            ) override val supportedSigningAlgorithms: NonEmptyList<JsonWebAlgorithm>? = null,
+            override val preferredKeyStorageStatusPeriod: SecondsDuration? = null,
+        ) : PlatformKeyAttestation<AndroidKeystoreAttestation> {
+            override fun equals(other: Any?): Boolean =
+                other is Android &&
+                    other.nonce == nonce &&
+                    other.platformKeyAttestations == platformKeyAttestations &&
+                    other.challenge.contentEquals(challenge) &&
+                    other.supportedSigningAlgorithms == supportedSigningAlgorithms &&
+                    other.preferredKeyStorageStatusPeriod == preferredKeyStorageStatusPeriod
+
+            override fun hashCode(): Int {
+                var result = nonce?.hashCode() ?: 0
+                result = 31 * result + platformKeyAttestations.hashCode()
+                result = 31 * result + challenge.contentHashCode()
+                result = 31 * result + (supportedSigningAlgorithms?.hashCode() ?: 0)
+                result = 31 * result + (preferredKeyStorageStatusPeriod?.hashCode() ?: 0)
+                return result
+            }
+        }
+
+        @Serializable
+        data class Ios(
+            override val nonce: Nonce? = null,
+            @Required @Serializable(with = NonEmptyListSerializer::class)
+            override val platformKeyAttestations: NonEmptyList<IosHomebrewAttestation>,
+            @Required override val challenge: Base64UrlSafeByteArray,
+            @Serializable(
+                with = NonEmptyListSerializer::class,
+            ) override val supportedSigningAlgorithms: NonEmptyList<JsonWebAlgorithm>? = null,
+            override val preferredKeyStorageStatusPeriod: SecondsDuration? = null,
+        ) : PlatformKeyAttestation<IosHomebrewAttestation> {
+            override fun equals(other: Any?): Boolean =
+                other is Ios &&
+                    other.nonce == nonce &&
+                    other.platformKeyAttestations == platformKeyAttestations &&
+                    other.challenge.contentEquals(challenge) &&
+                    other.supportedSigningAlgorithms == supportedSigningAlgorithms &&
+                    other.preferredKeyStorageStatusPeriod == preferredKeyStorageStatusPeriod
+
+            override fun hashCode(): Int {
+                var result = nonce?.hashCode() ?: 0
+                result = 31 * result + platformKeyAttestations.hashCode()
+                result = 31 * result + challenge.contentHashCode()
+                result = 31 * result + (supportedSigningAlgorithms?.hashCode() ?: 0)
+                result = 31 * result + (preferredKeyStorageStatusPeriod?.hashCode() ?: 0)
+                return result
+            }
+        }
+    }
+
+    @Serializable
+    data class JwkSet(
+        override val nonce: Nonce? = null,
+        val jwkSet: JsonWebKeySet,
+        @Serializable(with = NonEmptyListSerializer::class) override val supportedSigningAlgorithms: NonEmptyList<JsonWebAlgorithm>? = null,
+        override val preferredKeyStorageStatusPeriod: SecondsDuration? = null,
+    ) : KeyAttestationIssuanceRequest
+}
+
+sealed interface KeyAttestationIssuanceFailure {
+    class UnsupportedSigningAlgorithms(
+        val supportedSigningAlgorithm: JwsAlgorithm,
+        val requestedSigningAlgorithms: NonEmptyList<JsonWebAlgorithm>,
+    ) : KeyAttestationIssuanceFailure
+
+    class InvalidChallenge(
+        val error: NonBlankString,
+        val cause: Throwable? = null,
+    ) : KeyAttestationIssuanceFailure
+
+    class InvalidPlatformKeyAttestations(
+        val errors: NonEmptyList<PlatformKeyAttestationValidationFailure>,
+    ) : KeyAttestationIssuanceFailure
+
+    data object NonUniquePlatformAttestedKeys : KeyAttestationIssuanceFailure
+
+    data class UnsupportedPlatformAttestedKeyCurve(
+        val curve: ECCurve,
+    ) : KeyAttestationIssuanceFailure
+}
+
+@JvmInline
+value class KeyAttestationValidity(
+    val value: Duration,
+) {
+    init {
+        require(value.isPositive()) {
+            "value must be positive"
+        }
+        require(value >= TS3.MIN_KEY_ATTESTATION_VALIDITY) {
+            "minimum value must be equal or greater than ${TS3.MIN_KEY_ATTESTATION_VALIDITY}"
+        }
+    }
+
+    companion object {
+        val Default: KeyAttestationValidity = KeyAttestationValidity(TS3.MIN_KEY_ATTESTATION_VALIDITY)
+    }
+
+    override fun toString(): String = value.toString()
+}
+
+fun IssueKeyAttestation(
+    clock: Clock,
+    validateChallenge: ValidateChallenge,
+    validatePlatformKeyAttestation: ValidatePlatformKeyAttestation,
+    validity: KeyAttestationValidity,
+    allocateStatusListToken: AllocateStatusListToken,
+    certification: Url,
+    signJwt: SignJwt<KeyAttestationClaims>,
+    preferredKeyStorageStatusPeriod: PositiveDuration,
+): IssueKeyAttestation {
+    require(signJwt.signingAlgorithm in TS3.ALLOWED_SIGNATURE_ALGORITHMS) {
+        "Key Attestations must be signed using one of the following JWS Algorithms: " +
+            TS3.ALLOWED_SIGNATURE_ALGORITHMS.joinToString { it.identifier } +
+            ". Got a SignJwt implementation that uses ${signJwt.signingAlgorithm.identifier} instead."
+    }
+
+    return IssueKeyAttestation { request ->
+        val supportedSigningAlgorithm = signJwt.signingAlgorithm
+        val requestedSigningAlgorithms = request.supportedSigningAlgorithms
+        if (null != requestedSigningAlgorithms) {
+            ensure(supportedSigningAlgorithm in requestedSigningAlgorithms) {
+                KeyAttestationIssuanceFailure.UnsupportedSigningAlgorithms(supportedSigningAlgorithm, requestedSigningAlgorithms)
+            }
+        }
+
+        val platformAttestedKeys =
+            when (request) {
+                is KeyAttestationIssuanceRequest.PlatformKeyAttestation<*> -> {
+                    withError({ KeyAttestationIssuanceFailure.InvalidChallenge(it.error, it.cause) }) {
+                        validateChallenge(request.challenge, clock.now())
+                    }
+
+                    withError({ errors -> KeyAttestationIssuanceFailure.InvalidPlatformKeyAttestations(errors) }) {
+                        request.platformKeyAttestations
+                            .parMapOrAccumulate(Dispatchers.Default, 4) { validatePlatformKeyAttestation(it, request.challenge) }
+                            .bind()
+                            .map { it.publicKey }
+                            .toNonEmptyListOrThrow()
+                    }
+                }
+
+                is KeyAttestationIssuanceRequest.JwkSet -> {
+                    request.jwkSet.keys
+                }
+            }
+        ensure(platformAttestedKeys.distinct().size == platformAttestedKeys.size) {
+            KeyAttestationIssuanceFailure.NonUniquePlatformAttestedKeys
+        }
+
+        platformAttestedKeys.forEach { platformAttestedKey ->
+            val platformAttestedKeyCurve = platformAttestedKey.curve
+            ensure(platformAttestedKeyCurve in TS3.ALLOWED_SIGNATURE_ALGORITHMS.map { it.ecCurve }) {
+                KeyAttestationIssuanceFailure.UnsupportedPlatformAttestedKeyCurve(platformAttestedKeyCurve)
+            }
+        }
+
+        val issuedAt = clock.now()
+        val expiresAt = issuedAt + validity.value
+        val keyStorageStatus =
+            run {
+                val keyStatusPeriod = maxOf(request.preferredKeyStorageStatusPeriod ?: Duration.ZERO, preferredKeyStorageStatusPeriod.value)
+                val keyStorageExpiresAt = issuedAt + keyStatusPeriod
+
+                val statusListToken = allocateStatusListToken(StatusList.KeyAttestation, keyStorageExpiresAt)
+                val status = Status(statusListToken)
+
+                KeyStorageStatus(status, keyStorageExpiresAt)
+            }
+
+        val keyAttestation =
+            KeyAttestationClaims(
+                issuedAt = issuedAt,
+                expiresAt = expiresAt,
+                platformAttestedKeys,
+                keyStorage = nonEmptyListOf(AttackPotentialResistance.Iso18045High),
+                userAuthentication = nonEmptyListOf(AttackPotentialResistance.Iso18045High),
+                certification,
+                request.nonce,
+                keyStorageStatus = keyStorageStatus,
+            )
+
+        signJwt(keyAttestation)
+    }
+}

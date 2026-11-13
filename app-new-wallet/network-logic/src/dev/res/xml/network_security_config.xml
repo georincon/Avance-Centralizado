@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solo flavor dev: HTTP permitido hacia el backend de onboarding en la red local, y confianza en la CA
+     de desarrollo del issuer Registraduría (https://192.168.0.240:9443). -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/nw_registraduria_ca" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

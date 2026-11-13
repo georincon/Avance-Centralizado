@@ -1,0 +1,27 @@
+classDiagram
+    class Attribute {
+        +rdfs:Literal[] name
+        +rdfs:Literal identifier
+        +rdfs:Literal[] description
+        +string semanticDataSpecification
+        +SchemaDistribution[] distributions
+        +string nameSpace
+        +URI[] contactInfo
+        +[Provider information specification]:Law legalBasis
+        +DataService[] authenticSources
+    }
+
+    class SchemaDistribution {
+        +string accessURL
+        +string mediaType
+    }
+
+    class DataService {
+        +string country
+        +string nationalSubID
+        +rdfs:Resource endpointDescription
+        +string endpointURI
+    }
+
+    Attribute "1" *-- "1..*" DataService : contains
+    Attribute "1" *-- "1..*" SchemaDistribution : contains

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="verify_mdl_and_pid_from_verifier_mso_mdoc" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <gitb:name>Combined presentation of PID and mDL in mdoc format using HAIP via Redirects</gitb:name>
+        <gitb:version>1.0</gitb:version>
+        <gitb:description>This test case verifies that it is possible to do a combined presentation of PID and mDL in mdoc format using HAIP via Redirects</gitb:description>
+        <gitb:specification>
+            <gitb:reference>Remote_Presentation_5</gitb:reference>
+        </gitb:specification>
+        <gitb:documentation><![CDATA[
+            <h4>Preconditions</h4>
+            <ol style="list-style-type: lower-alpha;">
+            <li>The user of the remote reader has shared its url to&nbsp;the wallet user</li>
+            <li>The wallet has a PID and an mDL in mdoc format</li>
+            <li>The remote reader trusts the IACA certificate(s)&nbsp;used in the issuer data authentication</li>
+            </ol>
+            <h4>Test steps</h4>
+            <ol>
+            <li>The wallet user navigates to the url of the remote&nbsp;reader</li>
+            <li>The wallet user clicks on a link/scans a QR code to&nbsp;start reading the PID and mDL together (DCQL)</li>
+            <li>The wallet user gives permission to share the PID&nbsp;and the mDL</li>
+            <li>The remote reader is verified</li>
+            </ol>
+            <h4>Expected results</h4>
+            <ol>
+            <li>The website of the remote reader opens</li>
+            <li>The wallet opens and permission of the wallet user is&nbsp;requested</li>
+            <li>The PID and mDL is sent to the remote reader</li>
+            <li>The PID and mDL data is shown in the reader</li>
+            </ol>
+        ]]></gitb:documentation>
+    </metadata>
+    <actors>
+        <gitb:actor id="verifier" name="Verifier" />
+        <gitb:actor id="simulatedInitTransaction" name="Simulated Transaction"/>
+        <gitb:actor id="wallet" name="Wallet" role="SUT"/>
+    </actors>
+    <steps>
+        <btxn from="simulatedInitTransaction" to="verifier" txnId="t1" handler="HttpMessagingV2"/>
+        <process output="nonce" handler="TokenGenerator" operation="uuid"/>
+
+        <assign to="authReqUri{uri}">$SYSTEM{authUri}</assign>
+
+        <assign to="httpHeaders{Content-Type}">"application/json"</assign>
+        <assign to="httpHeaders{Accept}">"image/png"</assign>
+        <send id="dataReceived" desc="Send valid presentation request" handler="HttpMessagingV2" from="simulatedInitTransaction" to="verifier">
+            <input name="uri">$DOMAIN{verifierBackendAddress} || "/ui/presentations/v2"</input>
+            <input name="method">"POST"</input>
+            <input name="body">'{"dcql_query":{"credentials":[{"id":"query_0","format":"mso_mdoc","meta":{"doctype_value":"org.iso.18013.5.1.mDL"},"claims":[{"path":["org.iso.18013.5.1","family_name"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","given_name"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","birth_date"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","issue_date"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","expiry_date"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","age_over_18"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","age_in_years"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","age_birth_year"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","issuing_authority"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","document_number"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","portrait"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","driving_privileges"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","un_distinguishing_sign"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","administrative_number"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","sex"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","height"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","weight"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","eye_colour"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","hair_colour"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","birth_place"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","resident_address"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","portrait_capture_date"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","nationality"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","resident_city"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","resident_state"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","resident_postal_code"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","resident_country"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","family_name_national_character"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","given_name_national_character"],"intent_to_retain":false},{"path":["org.iso.18013.5.1","signature_usual_mark"],"intent_to_retain":false}]},{"id":"query_1","format":"mso_mdoc","meta":{"doctype_value":"eu.europa.ec.eudi.pid.1"},"claims":[{"path":["eu.europa.ec.eudi.pid.1","family_name"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","given_name"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","birth_date"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","family_name_birth"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","given_name_birth"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","place_of_birth"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","resident_address"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","resident_country"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","resident_state"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","resident_city"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","resident_postal_code"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","resident_street"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","resident_house_number"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","sex"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","nationality"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","issuance_date"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","expiry_date"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","issuing_authority"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","document_number"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","personal_administrative_number"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","issuing_country"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","issuing_jurisdiction"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","portrait"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","email_address"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","mobile_phone_number"],"intent_to_retain":false},{"path":["eu.europa.ec.eudi.pid.1","trust_anchor"],"intent_to_retain":false}]}]},"nonce":"'|| $nonce ||'","request_uri_method":"get","authorization_request_uri": "'|| $authReqUri{uri} ||'"}'</input>
+            <input name="headers">$httpHeaders</input>
+        </send>
+        <verify handler="ExpressionValidator" desc="Validate correct http status" stopOnError="true">
+            <input name="expression">$dataReceived{response}{status} = "200"</input>
+            <input name="successMessage">'The provided status code is 200.'</input>
+            <input name="failureMessage">'The provided status code is not 200.'</input>
+        </verify>
+
+        <process output="authorizationRequestUri" handler="CollectionUtils" operation="find">
+            <input name="map">$dataReceived{response}{headers}</input>
+            <input name="value">"Authorization-Request-Uri"</input>
+            <input name="ignoreCase">true()</input>
+        </process>
+        <log>"Presentation Request status:" || $dataReceived{response}{status}</log>
+        <log>"Authorization Request URI: " || $authorizationRequestUri</log>
+
+        <etxn txnId="t1"/>
+
+        <interact inputTitle="Scan the QR Code" desc="Scan the QR Code with your wallet." with="wallet">
+            <instruct desc="Click on the magnifying glass to display the QR code"/>
+            <instruct desc="Scan this QR with your wallet" mimeType="image/png">$dataReceived{response}{body}</instruct>
+            <instruct desc="After you present the credential on your wallet, click on the Close button to continue"/>
+        </interact>
+
+        <process output="transactionId" handler="CollectionUtils" operation="find">
+            <input name="map">$dataReceived{response}{headers}</input>
+            <input name="value">"transaction-id"</input>
+            <input name="ignoreCase">true()</input>
+        </process>
+
+        <verify handler="RegExpValidator" desc="Check if transaction id exists" stopOnError="true">
+            <input name="input">$transactionId</input>
+            <input name="expression">".+"</input>
+            <input name="successMessage">"Transaction id: " || $transactionId </input>
+            <input name="failureMessage">'Transaction id value is null.'</input>
+        </verify>
+
+        <assign to="attempt" type="number">1</assign>
+        <assign to="maxAttempts" type="number">$DOMAIN{maxAttempts}</assign>
+        <assign to="responseStatus">'404'</assign>
+        <assign to="transaction_url">$DOMAIN{verifierBackendAddress} || "/ui/presentations/" || $transactionId</assign>
+        <assign to="transaction_logs_url">$transaction_url || "/events"</assign>
+        <log>$transaction_url</log>
+        <log>$transaction_logs_url</log>
+
+        <while title="Transaction logs polling" desc="Polling transaction logs from Verifier until success or timeout">
+            <cond><![CDATA[$attempt <= $maxAttempts and $responseStatus != '200']]></cond>
+            <do>
+                <log>"Polling transaction logs (attempt " || $attempt || ")..."</log>
+                <send id="httpRequestPoll" handler="HttpMessagingV2" from="simulatedInitTransaction" to="verifier">
+                    <input name="uri">$transaction_url</input>
+                    <input name="method">"GET"</input>
+                </send>
+                <log>"Request status: "|| $httpRequestPoll{response}{status}</log>
+                <assign to="responseStatus" source="$httpRequestPoll{response}{status}"/>
+                <assign to="attempt" type="number">$attempt + 1</assign>
+                <process handler="DelayProcessor" operation="delay" input="$DOMAIN{delayBetweenCalls}"/>
+            </do>
+        </while>
+
+        <log>"Final response status:" || $responseStatus</log>
+        <verify handler="ExpressionValidator" desc="Validate if log exists for transaction id on verifier">
+            <input name="expression">$responseStatus = "200"</input>
+            <input name="successMessage">'Flow is complete'</input>
+            <input name="failureMessage">'Flow failed!'</input>
+        </verify>
+
+        <send id="transactionEventLogs" desc="Retrieve transaction event logs" handler="HttpMessagingV2" from="simulatedInitTransaction" to="verifier">
+            <input name="uri">$transaction_logs_url</input>
+            <input name="method">"GET"</input>
+        </send>
+
+        <verify handler="$DOMAIN{validationService}" desc="Validate logs" >
+            <input name="text">$transactionEventLogs{response}{body}</input>
+        </verify>
+        <log>$transactionEventLogs{response}{body}</log>
+    </steps>
+    <output>
+        <success>
+            <default>
+                "Test session succeeded."
+            </default>
+        </success>
+        <failure>
+            <default>
+                "Test session failed. Refer to the failed step's report for more details."
+            </default>
+        </failure>
+    </output>
+</testcase>

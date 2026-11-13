@@ -1,0 +1,563 @@
+/*
+ * Copyright (c) 2023-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.openid4vci.internal
+
+import com.nimbusds.jose.JWSAlgorithm
+import com.nimbusds.jose.crypto.ECDSAVerifier
+import com.nimbusds.jwt.SignedJWT
+import eu.europa.ec.eudi.openid4vci.*
+import eu.europa.ec.eudi.openid4vci.internal.http.CNonceAndDPoPNonce
+import eu.europa.ec.eudi.openid4vci.internal.http.CredentialEndpointClient
+import eu.europa.ec.eudi.openid4vci.internal.http.NonceEndpointClient
+import java.time.Instant
+import kotlin.time.Duration
+
+internal class RequestIssuanceImpl(
+    private val credentialOffer: CredentialOffer,
+    private val config: OpenId4VCIConfig,
+    private val credentialEndpointClient: CredentialEndpointClient,
+    private val nonceEndpointClient: NonceEndpointClient?,
+    private val batchCredentialIssuance: BatchCredentialIssuance,
+    private val exchangeEncryptionSpecification: ExchangeEncryptionSpecification,
+) : RequestIssuance {
+
+    init {
+        val nonceEndpoint = credentialOffer.credentialIssuerMetadata.nonceEndpoint
+        if (nonceEndpoint != null) {
+            check(nonceEndpointClient != null) {
+                " A nonce endpoint client needs to be configured if issuer advertises a nonce endpoint"
+            }
+        }
+        if (nonceEndpointClient != null) {
+            check(nonceEndpoint != null) {
+                "A nonce endpoint client is configured although issuer does not advertises a nonce endpoint"
+            }
+        }
+    }
+
+    override suspend fun AuthorizedRequest.request(
+        requestPayload: IssuanceRequestPayload,
+        proofSpecification: ProofSpecification,
+    ): Result<AuthorizedRequestAnd<SubmissionOutcome>> = runCatchingCancellable {
+        validateRequestPayload(requestPayload, credentialIdentifiers.orEmpty())
+        val credentialConfiguration = credentialSupportedById(requestPayload.credentialConfigurationIdentifier)
+
+        // Credential Reuse Policies are applicable only when using:
+        // JWT Proof with Key Attestation,
+        // or Attestation Proof
+        val selectedCredentialReusePolicy = when (proofSpecification) {
+            is ProofSpecification.JwtProofWithKeyAttestation,
+            is ProofSpecification.AttestationProof,
+            -> selectCredentialReusePolicy(credentialConfiguration)
+
+            ProofSpecification.NoProof,
+            is ProofSpecification.JwtProofsWithoutKeyAttestation,
+            -> null
+        }
+
+        val (proofs, proofsDpopNonce) = buildProofs(
+            proofSpecification,
+            selectedCredentialReusePolicy,
+            requestPayload.credentialConfigurationIdentifier,
+            grant,
+        )
+        val credentialRequest = buildRequest(requestPayload, proofs, credentialIdentifiers.orEmpty())
+
+        // Place the request
+        val proofsOrAuthRequestDpopNonce = proofsDpopNonce ?: resourceServerDpopNonce
+        val (outcome, newResourceServerDpopNonce) =
+            credentialEndpointClient.placeIssuanceRequest(
+                accessToken,
+                proofsOrAuthRequestDpopNonce,
+                credentialRequest,
+            ).getOrThrow()
+
+        // Update state (maybe) with new Dpop Nonce from resource server
+        val updatedAuthorizedRequest = withResourceServerDpopNonce(newResourceServerDpopNonce ?: proofsOrAuthRequestDpopNonce)
+
+        val updatedOutcome = outcome.withSelectedCredentialReusePolicy(selectedCredentialReusePolicy)
+        updatedAuthorizedRequest to updatedOutcome.toPub()
+    }
+
+    private fun validateRequestPayload(
+        requestPayload: IssuanceRequestPayload,
+        authorizationDetails: Map<CredentialConfigurationIdentifier, List<CredentialIdentifier>>,
+    ) {
+        if (authorizationDetails.isNotEmpty()) {
+            val authorizedIdentifiers = authorizationDetails[requestPayload.credentialConfigurationIdentifier]
+            check(!authorizedIdentifiers.isNullOrEmpty()) {
+                "No credential identifiers authorized for ${requestPayload.credentialConfigurationIdentifier}"
+            }
+            require(requestPayload is IssuanceRequestPayload.IdentifierBased) {
+                "Authorization detail type of openid_credential require usage of credential identifiers in credential request"
+            }
+            require(requestPayload.credentialIdentifier in authorizedIdentifiers) {
+                "Credential identifier ${requestPayload.credentialIdentifier.value} is not in authorized identifiers $authorizedIdentifiers"
+            }
+        } else {
+            require(requestPayload is IssuanceRequestPayload.ConfigurationBased) {
+                "Issuance request payload must be of type ConfigurationBased when no credential identifiers are authorized"
+            }
+        }
+    }
+
+    private suspend fun buildProofs(
+        proofSpecification: ProofSpecification,
+        selectedReusePolicy: EudiReusePolicy?,
+        credentialConfigId: CredentialConfigurationIdentifier,
+        grant: Grant,
+    ): Pair<List<Proof>, Nonce?> {
+        val credentialConfiguration = credentialSupportedById(credentialConfigId)
+        config.proofs.ensureCompatibleWith(credentialConfiguration.proofTypesSupported)
+        val proofRequirement = proofSpecification.ensureCompatibleWith(credentialConfiguration)
+
+        return when (proofSpecification) {
+            is ProofSpecification.NoProof -> emptyList<Proof>() to null
+
+            is ProofSpecification.JwtProofWithKeyAttestation -> {
+                val cNonceAndDPoPNonce = cNonce()
+                val proof = jwtProofWithKeyAttestation(
+                    proofRequirement as ProofTypeMeta.Jwt,
+                    proofSpecification,
+                    selectedReusePolicy,
+                    grant,
+                    cNonceAndDPoPNonce?.cnonce,
+                )
+                listOf(proof) to cNonceAndDPoPNonce?.dpopNonce
+            }
+
+            is ProofSpecification.JwtProofsWithoutKeyAttestation -> {
+                val cNonceAndDPoPNonce = cNonce()
+                val proofs = jwtProofsWithoutKeyAttestation(
+                    proofRequirement as ProofTypeMeta.Jwt,
+                    proofSpecification,
+                    grant,
+                    cNonceAndDPoPNonce?.cnonce,
+                )
+                proofs to cNonceAndDPoPNonce?.dpopNonce
+            }
+
+            is ProofSpecification.AttestationProof -> {
+                val cNonceAndDPoPNonce = cNonce()
+                val proof = attestationProof(
+                    proofRequirement as ProofTypeMeta.Attestation,
+                    proofSpecification,
+                    selectedReusePolicy,
+                    cNonceAndDPoPNonce?.cnonce,
+                )
+                listOf(proof) to cNonceAndDPoPNonce?.dpopNonce
+            }
+        }
+    }
+
+    private fun ProofSpecification.ensureCompatibleWith(
+        credentialConfiguration: CredentialConfiguration,
+    ): ProofTypeMeta? {
+        val proofTypesSupported = credentialConfiguration.proofTypesSupported
+
+        return when (this) {
+            is ProofSpecification.NoProof -> {
+                require(proofTypesSupported == ProofTypesSupported.Empty) {
+                    "Credential configuration requires proofs."
+                }
+                null
+            }
+
+            is ProofSpecification.JwtProofWithKeyAttestation -> {
+                val proofRequirement = proofTypesSupported[ProofType.JWT]
+                requireNotNull(proofRequirement) {
+                    "Credential configuration doesn't support JWT proofs."
+                }
+                check(proofRequirement is ProofTypeMeta.Jwt)
+                requireNotNull(proofRequirement.keyAttestationRequirement) {
+                    "Credential configuration does not support key attestation."
+                }
+                proofRequirement
+            }
+
+            is ProofSpecification.JwtProofsWithoutKeyAttestation -> {
+                val proofRequirement = proofTypesSupported[ProofType.JWT]
+                requireNotNull(proofRequirement) {
+                    "Credential configuration doesn't support JWT proofs."
+                }
+                check(proofRequirement is ProofTypeMeta.Jwt)
+                require(null == proofRequirement.keyAttestationRequirement) {
+                    "Credential configuration requires key attestation."
+                }
+                proofRequirement
+            }
+
+            is ProofSpecification.AttestationProof -> {
+                val proofRequirement = proofTypesSupported[ProofType.ATTESTATION]
+                requireNotNull(proofRequirement) {
+                    "Credential configuration doesn't support attestation proofs."
+                }
+                check(proofRequirement is ProofTypeMeta.Attestation)
+                proofRequirement
+            }
+        }
+    }
+
+    private fun selectCredentialReusePolicy(
+        credentialConfiguration: CredentialConfiguration,
+    ): EudiReusePolicy? {
+        val reusePolicy = credentialConfiguration.credentialMetadata?.credentialReusePolicy
+        val issuerEudiReuseTypes = when (reusePolicy) {
+            is CredentialReusePolicy.EUDI -> {
+                reusePolicy.options.map {
+                    when (it) {
+                        is EudiReusePolicy.OnceOnly -> EudiReusePolicyType.OnceOnly
+                        is EudiReusePolicy.LimitedTime -> EudiReusePolicyType.LimitedTime
+                        is EudiReusePolicy.RotatingBatch -> EudiReusePolicyType.RotatingBatch
+                        is EudiReusePolicy.PerRelyingParty -> EudiReusePolicyType.PerRelyingParty
+                    }
+                }.toSet()
+            }
+            else -> null
+        }
+
+        if (config.supportedCredentialReusePolicies is CredentialReusePolicies.Required) {
+            requireNotNull(issuerEudiReuseTypes) {
+                "Credential reuse policies are required but not supported by issuer"
+            }
+            require(config.supportedCredentialReusePolicies.policyTypes.intersect(issuerEudiReuseTypes).isNotEmpty()) {
+                "None of the required credential reuse policies are supported by issuer"
+            }
+        }
+
+        return when (reusePolicy) {
+            is CredentialReusePolicy.EUDI -> {
+                val selectedPolicy = reusePolicy.options.firstOrNull {
+                    it.isSupported(config.supportedCredentialReusePolicies)
+                }
+                requireNotNull(selectedPolicy) {
+                    "The configured credential reuse policies cannot support the credential's reuse policy."
+                }
+            }
+
+            else -> null
+        }
+    }
+
+    private fun credentialSupportedById(credentialId: CredentialConfigurationIdentifier): CredentialConfiguration {
+        val credentialSupported =
+            credentialOffer.credentialIssuerMetadata.credentialConfigurationsSupported[credentialId]
+        return requireNotNull(credentialSupported) {
+            "$credentialId was not found within issuer metadata"
+        }
+    }
+
+    private suspend fun jwtProofWithKeyAttestation(
+        proofRequirement: ProofTypeMeta.Jwt,
+        proofSpecification: ProofSpecification.JwtProofWithKeyAttestation,
+        selectedReusePolicy: EudiReusePolicy?,
+        grant: Grant,
+        cNonce: Nonce?,
+    ): Proof.Jwt {
+        checkNotNull(proofRequirement.keyAttestationRequirement)
+        val proofSigner = proofSpecification.proofSignerProvider(
+            cNonce,
+            proofRequirement.keyAttestationRequirement.preferredKeyStorageStatusPeriod,
+        )
+        val joseAlg = run {
+            val javaSigningAlgorithm = proofSigner.javaAlgorithm
+            javaSigningAlgorithm.toSupportedJoseAlgorithm(proofRequirement)
+        }
+        val claims = jwtProofClaims(cNonce = cNonce, grant = grant)
+        val jwtProof = proofSigner.use { operation ->
+            operation.publicMaterial.ensureKeyAttestationJwtAlgIsSupported(proofRequirement)
+            operation.publicMaterial.attestedKeys.assertMatchesBatchIssuanceBatchSize(selectedReusePolicy)
+            val signer = KeyAttestationJwtProofSigner(joseAlg, operation, ETSI119472Part3.KEY_ATTESTATION_JWT_PROOF_SIGNING_KEY_INDEX)
+            val signedJwt = signer.sign(claims)
+            SignedJWT.parse(signedJwt)
+        }
+        verifyKeyAttestationJwtProofSignature(jwtProof)
+        return Proof.Jwt(jwtProof)
+    }
+
+    private suspend fun jwtProofsWithoutKeyAttestation(
+        proofRequirement: ProofTypeMeta.Jwt,
+        proofSpecification: ProofSpecification.JwtProofsWithoutKeyAttestation,
+        grant: Grant,
+        cNonce: Nonce?,
+    ): List<Proof.Jwt> {
+        check(null == proofRequirement.keyAttestationRequirement)
+
+        val joseAlg = run {
+            val javaSigningAlgorithm = proofSpecification.proofSigner.javaAlgorithm
+            javaSigningAlgorithm.toSupportedJoseAlgorithm(proofRequirement)
+        }
+        return proofSpecification.proofSigner.use { operation ->
+            operation.assertMatchesBatchIssuanceBatchSize()
+            val proofsSigner = NoKeyAttestationJwtProofsSigner(joseAlg, operation)
+            val claims = jwtProofClaims(cNonce = cNonce, grant = grant)
+            proofsSigner.sign(claims).map {
+                Proof.Jwt(SignedJWT.parse(it.second))
+            }
+        }
+    }
+
+    private fun KeyAttestationJWT.ensureKeyAttestationJwtAlgIsSupported(
+        spec: ProofTypeMeta,
+    ) {
+        val attestationJwtAlg = header.algorithm
+        ensure(attestationJwtAlg in spec.algorithms) {
+            CredentialIssuanceError.ProofGenerationError.ProofTypeSigningAlgorithmNotSupported()
+        }
+    }
+
+    private suspend fun attestationProof(
+        proofRequirement: ProofTypeMeta.Attestation,
+        proofSpecification: ProofSpecification.AttestationProof,
+        selectedReusePolicy: EudiReusePolicy?,
+        cNonce: Nonce?,
+    ): Proof.Attestation {
+        val keyAttestationJwt = proofSpecification.attestationProvider(
+            cNonce,
+            proofRequirement.keyAttestationRequirement.preferredKeyStorageStatusPeriod,
+        )
+        keyAttestationJwt.ensureKeyAttestationJwtAlgIsSupported(proofRequirement)
+        keyAttestationJwt.attestedKeys.assertMatchesBatchIssuanceBatchSize(selectedReusePolicy)
+        return Proof.Attestation(keyAttestationJwt)
+    }
+
+    private fun BatchSignOperation<JwtBindingKey>.assertMatchesBatchIssuanceBatchSize() {
+        if (operations.size > 1) {
+            ensure(batchCredentialIssuance is BatchCredentialIssuance.Supported) {
+                CredentialIssuanceError.IssuerDoesNotSupportBatchIssuance()
+            }
+            ensure(operations.size <= batchCredentialIssuance.batchSize) {
+                CredentialIssuanceError.IssuerBatchSizeLimitExceeded(batchCredentialIssuance.batchSize)
+            }
+        }
+    }
+
+    private fun AttestedKeys.assertMatchesBatchIssuanceBatchSize(
+        selectedReusePolicy: EudiReusePolicy?,
+    ) {
+        size.assertMatchesBatchIssuanceBatchSize(selectedReusePolicy)
+    }
+
+    private fun Int.assertMatchesBatchIssuanceBatchSize(
+        selectedReusePolicy: EudiReusePolicy?,
+    ) {
+        when (this) {
+            0 -> error("At least one PopSigner is required in Authorized.ProofRequired")
+            1 -> Unit
+            else -> {
+                if (selectedReusePolicy != null) {
+                    when (selectedReusePolicy) {
+                        is EudiReusePolicy.LimitedTime ->
+                            throw CredentialIssuanceError.IssuerDoesNotSupportBatchIssuance()
+
+                        else -> {
+                            val policyBatchSize = checkNotNull(selectedReusePolicy.batchSize) {
+                                "Batch reuse policy ${selectedReusePolicy::class} with null batch size"
+                            }
+                            ensure(this <= policyBatchSize) {
+                                CredentialIssuanceError.IssuerBatchSizeLimitExceeded(policyBatchSize)
+                            }
+                        }
+                    }
+                } else {
+                    when (batchCredentialIssuance) {
+                        BatchCredentialIssuance.NotSupported -> throw CredentialIssuanceError.IssuerDoesNotSupportBatchIssuance()
+                        is BatchCredentialIssuance.Supported -> {
+                            val maxBatchSize = batchCredentialIssuance.batchSize
+                            ensure(this <= maxBatchSize) {
+                                CredentialIssuanceError.IssuerBatchSizeLimitExceeded(maxBatchSize)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun String.toSupportedJoseAlgorithm(spec: ProofTypeMeta.Jwt): JWSAlgorithm =
+        spec.let {
+            val joseSigningAlgorithm = this.toJoseAlg()
+            val proofTypeSigningAlgorithmsSupported = spec.algorithms
+            ensure(joseSigningAlgorithm in proofTypeSigningAlgorithmsSupported) {
+                CredentialIssuanceError.ProofGenerationError.ProofTypeSigningAlgorithmNotSupported()
+            }
+            joseSigningAlgorithm
+        }
+
+    private suspend fun cNonce(): CNonceAndDPoPNonce? = nonceEndpointClient?.getNonce()?.getOrThrow()
+
+    private fun jwtProofClaims(
+        cNonce: Nonce?,
+        grant: Grant,
+    ): JwtProofClaims {
+        fun iss(clientAuthentication: ClientAuthentication, grant: Grant): ClientId? {
+            val useIss = when (grant) {
+                Grant.AuthorizationCode -> true
+                Grant.PreAuthorizedCodeGrant -> when (clientAuthentication) {
+                    is ClientAuthentication.AttestationBased -> true
+                    is ClientAuthentication.None -> false
+                }
+            }
+            return clientAuthentication.id.takeIf { useIss }
+        }
+
+        return JwtProofClaims(
+            audience = credentialOffer.credentialIssuerMetadata.credentialIssuerIdentifier.toString(),
+            issuedAt = Instant.now(),
+            issuer = iss(config.clientAuthentication, grant),
+            nonce = cNonce?.value,
+        )
+    }
+
+    private fun verifyKeyAttestationJwtProofSignature(jwtProof: SignedJWT) {
+        val keyAttestationJwt = jwtProof.header.getCustomParam("key_attestation") as? String
+            ?: throw IllegalArgumentException("Missing 'key_attestation' in JWT header")
+        val keyAttestation = KeyAttestationJWT(keyAttestationJwt)
+        val attestedKeys = keyAttestation.attestedKeys
+        val signatureVerified = try {
+            val signingKey = attestedKeys[ETSI119472Part3.KEY_ATTESTATION_JWT_PROOF_SIGNING_KEY_INDEX].toECKey()
+            val verifier = ECDSAVerifier(signingKey)
+            jwtProof.verify(verifier)
+        } catch (_: Exception) {
+            false
+        }
+        require(signatureVerified) {
+            "Signed JWT is not signed by the first attested key in key_attestation."
+        }
+    }
+
+    private fun buildRequest(
+        requestPayload: IssuanceRequestPayload,
+        proofs: List<Proof>,
+        authorizationDetails: Map<CredentialConfigurationIdentifier, List<CredentialIdentifier>>,
+    ): CredentialIssuanceRequest = when (requestPayload) {
+        is IssuanceRequestPayload.ConfigurationBased -> {
+            CredentialIssuanceRequest.byCredentialConfigurationId(
+                requestPayload.credentialConfigurationIdentifier,
+                proofs,
+                exchangeEncryptionSpecification,
+            )
+        }
+
+        is IssuanceRequestPayload.IdentifierBased -> {
+            requestPayload.ensureAuthorized(authorizationDetails)
+            CredentialIssuanceRequest.byCredentialId(
+                requestPayload.credentialIdentifier,
+                proofs,
+                exchangeEncryptionSpecification,
+            )
+        }
+    }
+}
+
+private fun IssuanceRequestPayload.IdentifierBased.ensureAuthorized(
+    authorizationDetails: Map<CredentialConfigurationIdentifier, List<CredentialIdentifier>>,
+) {
+    val credentialId = credentialIdentifier
+    val authorizedCredIds = checkNotNull(authorizationDetails[credentialConfigurationIdentifier]) {
+        "No credential identifiers authorized for $credentialConfigurationIdentifier"
+    }
+    check(credentialId in authorizedCredIds) {
+        "The credential identifier ${credentialId.value} is not authorized"
+    }
+}
+
+internal sealed interface SubmissionOutcomeInternal {
+
+    data class Success(
+        val credentials: List<IssuedCredential>,
+        val notificationId: NotificationId?,
+        val selectedCredentialReusePolicy: EudiReusePolicy? = null,
+    ) : SubmissionOutcomeInternal
+
+    data class Deferred(
+        val transactionId: TransactionId,
+        val interval: Duration,
+    ) : SubmissionOutcomeInternal {
+        init {
+            require(interval.isPositive()) { "interval must be positive" }
+        }
+    }
+
+    data class Failed(
+        val error: CredentialIssuanceError,
+    ) : SubmissionOutcomeInternal
+
+    fun toPub(): SubmissionOutcome =
+        when (this) {
+            is Success -> SubmissionOutcome.Success(credentials, notificationId, selectedCredentialReusePolicy)
+            is Deferred -> SubmissionOutcome.Deferred(transactionId, interval)
+            is Failed -> SubmissionOutcome.Failed(error)
+        }
+
+    fun withSelectedCredentialReusePolicy(
+        selectedCredentialReusePolicy: EudiReusePolicy?,
+    ): SubmissionOutcomeInternal =
+        when (this) {
+            is Success -> copy(selectedCredentialReusePolicy = selectedCredentialReusePolicy)
+            is Deferred, is Failed -> this
+        }
+}
+
+private fun ProofsConfig.ensureCompatibleWith(issuerSupportedProofTypes: ProofTypesSupported) {
+    when (issuerSupportedProofTypes) {
+        ProofTypesSupported.Empty -> {
+            require(isNoProofSupported) { "Wallet doesn't support attestations that require no proofs" }
+        }
+
+        else -> {
+            val supportsJwtProofWithKeyAttestation = run {
+                jwtProofWithKeyAttestation?.let { jwtProofWithKeyAttestation ->
+                    val issuerSupportedJwtProof = issuerSupportedProofTypes.jwtProof
+                    issuerSupportedJwtProof?.let { issuerSupportedJwtProof ->
+                        null != issuerSupportedJwtProof.keyAttestationRequirement &&
+                            jwtProofWithKeyAttestation.supportedAlgorithms.intersect(
+                                issuerSupportedJwtProof.algorithms.toSet(),
+                            ).isNotEmpty()
+                    }
+                }
+            } ?: false
+
+            val supportsJwtProofsWithoutKeyAttestation = run {
+                jwtProofsWithoutKeyAttestation?.let { jwtProofsWithoutKeyAttestation ->
+                    val issuerSupportedJwtProof = issuerSupportedProofTypes.jwtProof
+                    issuerSupportedJwtProof?.let { issuerSupportedJwtProof ->
+                        null == issuerSupportedJwtProof.keyAttestationRequirement &&
+                            jwtProofsWithoutKeyAttestation.supportedAlgorithms.intersect(
+                                issuerSupportedJwtProof.algorithms.toSet(),
+                            ).isNotEmpty()
+                    }
+                }
+            } ?: false
+
+            val supportsAttestationProof = attestationProof?.let { attestationProof ->
+                attestationProof.supportedAlgorithms.intersect(
+                    issuerSupportedProofTypes.attestationProof?.algorithms.orEmpty().toSet(),
+                ).isNotEmpty()
+            } ?: false
+
+            require(supportsJwtProofWithKeyAttestation || supportsJwtProofsWithoutKeyAttestation || supportsAttestationProof) {
+                "Wallet doesn't support any of the advertised Proofs"
+            }
+        }
+    }
+}
+
+private val ProofTypesSupported.jwtProof: ProofTypeMeta.Jwt?
+    get() = this[ProofType.JWT] as ProofTypeMeta.Jwt?
+
+private val ProofTypesSupported.attestationProof: ProofTypeMeta.Attestation?
+    get() = this[ProofType.ATTESTATION] as ProofTypeMeta.Attestation?

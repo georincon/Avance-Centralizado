@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    {% include 'partials/cabeza.html' %}
+    <title>Notaría Avance</title>
+</head>
+
+<body id="responsive-main-nav1">
+    <div class="main container-fluid">
+        {% include 'partials/cabecera.html' %}
+        <div role="main" class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <h1>Pide tu documento notarial</h1>
+                    <div id="content" class="content-wrap1 content-center col-md-6 text-center">
+                        <h2>Código QR</h2>
+                        <div class="row justify-content-center">
+                            <div class="col-md-6">
+                                <img src="{{qrcode}}">
+                            </div>
+                            <div class="col-md-3 col-md-offset-2">
+                                <p>Escanea el código con la cámara del teléfono o abre el enlace en el teléfono donde tienes la billetera.</p>
+                            </div>
+                            
+                        </div>
+                        
+                        <a href="{{url_data}}" class="btn btn-primary">Abrir en mi billetera</a>
+                        <a href="revocation_choice" class="btn btn-back">Volver</a>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Version 9.7.1.20 - 23/03/2023 - 09:26 -->
+</body>
+<script>
+
+$('#check').change(function() {
+  $('#btncheck').prop("disabled", !this.checked);
+});
+
+</script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+
+var presentation_id= '{{presentation_id}}'
+function Ajax_request() {
+    $.ajax({
+        url: '{{redirect_url}}pid_authorization',
+        method: 'GET',
+        data:{"presentation_id": presentation_id },
+        success: function(response) {
+            console.log('Success:', response);
+            window.location.replace("{{redirect_url}}revocation/getoid4vp?presentation_id=" + presentation_id);
+            clearInterval(intervalId);
+            
+        },
+        error: function(xhr, status, error) {
+            console.error('Error:', error);
+        }
+    });
+}
+
+function makeRequests() {
+    let counter = 0;
+    const intervalId = setInterval(() => {
+        if (counter >= 15) {
+            clearInterval(intervalId); 
+            console.log('Stopped making requests after 30 seconds.');
+        } else {
+            Ajax_request(); 
+            counter++;
+        }
+    }, 4000);
+}
+
+makeRequests();
+
+</script>
+</html>

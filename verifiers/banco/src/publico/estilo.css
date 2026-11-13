@@ -1,0 +1,565 @@
+/* ==========================================================================
+   NUBankCivica — hoja de estilo del banco
+   Identidad visual NU Colombia.
+
+   Los colores no son inventados: son los mismos tokens que publica nu.com.co
+   en su CSS (`--colors-brand-co` y `--colors-neutrals`):
+
+     --nu-p   #820AD1  violeta de marca (botones, enlaces, acentos)
+     --nu-t4  #ECD9FF  lavanda (franjas, fondos de tarjeta)
+     --nu-t5  #F5ECFF  lavanda clara (tarjetas de producto)
+
+   La tipografía de NU es Graphik, que es una fuente con licencia: aquí se usa
+   DM Sans, de geometría muy parecida y de uso libre. Si esta página va a
+   publicarse con la marca NU de verdad, la fuente correcta es Graphik.
+   ========================================================================== */
+
+:root {
+  /* Marca */
+  --nu-p: #820AD1;
+  --nu-p-hover: #5A0894;
+  --nu-p-press: #3A0564;
+  --nu-t1: #A040E0;
+  --nu-t2: #C07AF0;
+  --nu-t3: #D2A5FF;
+  --nu-t4: #ECD9FF;
+  --nu-t5: #F5ECFF;
+  --nu-p20: rgba(130, 10, 209, .20);
+  --nu-p30: rgba(130, 10, 209, .30);
+
+  /* Neutros */
+  --negro: #000000;
+  --hueso: #0D0D0D;
+  --gris-100: #F7F3F8;
+  --gris-70: #777777;
+  --gris-osc: #27272A;
+  --piedra: #52525D;
+  --gris-med: #8F8F9A;
+  --gris-claro: #AEAEB9;
+  --gris-cc: #D4D4D8;
+  --platino: #E4E4E4;
+  --humo: #F4F4F5;
+  --blanco: #FFFFFF;
+
+  /* Feedback */
+  --verde: #4EE04B;
+  --verde-tenue: #F1FDF1;
+  --rojo: #FF4242;
+  --rojo-tenue: #FFF4F4;
+  --azul: #0968F6;
+
+  /* Radios */
+  --r-chico: 12px;
+  --r-tarjeta: 16px;
+  --r-medio: 24px;
+  --r-grande: 32px;
+  --r-full: 999px;
+
+  /* Sombras (tinte de sombra de NU: rgba(31,2,48)) */
+  --sombra-4: 0 1px 2px rgba(31, 2, 48, .04);
+  --sombra-8: 0 4px 16px rgba(31, 2, 48, .08);
+  --sombra-tarjeta: 0 18px 44px rgba(74, 10, 138, .22);
+
+  --max: 1080px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--negro);
+  background: var(--blanco);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--nu-p); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Barra superior ─────────────────────────────────────────────────────── */
+
+header {
+  background: var(--blanco);
+  border-bottom: 1px solid var(--platino);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.barra {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--negro);
+  font-weight: 700;
+  font-size: 1.12rem;
+  letter-spacing: -.01em;
+}
+.logo:hover { text-decoration: none; }
+
+.logo .marca {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, var(--nu-t1), var(--nu-p));
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 12px var(--nu-p30);
+  flex: none;
+}
+.logo .marca svg { width: 22px; height: 17px; display: block; }
+
+nav {
+  margin-left: auto;
+  display: flex;
+  gap: 26px;
+  font-size: .95rem;
+}
+nav a { color: var(--piedra); font-weight: 500; }
+nav a:hover { color: var(--negro); text-decoration: none; }
+
+/* ── Botones ────────────────────────────────────────────────────────────── */
+
+button, .boton {
+  font: inherit;
+  font-weight: 500;
+  border: 0;
+  border-radius: var(--r-full);
+  padding: 13px 26px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.primario { background: var(--nu-p); color: var(--blanco); }
+.primario:hover { background: var(--nu-p-hover); text-decoration: none; }
+.primario:active { background: var(--nu-p-press); }
+
+.secundario {
+  background: var(--blanco);
+  color: var(--nu-p);
+  border: 1px solid var(--nu-p);
+}
+.secundario:hover { background: var(--nu-p20); text-decoration: none; }
+
+.sutil { background: var(--humo); color: var(--piedra); }
+.sutil:hover { background: var(--gris-cc); text-decoration: none; }
+
+/* ── Portada ────────────────────────────────────────────────────────────── */
+
+.heroe {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 56px 20px 40px;
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 48px;
+  align-items: center;
+}
+
+.heroe .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--nu-p);
+  background: var(--nu-t5);
+  border-radius: var(--r-full);
+  padding: 6px 14px;
+  margin-bottom: 18px;
+}
+
+.heroe h1 {
+  font-size: 2.75rem;
+  line-height: 1.12;
+  font-weight: 500;
+  letter-spacing: -.02em;
+  margin: 0 0 16px;
+}
+
+.heroe p {
+  font-size: 1.12rem;
+  line-height: 1.55;
+  color: var(--piedra);
+  margin: 0 0 28px;
+  max-width: 46ch;
+}
+
+.acciones { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* ── La tarjeta ─────────────────────────────────────────────────────────── */
+
+.tarjeta-demo {
+  background: var(--nu-t4);
+  border-radius: var(--r-grande);
+  padding: 34px 28px;
+  display: grid;
+  place-items: center;
+}
+
+.tarjeta {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 1.586;
+  border-radius: 20px;
+  padding: 20px 22px;
+  color: var(--blanco);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  box-shadow: var(--sombra-tarjeta);
+  /* El degradado de las tarjetas de NU: violeta claro en los extremos,
+     profundo en el centro y oscurecido arriba y abajo. */
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgba(58, 5, 100, .72) 0%, rgba(58, 5, 100, 0) 85%),
+    radial-gradient(120% 70% at 50% 100%, rgba(58, 5, 100, .72) 0%, rgba(58, 5, 100, 0) 85%),
+    radial-gradient(85% 90% at 8% 50%, rgba(199, 125, 243, .95) 0%, rgba(199, 125, 243, 0) 70%),
+    linear-gradient(90deg, #8B3BD2 0%, #5B2199 70%, #9C48EE 100%);
+}
+
+.tarjeta .fila-sup {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* La "nu" de NU: trazo de vidrio, con la luz en el borde superior izquierdo. */
+.tarjeta .marca-nu { width: 62px; height: 45px; display: block; }
+
+.tarjeta .mc { width: 72px; height: 43px; display: block; }
+
+.tarjeta .chip { width: 48px; height: 37px; display: block; margin-left: auto; }
+
+.tarjeta .fila-inf {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+.tarjeta .nombre {
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: -.01em;
+  line-height: 1.1;
+}
+.tarjeta .tipo {
+  font-size: .82rem;
+  font-weight: 500;
+  opacity: .78;
+  text-transform: lowercase;
+}
+.tarjeta .numero {
+  font-size: 1.05rem;
+  letter-spacing: 2px;
+  font-weight: 500;
+  opacity: .95;
+}
+
+/* ── Franja de ventajas ─────────────────────────────────────────────────── */
+
+.ventajas {
+  background: var(--nu-t4);
+  padding: 52px 20px 56px;
+}
+.ventajas .contenido {
+  max-width: var(--max);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.ventaja {
+  background: var(--blanco);
+  border-radius: var(--r-tarjeta);
+  padding: 24px;
+  box-shadow: var(--sombra-8);
+}
+.ventaja .icono {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-chico);
+  background: var(--nu-t4);
+  color: var(--nu-p);
+  display: grid;
+  place-items: center;
+  font-size: 1.15rem;
+  margin-bottom: 14px;
+}
+.ventaja h3 { margin: 0 0 6px; font-size: 1.05rem; font-weight: 500; }
+.ventaja p { margin: 0; color: var(--piedra); font-size: .95rem; line-height: 1.5; }
+
+.aviso-error { max-width: var(--max); margin: 18px auto 0; padding: 0 20px; }
+.aviso-error div {
+  background: var(--rojo-tenue);
+  border: 1px solid var(--rojo);
+  color: #8A1C1C;
+  border-radius: var(--r-chico);
+  padding: 12px 16px;
+  font-size: .95rem;
+}
+
+footer {
+  text-align: center;
+  color: var(--gris-med);
+  font-size: .85rem;
+  padding: 26px 20px 34px;
+}
+
+/* ── Ventana de la wallet ───────────────────────────────────────────────── */
+
+.velo {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 0, 25, .55);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 10;
+}
+.velo.abierto { display: flex; }
+
+.ventana {
+  background: var(--blanco);
+  border-radius: var(--r-medio);
+  width: 100%;
+  max-width: 440px;
+  padding: 28px;
+  position: relative;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .3);
+}
+.ventana h2 { margin: 0 0 6px; font-size: 1.35rem; font-weight: 500; }
+.ventana .sub { color: var(--piedra); margin: 0 0 20px; font-size: .95rem; }
+
+.cerrar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  color: var(--gris-med);
+  padding: 8px 12px;
+  font-size: 1.1rem;
+  border-radius: var(--r-full);
+}
+.cerrar:hover { background: var(--humo); }
+
+.qr {
+  width: 240px;
+  height: 240px;
+  margin: 0 auto 14px;
+  border: 1px solid var(--platino);
+  border-radius: var(--r-chico);
+  display: grid;
+  place-items: center;
+}
+.qr img { width: 224px; height: 224px; }
+
+.pide {
+  text-align: left;
+  background: var(--gris-100);
+  border-radius: var(--r-chico);
+  padding: 14px 16px;
+  font-size: .92rem;
+  margin-bottom: 16px;
+}
+.pide strong { display: block; margin-bottom: 6px; font-weight: 500; }
+.pide ul { margin: 0; padding-left: 18px; color: var(--piedra); }
+
+.estado {
+  font-size: .95rem;
+  color: var(--piedra);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 24px;
+}
+.estado.error { color: #C22A2A; }
+
+.girando {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--platino);
+  border-top-color: var(--nu-p);
+  border-radius: 50%;
+  animation: girar .8s linear infinite;
+}
+@keyframes girar { to { transform: rotate(360deg); } }
+
+.solo-movil { display: none; }
+.ancho { width: 100%; margin-bottom: 12px; }
+
+/* ── Mi cuenta ──────────────────────────────────────────────────────────── */
+
+.usuario { margin-left: auto; display: flex; align-items: center; gap: 12px; font-size: .95rem; }
+.usuario img, .usuario .inicial {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--nu-p);
+  color: var(--blanco);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+.salir {
+  background: var(--humo);
+  color: var(--piedra);
+  border-radius: var(--r-full);
+  padding: 9px 18px;
+  font-weight: 500;
+}
+.salir:hover { background: var(--gris-cc); }
+
+main { max-width: var(--max); margin: 0 auto; padding: 34px 20px 48px; }
+
+.bienvenida {
+  background: var(--verde-tenue);
+  border: 1px solid var(--verde);
+  color: #14601A;
+  border-radius: var(--r-chico);
+  padding: 14px 18px;
+  margin-bottom: 22px;
+  font-size: .97rem;
+}
+
+main h1 { font-size: 1.7rem; font-weight: 500; letter-spacing: -.01em; margin: 0 0 22px; }
+
+.rejilla { display: grid; grid-template-columns: 1.25fr 1fr; gap: 20px; }
+
+.caja {
+  background: var(--blanco);
+  border: 1px solid var(--platino);
+  border-radius: var(--r-tarjeta);
+  padding: 24px;
+  box-shadow: var(--sombra-4);
+}
+
+.saldo {
+  background:
+    radial-gradient(120% 70% at 50% 0%, rgba(58, 5, 100, .60) 0%, rgba(58, 5, 100, 0) 85%),
+    radial-gradient(120% 70% at 50% 100%, rgba(58, 5, 100, .60) 0%, rgba(58, 5, 100, 0) 85%),
+    linear-gradient(90deg, #A040E0 0%, #6B2EA8 58%, #820AD1 100%);
+  color: var(--blanco);
+  border: 0;
+  border-radius: var(--r-medio);
+  box-shadow: var(--sombra-tarjeta);
+}
+.saldo .etiqueta { opacity: .85; font-size: .92rem; }
+.saldo .valor { font-size: 2.5rem; font-weight: 500; margin: 8px 0 18px; letter-spacing: -.02em; }
+.saldo .cuenta { display: flex; justify-content: space-between; font-size: .92rem; opacity: .9; flex-wrap: wrap; gap: 6px; }
+.acciones-rapidas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+.acciones-rapidas button {
+  background: rgba(255, 255, 255, .16);
+  color: var(--blanco);
+  padding: 12px 6px;
+  font-size: .9rem;
+  font-weight: 500;
+  border-radius: var(--r-chico);
+}
+.acciones-rapidas button:disabled { opacity: .55; cursor: not-allowed; }
+
+.caja h2 { font-size: 1.08rem; font-weight: 500; margin: 0 0 16px; }
+
+table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+td { padding: 12px 0; border-bottom: 1px solid var(--humo); }
+td:last-child { text-align: right; font-weight: 500; }
+.positivo { color: #1D7A22; }
+.fecha { color: var(--gris-med); font-size: .83rem; font-weight: 400; }
+
+dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; font-size: .95rem; }
+dt { color: var(--piedra); }
+dd { margin: 0; word-break: break-word; }
+
+.sello {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--nu-t4);
+  color: var(--nu-p);
+  border-radius: var(--r-full);
+  padding: 6px 12px;
+  font-size: .82rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.foto {
+  width: 96px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: var(--r-chico);
+  border: 1px solid var(--platino);
+  float: right;
+  margin-left: 12px;
+}
+
+/* ── Móvil ──────────────────────────────────────────────────────────────── */
+
+@media (max-width: 860px) {
+  nav { display: none; }
+  .heroe { grid-template-columns: 1fr; gap: 32px; padding: 36px 16px 28px; }
+  .heroe h1 { font-size: 2.1rem; }
+  .heroe p { font-size: 1.02rem; }
+  .tarjeta-demo { padding: 24px 16px; }
+  .ventajas .contenido { grid-template-columns: 1fr; }
+  .acciones button { flex: 1; }
+  .rejilla { grid-template-columns: 1fr; }
+  main { padding: 22px 16px 36px; }
+  .usuario span.nombre { display: none; }
+  .saldo .valor { font-size: 2rem; }
+}
+
+
+/* ── Varias cuentas ─────────────────────────────────────────────────────── */
+
+.cuentas { display: flex; gap: 12px; flex-wrap: wrap; margin: 0 0 22px; }
+.tarjeta-cuenta {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  background: var(--blanco); color: var(--negro);
+  border: 1px solid var(--platino); border-radius: var(--r-tarjeta);
+  padding: 14px 18px; min-width: 190px; text-align: left; box-shadow: var(--sombra-4);
+}
+.tarjeta-cuenta .tipo { color: var(--piedra); font-size: .85rem; }
+.tarjeta-cuenta strong { font-size: 1.2rem; font-weight: 500; }
+.tarjeta-cuenta .num { color: var(--gris-med); font-size: .8rem; }
+.tarjeta-cuenta:hover { border-color: var(--nu-p); }
+.tarjeta-cuenta.activa { border: 2px solid var(--nu-p); }
+.tarjeta-cuenta.nueva { justify-content: center; align-items: center; color: var(--nu-p); border-style: dashed; font-weight: 500; }
+
+.nota { color: var(--piedra); font-size: .93rem; margin: 0 0 14px; }
+.peligro { background: var(--rojo-tenue); color: #C22A2A; border: 1px solid var(--rojo); }
+.peligro:hover { background: var(--rojo); color: var(--blanco); }
+.zona-peligro h2 { color: #C22A2A; }
+.vacia { text-align: center; }
+.cerradas { margin-top: 20px; }
+.cerradas summary { cursor: pointer; font-weight: 500; }
+.cerradas table { width: 100%; margin-top: 12px; }
+.tipos { display: grid; gap: 10px; margin-bottom: 18px; }
+.tipo-op { background: var(--humo); color: var(--negro); border: 2px solid transparent; justify-content: flex-start; border-radius: var(--r-chico); }
+.tipo-op.activa { border-color: var(--nu-p); background: var(--blanco); }
+
+/* Credencial de la cuenta en la wallet */
+.caja.credencial { border-left: 4px solid var(--nu-p); }
+.pin { font-size: 2rem; letter-spacing: .4em; font-weight: 700; margin: 4px 0 8px; color: var(--nu-p); font-variant-numeric: tabular-nums; }

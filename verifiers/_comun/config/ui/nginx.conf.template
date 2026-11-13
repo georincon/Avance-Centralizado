@@ -1,0 +1,28 @@
+# Sustituye a la plantilla de la imagen oficial de la UI (eudi-web-verifier), que
+# solo sabe servir en la raíz de un dominio. La imagen la procesa con envsubst
+# (solo ${HOST_API} y ${PREFIJO}, que son las variables definidas) y la deja en
+# conf.d. El gateway ya quitó el prefijo: aquí se sirve en la raíz, y se
+# reescribe lo que la UI trae compilado para que funcione bajo /PREFIJO/:
+#
+#   <base href="/">            → /PREFIJO/: rutas y recursos relativos al prefijo
+#   http://localhost:8080      → HOST_API: dónde está la API del verifier
+#   /get-wallet-code?          → /PREFIJO/get-wallet-code?: a donde vuelve la
+#                                wallet en el mismo dispositivo (la UI lo arma con
+#                                location.origin y perdería el prefijo)
+
+include /etc/nginx/mime.types;
+server {
+    listen 4300;
+    server_name localhost;
+    root /usr/share/nginx/html;
+    index index.html;
+    location / {
+        try_files $uri $uri/ /index.html;
+        # text/html va siempre; se agregan los JS compilados.
+        sub_filter_types application/javascript text/javascript;
+        sub_filter_once off;
+        sub_filter '<base href="/">' '<base href="/${PREFIJO}/">';
+        sub_filter 'http://localhost:8080' '${HOST_API}';
+        sub_filter '/get-wallet-code?' '/${PREFIJO}/get-wallet-code?';
+    }
+}

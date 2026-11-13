@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administración · {{EPS}}</title>
+<link rel="icon" href="{{BASE}}/publico/logo.png">
+<link rel="stylesheet" href="{{BASE}}/publico/tema.css">
+</head>
+<body data-base="{{BASE}}" data-eps="{{EPS}}" data-seccion="admin" data-slot="der" data-titulo="Administración" data-icono="admin">
+<main id="vista"></main>
+<script src="{{BASE}}/publico/marco.js"></script>
+<script>
+const BASE = '{{BASE}}'
+const $ = (id) => document.getElementById(id)
+function el(t, props = {}, ...hijos) {
+  const n = document.createElement(t)
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') n.className = v
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v)
+    else if (v !== undefined && v !== null && v !== false) n.setAttribute(k, v === true ? '' : v)
+  }
+  for (const h of hijos.flat()) if (h !== null && h !== undefined && h !== false && h !== '') n.append(h instanceof Node ? h : String(h))
+  return n
+}
+const api = async (ruta, o = {}) => {
+  const r = await fetch(BASE + ruta, { ...o, headers: { 'content-type': 'application/json' }, body: o.body && JSON.stringify(o.body) })
+  const c = await r.json().catch(() => ({}))
+  if (!r.ok) throw Object.assign(new Error(c.error || `Error ${r.status}`), { estado: r.status })
+  return c
+}
+const vista = $('vista')
+// Doble pulsación para eliminar: sin diálogos del navegador.
+const pulsado = new Set()
+function confirmar(m) {
+  if (pulsado.has(m.documento)) return true
+  pulsado.add(m.documento)
+  setTimeout(() => pulsado.delete(m.documento), 3000)
+  return false
+}
+const fecha = (f) => (f ? new Date(f).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' }) : '—')
+
+function entrar(error) {
+  $('der').replaceChildren()
+  const clave = el('input', { type: 'password', autocomplete: 'current-password' })
+  const aviso = el('div', { class: 'aviso error', hidden: !error }, error ?? '')
+  vista.replaceChildren(el('h1', {}, 'Entrar'), el('form', { class: 'caja', style: 'max-width:420px', onsubmit: async (e) => {
+    e.preventDefault()
+    try { await api('/api/admin/entrar', { method: 'POST', body: { clave: clave.value } }); panel() } catch (x) { aviso.textContent = x.message; aviso.hidden = false }
+  } }, el('p', { style: 'margin:0;color:var(--suave)' }, 'Aquí se registran los médicos que pueden entrar al portal médico. Ellos entran con su wallet; esta contraseña es solo para administrar.'),
+  el('label', {}, 'Contraseña de administración', clave), aviso, el('button', { class: 'primario' }, 'Entrar')))
+}
+
+async function panel(mensaje) {
+  let lista
+  try { lista = await api('/api/admin/medicos') } catch (e) { return entrar(e.estado === 401 ? undefined : e.message) }
+  $('der').replaceChildren(el('button', { class: 'claro', onclick: async () => { await api('/api/admin/salir', { method: 'POST' }); entrar() } }, 'Salir'))
+
+  const aviso = el('div', { class: `aviso ${mensaje ? 'ok' : 'error'}`, hidden: !mensaje }, mensaje ?? '')
+  const form = el('div', { class: 'caja' }, el('h2', {}, 'Registrar un médico'),
+    el('p', { style: 'margin:0;color:var(--suave)' }, 'El médico presenta su documento de identidad desde su wallet: su nombre y su cédula llegan verificados, sin escribirlos. Tú añades su registro médico.'),
+    aviso, el('div', { id: 'registro' }, el('button', { class: 'primario', onclick: pedirDocumento }, 'Pedir su documento al médico')))
+
+
+  const filas = lista.map((m) => el('tr', {},
+    el('td', {}, el('strong', {}, m.nombre), el('br'), m.documento),
+    el('td', {}, m.registro), el('td', {}, m.especialidad),
+    el('td', {}, el('span', { class: `etiqueta ${m.pendiente ? 'pend' : m.activo ? 'si' : 'no'}` }, m.pendiente ? 'Pendiente' : m.activo ? 'Activo' : 'Desactivado'),
+      m.origen === 'autorregistro con PID' ? el('div', { style: 'font-size:.78rem;color:var(--suave);margin-top:4px' }, 'Se registró con su PID') : ''),
+    el('td', {}, fecha(m.ultimo_ingreso)),
+    el('td', { style: 'white-space:nowrap' },
+      m.pendiente
+        ? [el('button', { class: 'chico', style: 'color:var(--verde);font-weight:700', onclick: async () => { await api(`/api/admin/medicos/${m.documento}`, { method: 'PUT', body: { activo: true } }); panel(`${m.nombre} aprobado: ya puede entrar con su wallet.`) } }, 'Aprobar'), ' ',
+           el('button', { class: 'chico', onclick: async () => { await api(`/api/admin/medicos/${m.documento}`, { method: 'DELETE' }); panel('Solicitud rechazada.') } }, 'Rechazar')]
+        : [el('button', { class: 'chico', onclick: async () => { await api(`/api/admin/medicos/${m.documento}`, { method: 'PUT', body: { activo: !m.activo } }); panel() } }, m.activo ? 'Desactivar' : 'Activar'), ' ',
+           el('button', { class: 'chico', onclick: async (e) => { if (confirmar(m)) { await api(`/api/admin/medicos/${m.documento}`, { method: 'DELETE' }); panel(`${m.nombre} eliminado.`) } else e.currentTarget.textContent = 'Pulsa otra vez' } }, 'Eliminar')])))
+  const pendientes = lista.filter((m) => m.pendiente).length
+
+  vista.replaceChildren(el('h1', {}, 'Médicos'),
+    pendientes ? el('div', { class: 'aviso ok', style: 'background:#FFF8E8;color:#7A5A14' }, `${pendientes} solicitud(es) de médicos que se registraron con su PID esperan aprobación (abajo).`) : '',
+    form,
+    el('div', { class: 'caja' }, el('h2', {}, `Registrados (${lista.length})`),
+      lista.length ? el('div', { class: 'tabla' }, el('table', {}, el('thead', {}, el('tr', {}, ...['Médico', 'Registro', 'Especialidad', 'Acceso', 'Último ingreso', ''].map((t) => el('th', {}, t)))), el('tbody', {}, ...filas)))
+        : el('p', { style: 'margin:0;color:var(--suave)' }, 'Todavía no hay médicos registrados.')))
+}
+
+// Paso 1: QR para la wallet del médico. Paso 2: datos verificados + registro médico.
+let sondeo
+async function pedirDocumento() {
+  clearTimeout(sondeo)
+  const caja = $('registro')
+  const estado = el('p', { style: 'margin:0;color:var(--suave)' }, 'Preparando el código…')
+  caja.replaceChildren(estado)
+  let s
+  try { s = await api('/api/solicitud', { method: 'POST', body: { proposito: 'registro-medico', dispositivo: 'otro' } }) } catch (e) { estado.textContent = e.message; return }
+  caja.replaceChildren(el('div', { style: 'display:flex;gap:16px;align-items:center;flex-wrap:wrap' },
+    el('img', { src: s.qr, alt: 'Código QR para la wallet del médico', style: 'width:220px;height:220px;border:1px solid var(--borde);border-radius:12px' }),
+    el('div', { style: 'display:flex;flex-direction:column;gap:8px;max-width:340px' },
+      el('strong', {}, 'Que el médico escanee este código con su wallet'), estado,
+      el('button', { class: 'chico', onclick: () => { clearTimeout(sondeo); panel() } }, 'Cancelar'))))
+  estado.textContent = 'Esperando su wallet…'
+  const preguntar = async () => {
+    try {
+      const r = await api(`/api/solicitud/${s.id}`)
+      if (r.estado === 'listo') return completarRegistro(s.id, r)
+      if (r.estado === 'rechazada') { estado.textContent = r.motivo; return }
+    } catch { /* reintentar */ }
+    sondeo = setTimeout(preguntar, 2000)
+  }
+  preguntar()
+}
+
+function completarRegistro(id, r) {
+  const caja = $('registro')
+  if (r.ya_registrado) {
+    return caja.replaceChildren(el('div', { class: 'aviso error' }, `${r.persona.nombre} (${r.persona.documento}) ya está registrado. Búscalo en la lista.`),
+      el('button', { class: 'chico', style: 'margin-top:10px', onclick: pedirDocumento }, 'Registrar a otro'))
+  }
+  const registro = el('input', { required: true, placeholder: 'RM 123456' })
+  const especialidad = el('input', { placeholder: 'Medicina general' })
+  const error = el('div', { class: 'aviso error', hidden: true })
+  caja.replaceChildren(el('form', { style: 'display:flex;flex-direction:column;gap:12px', onsubmit: async (e) => {
+    e.preventDefault()
+    try {
+      const m = await api('/api/admin/medicos', { method: 'POST', body: { solicitud: id, registro: registro.value, especialidad: especialidad.value } })
+      panel(`${m.nombre} registrado. Ya puede entrar al portal médico con su wallet.`)
+    } catch (x) { error.textContent = x.message; error.hidden = false }
+  } },
+  el('div', { class: 'aviso ok' }, '✔ Documento de identidad verificado'),
+  el('div', { class: 'rejilla' }, el('label', {}, 'Nombre', el('input', { value: r.persona.nombre, disabled: true })), el('label', {}, 'Cédula', el('input', { value: r.persona.documento, disabled: true }))),
+  el('div', { class: 'rejilla' }, el('label', {}, 'Registro médico (RETHUS)', registro), el('label', {}, 'Especialidad', especialidad)),
+  error, el('button', { class: 'primario' }, 'Registrar')))
+}
+
+panel()
+</script>
+</body>
+</html>

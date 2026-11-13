@@ -1,0 +1,20 @@
+name: SAST - CodeQL Android
+
+on:
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+  pull_request_target:
+  workflow_dispatch:
+
+permissions: 
+  security-events: write
+  contents: read
+
+jobs:
+  CodeQL_caller:
+    uses: eu-digital-identity-wallet/eudi-infra-ci/.github/workflows/code_ql_sast_android_app.yml@main
+    with:
+      gradle-task: assembleDevDebug
+
+    secrets: inherit

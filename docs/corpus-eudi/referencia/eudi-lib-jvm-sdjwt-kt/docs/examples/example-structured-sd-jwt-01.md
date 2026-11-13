@@ -1,0 +1,64 @@
+<!--- TEST_NAME ExampleStructuredSdJwt01Test --> 
+
+# Example: Structured SD-JWT
+
+Check [RFC Example: Structured SD-JWT](https://www.rfc-editor.org/rfc/rfc9901.html#name-example-structured-sd-jwt)
+
+The example below demonstrates the usage of the library mixed with the Kotlinx Serialization DSL
+to produce a SD-JWT which contains claim `sub` plain and `address` claim contents selectively disclosable individually
+
+<!--- INCLUDE
+import eu.europa.ec.eudi.sdjwt.dsl.values.sdJwt
+-->
+
+```kotlin
+val structuredSdJwt =
+    sdJwt {
+        claim("iss", "https://issuer.example.com")
+        claim("iat", 1683000000)
+        claim("exp", 1883000000)
+        claim("sub", "6c5c0a49-b589-431d-bae7-219122a9ec2c")
+
+        objClaim("address") {
+            sdClaim("street_address", "Schulstr. 12")
+            sdClaim("locality", "Schulpforta")
+            sdClaim("region", "Sachsen-Anhalt")
+            sdClaim("country", "DE")
+        }
+    }
+```
+
+Produces
+
+```json
+{
+  "iss": "https://issuer.example.com",
+  "iat": 1683000000,
+  "exp": 1883000000,
+  "sub": "6c5c0a49-b589-431d-bae7-219122a9ec2c",
+  "address": {
+    "_sd": [
+      "Ek2zRVvXFVw3-EHiBK3Lsssjv1qbotW_sp2ju03sq4s",
+      "evzKfw0XVp9x1Br5IZrl1c-t0HlrGo6uvYY7qIUhqXA",
+      "fd4ull64_NWEHwPFiE87blw2sjDjtyZW-Ho_DuZUpyE",
+      "jBYSBZ7gJpwMja_eJcWuVHJFAmz1fF7xOc6Fb0dGGH8"
+    ]
+  },
+  "_sd_alg": "sha-256"
+}
+```
+
+and the following disclosures (salt omitted):
+
+```json 
+[
+  ["...salt...","street_address","Schulstr. 12"],
+  ["...salt...","locality","Schulpforta"],
+  ["...salt...","region","Sachsen-Anhalt"],
+  ["...salt...","country","DE"]
+]
+```
+
+> You can get the full code [here](../../src/test/kotlin/eu/europa/ec/eudi/sdjwt/examples/ExampleStructuredSdJwt01.kt).
+
+<!--- TEST structuredSdJwt.assertThat("Example: Structured SD-JWT", 4) -->

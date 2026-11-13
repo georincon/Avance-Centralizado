@@ -1,0 +1,766 @@
+# PID Issuer
+
+**Important!** Before you proceed, please read
+the [EUDI Wallet Reference Implementation project description](https://github.com/eu-digital-identity-wallet/.github/blob/main/profile/reference-implementation.md)
+
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+
+* [Overview](#overview)
+* [OpenId4VCI coverage](#openid4vci-coverage)
+* [How to use docker](#how-to-use-docker)
+* [Configuration](#configuration)
+* [Endpoints](#endpoints)
+* [Protected Resource Metadata](#protected-resource-metadata)
+* [How to contribute](#how-to-contribute)
+* [License](#license)
+
+## Overview
+
+An implementation of a credential issuing service, according to [OpenId4VCI - v1.0](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html),
+aiming for compliance with:
+
+* [Specification of Wallet Unit Attestations (WUA) used in issuance of PID and Attestations](https://github.com/eu-digital-identity-wallet/eudi-doc-standards-and-technical-specifications/blob/main/docs/technical-specifications/ts3-wallet-unit-attestation.md)
+* [ETSI TS 119 472-3 V1.1.1](https://www.etsi.org/deliver/etsi_ts/119400_119499/11947203/01.01.01_60/ts_11947203v010101p.pdf)
+
+The service provides generic support for `mso_mdoc` and `SD-JWT-VC` formats using PID, mDL, and Learning Credential
+as an example and requires the use of a suitable OAuth 2.0 server.
+
+| Credential/Attestation         | Format    |
+|--------------------------------|-----------|
+| PID                            | mso_mdoc  |
+| PID                            | SD-JWT VC |
+| mDL                            | mso_mdoc  |
+| Learning Credential            | SD-JWT VC |
+
+### OpenId4VCI coverage
+
+| Feature                                                   | Coverage                                                                            |
+|-----------------------------------------------------------|-------------------------------------------------------------------------------------|
+| Authorization Code flow                                   | ✅ Using a suitable OAuth 2.0 server that supports DPoP using ES256, ES384, or ES512 |
+| Pre-authorized code flow                                  | ❌                                                                                   |
+| mso_mdoc format                                           | ✅                                                                                   |
+| SD-JWT-VC format                                          | ✅ Except revocation list & meta                                                     |
+| W3C VC DM                                                 | ❌                                                                                   |
+| Credential Offer                                          | ✅ `authorization_code` , ❌ `pre-authorized_code`                                    |
+| [Credential Endpoint](#credential-endpoint)               | Yes, including proofs, encryption, repeatable invocations                           |
+| [Credential Issuer MetaData](#credential-issuer-metadata) | Yes, using `scopes`, and `signed_metadata`                                          | 
+| Deferred Endpoint                                         | ✅                                                                                   |
+| Nonce Endpoint                                            | ✅                                                                                   |
+| Notification Endpoint                                     | ✅                                                                                   |
+| Proof                                                     | ✅ JWT (`key-attestation` required, as per TS3 (see Proofs section below)            |
+|                                                           | ✅ attestation                                                                       |
+|                                                           | ❌ Data Integrity Proof                                                              |
+
+### Proofs
+
+> [!IMPORTANT]
+> 
+> The pid-issuer accepts only one proof per credential request, either a JWT Proof with a key attestation or an Attestation Proof.
+> 
+> The `key_storage` and `user_authentication` attributes of the key attestation shall be `iso_18045_high`.
+> 
+> These requirements are mandated by the [TS3 - Specification of Wallet Unit Attestations (WUA) used in issuance of PID and Attestations](https://github.com/eu-digital-identity-wallet/eudi-doc-standards-and-technical-specifications/blob/main/docs/technical-specifications/ts3-wallet-unit-attestation.md)
+
+## How to use docker
+
+Folder [docker-compose](docker-compose) contains the following services to be used in a local development environment:
+
+### Keycloak
+
+A Keycloak instance accessible via https://localhost/idp/ with the Realm *pid-issuer-realm*.
+
+The Realm *pid-issuer-realm*:
+
+- has user self-registration active with a custom registration page accessible
+  via https://localhost/idp/realms/pid-issuer-realm/account/#/
+- defines *eu.europa.ec.eudi.pid_vc_sd_jwt* scope for requesting PID issuance in SD-JWT VC format
+- defines *eu.europa.ec.eudi.pid_mso_mdoc* scope for requesting PID issuance in MSO MDOC format
+- defines *org.iso.18013.5.1.mDL* scope for requesting mDL issuance in MSO MDOC format
+- defines *urn:eu.europa.ec.eudi:learning:credential:1:dc+sd-jwt* scope for requesting Learning Credential issuance in SD-JWT VC format
+- defines *wallet-dev*, *eudiw*, *eudiw-abca*, and *pid-issuer-srv* clients
+- contains sample user with credentials: tneal / password
+
+The Administration console is accessible via https://localhost/idp/admin/ using the credential admin / password
+
+### Issuer
+
+An Issuer instance accessible via https://localhost/pid-issuer/
+
+It uses the configured Keycloak instance as an Authorization Server, and supports issuing of PID, mDL, and European Health Insurance Card.
+Additionally, *deferred issuance* is enabled for PID in *SD JWT VC* format.
+
+The issuing country is set to GR (Greece).
+
+### HA Proxy
+
+An HA Proxy instance is also configured. This instance exposes both Keyclaok and PID Issuer via https. The certificate
+and respective private key can be found in [docker-compose/haproxy/certs](docker-compose/haproxy/certs).
+
+### docker compose usage
+
+```shell
+cd docker-compose
+docker-compose up -d
+```
+
+or
+
+```shell
+cd docker-compose
+docker compose up -d
+```
+
+## Configuration
+
+The PID Issuer application can be configured using the following *environment* variables:
+
+Variable: `SPRING_PROFILES_ACTIVE`  
+Description: Spring profiles to enable. Enable `insecure` profile to disable SSL certificates verification.  
+Default value: N/A 
+
+Variable: `SPRING_WEBFLUX_BASE_PATH`  
+Description: Context path for the PID issuer application.  
+Default value: `/`
+
+Variable: `SERVER_PORT`  
+Description: Port for the HTTP listener of the PID Issuer application  
+Default value: `8080`
+
+Variable: `SPRING_SECURITY_OAUTH2_RESOURCESERVER_OPAQUETOKEN_CLIENTID`  
+Description: Client Id of the OAuth 2.0 client registered in the Authorization Server  
+Default value: N/A
+
+Variable: `SPRING_SECURITY_OAUTH2_RESOURCESERVER_OPAQUETOKEN_CLIENTSECRET`  
+Description: Client Server of the OAuth 2.0 client registered in the Authorization Server  
+Default value: N/A
+
+Variable: `SERVER_FORWARD_HEADERS_STRATEGY`  
+Description: Whether the server should consider X-Forwarded headers. In case the application is behind a reverse proxy,
+set this to `FRAMEWORK`.  
+Possible values: `FRAMEWORK`, `NONE`  
+Default value: `FRAMEWORK`  
+
+Variable: `SPRING_HTTP_CODECS_MAXINMEMORYSIZE`  
+Description: Configure a limit on the number of bytes that can be buffered whenever the input stream needs to be aggregated. Uses Spring Framework's DataSize notation.         
+Default value: `1MB`
+
+Variable: `ISSUER_PUBLICURL`  
+Description: URL the PID Issuer application is accessible from  
+Default value: N/A
+
+Variable: `ISSUER_AUTHORIZATIONSERVER_PUBLICURL`  
+Description: URL of the Authorization Server advertised via the issuer metadata    
+Default value: N/A
+
+Variable: `ISSUER_AUTHORIZATIONSERVER_INTROSPECTION`  
+Description: URL of the Token Introspection endpoint of the Authorization Server  
+Default value: N/A
+
+Variable: `ISSUER_CREDENTIALRESPONSEENCRYPTION_SUPPORTED`  
+Description: Whether to enable support for credential response encryption.    
+Default value: `true`
+
+Variable: `ISSUER_CREDENTIALRESPONSEENCRYPTION_REQUIRED`  
+Description: Whether credential response encryption is required.  
+Default value: `true`
+
+Variable: `ISSUER_CREDENTIALRESPONSEENCRYPTION_ALGORITHMSSUPPORTED`  
+Description: Comma separated list of supported encryption algorithms for credential response encryption.      
+Default value: `ECDH-ES`
+
+Variable: `ISSUER_CREDENTIALRESPONSEENCRYPTION_ENCRYPTIONMETHODS`  
+Description: Comma separated list of supported encryption method for credential response encryption.      
+Default value: `A128GCM,A256GCM`
+
+Variable: `ISSUER_CREDENTIALRESPONSEENCRYPTION_ZIPALGORITHMSSUPPORTED`  
+Description: Comma separated list of supported compression algorithms for credential response encryption.      
+Default value: N/A  
+Allowed values:
+* `DEF`
+
+Variable: `ISSUER_KEYSTORE_FILE`  
+Description: Location of the keystore from which to load key-pairs and certificates. Uses Spring Resource URL syntax.       
+Default value: N/A
+
+Variable: `ISSUER_KEYSTORE_TYPE`  
+Description: Type of the keystore from which to load key-pairs and certificates.       
+Default value: N/A
+
+Variable: `ISSUER_KEYSTORE_PASSWORD`  
+Description: Password of the keystore from which to load key-pairs and certificates.   
+Default value: N/A
+
+Variable: `ISSUER_PID_MSO_MDOC_ENABLED`  
+Description: Whether to enable support for PID issuance in *MSO MDOC* format  
+Default value: `true`
+
+Variable: `ISSUER_PID_MSO_MDOC_SIGNING_KEY_ALIAS`  
+Description: Alias of the key-pair for signing MSO MDOC PIDs.       
+Default value: N/A 
+
+Variable: `ISSUER_PID_MSO_MDOC_SIGNING_KEY_PASSWORD`  
+Description: Password of the key-pair for signing MSO MDOC PIDs.       
+Default value: N/A
+
+Variable: `ISSUER_PID_MSO_MDOC_ENCODER_DURATION`    
+Description: Configures the validity of issued PIDs in *MSO MDOC* format. Uses Period syntax. 
+Default value: `P31D`
+
+Variable: `ISSUER_PID_MSO_MDOC_NOTIFICATIONS_ENABLED`  
+Description: Whether to enable Notifications Endpoint support for PIDs issued in *MSO MDOC*.     
+Default value: `true`
+
+Variable: `ISSUER_PID_MSO_MDOC_PROOFS_SUPPORTEDSIGNINGALGORITHMS`      
+Description: Comma separated list of the signing algorithms that can be used with JWT or Attestation Proofs.      
+Default value: `ES256`  
+Allowed values:
+* `ES256`
+* `ES384`
+* `ES512`
+
+Variable: `ISSUER_PID_MSO_MDOC_REUSEPOLICY_ENABLED`  
+Description: Whether to enable support for Credential Reuse Policy for PIDs issued in *MSO MDOC*.  
+Default value: `false`  
+
+Variable: `ISSUER_PID_MSO_MDOC_REUSEPOLICY_TYPE`  
+Description: The type of Credential Reuse Policy.  
+Default value: `ArfAnnex2`  
+
+Variable: `ISSUER_PID_MSO_MDOC_REUSEPOLICY_OPTIONS_XX_DETAILS`  
+Description: Comma separated list of policy types.   
+Possible values: `once_only`, `limited_time`, `rotating_batch`, `per_relying_party`  
+Default value: N/A  
+
+Variable: `ISSUER_PID_MSO_MDOC_REUSEPOLICY_OPTIONS_XX_BATCHSIZE`  
+Description: The size of the batch of credentials to be issued.  
+Default value: N/A  
+
+Variable: `ISSUER_PID_MSO_MDOC_REUSEPOLICY_OPTIONS_XX_REISSUETRIGGERUNUSED`  
+Description: The number of unused credentials that triggers a reissue.  
+Default value: N/A  
+
+Variable: `ISSUER_PID_MSO_MDOC_REUSEPOLICY_OPTIONS_XX_REISSUETRIGGERLIFETIMELEFT`  
+Description: The remaining lifetime of the credential (in seconds) that triggers a reissue.  
+Default value: N/A  
+
+Variable: `ISSUER_PID_SD_JWT_VC_ENABLED`  
+Description: Whether to enable support for PID issuance in *SD JWT VC* format.  
+Default value: `true`
+
+Variable: `ISSUER_PID_SD_JWT_VC_SIGNING_KEY_ALIAS`  
+Description: Alias of the key-pair for signing SD JWT VC PIDs.       
+Default value: N/A 
+
+Variable: `ISSUER_PID_SD_JWT_VC_SIGNING_KEY_PASSWORD`  
+Description: Password of the key-pair for signing SD JWT VC PIDs.       
+Default value: N/A 
+
+Variable: `ISSUER_PID_SD_JWT_VC_DURATION`  
+Description: Configures the validity of issued PIDs in *SD JWT VC* format. Uses Period syntax.  
+Default value: `P31D`
+
+Variable: `ISSUER_PID_SD_JWT_VC_NOTUSEBEFORE`  
+Description: Period after which a PID issued in *SD JWT VC* becomes valid. Used to calculate the value of the `nbf` claim.  
+Default value: `PT20S`
+
+Variable: `ISSUER_PID_SD_JWT_VC_NOTIFICATIONS_ENABLED`  
+Description: Whether to enable Notifications Endpoint support for PIDs issued in *SD JWT VC*.  
+Default value: `true`
+
+Variable: `ISSUER_PID_SD_JWT_VC_DIGESTS_HASHALGORITHM`  
+Description: Hash algorithm used to calculate the disclosure digests of PIDs issued in *SD JWT VC*.   
+Allowed values: `sha-256`, `sha-384`, `sha-512`, `sha3-256`, `sha3-384`, `sha3-512`   
+Default value: `sha-256`
+
+Variable: `ISSUER_PID_SD_JWT_VC_PROOFS_SUPPORTEDSIGNINGALGORITHMS`      
+Description: Comma separated list of the signing algorithms that can be used with JWT or Attestation Proofs.      
+Default value: `ES256`  
+Allowed values:
+* `ES256`
+* `ES384`
+* `ES512`
+
+Variable: `ISSUER_PID_SD_JWT_VC_REUSEPOLICY_ENABLED`  
+Description: Whether to enable support for Credential Reuse Policy for PIDs issued in *SD JWT VC*.  
+Default value: `false`  
+
+Variable: `ISSUER_PID_SD_JWT_VC_REUSEPOLICY_TYPE`  
+Description: The type of Credential Reuse Policy.  
+Default value: `ArfAnnex2`  
+
+Variable: `ISSUER_PID_SD_JWT_VC_REUSEPOLICY_OPTIONS_XX_DETAILS`  
+Description: Comma separated list of policy types.   
+Possible values: `once_only`, `limited_time`, `rotating_batch`, `per_relying_party`  
+Default value: N/A  
+
+Variable: `ISSUER_PID_SD_JWT_VC_REUSEPOLICY_OPTIONS_XX_BATCHSIZE`  
+Description: The size of the batch of credentials to be issued.  
+Default value: N/A  
+
+Variable: `ISSUER_PID_SD_JWT_VC_REUSEPOLICY_OPTIONS_XX_REISSUETRIGGERUNUSED`  
+Description: The number of unused credentials that triggers a reissue.  
+Default value: N/A  
+
+Variable: `ISSUER_PID_SD_JWT_VC_REUSEPOLICY_OPTIONS_XX_REISSUETRIGGERLIFETIMELEFT`  
+Description: The remaining lifetime of the credential (in seconds) that triggers a reissue.  
+Default value: N/A  
+
+Variable: `ISSUER_PID_ISSUINGCOUNTRY`  
+Description: Code of the Country issuing the PID  
+Default value: `GR`
+
+Variable: `ISSUER_PID_ISSUINGJURISDICTION`  
+Description: Country subdivision code of the jurisdiction issuing the PID  
+Default value: `GR-I`
+
+Variable: `ISSUER_MDL_ENABLED`    
+Description: Whether to enable support for issuing mDL.    
+Default value: `true`
+
+Variable: `ISSUER_MDL_SIGNING_KEY_ALIAS`  
+Description: Alias of the key-pair for signing mDLs.       
+Default value: N/A
+
+Variable: `ISSUER_MDL_SIGNING_KEY_PASSWORD`  
+Description: Password of the key-pair for signing mDLs.       
+Default value: N/A
+
+Variable: `ISSUER_MDL_MSO_MDOC_ENCODER_DURATION`    
+Description: Configures the validity of issued mDLs when using the internal encoder. Uses Period syntax.   
+Default value: `P31D`
+
+Variable: `ISSUER_MDL_NOTIFICATIONS_ENABLED`    
+Description: Whether to enable Notifications Endpoint support for mDLs.    
+Default value: `true`
+
+Variable: `ISSUER_MDL_PROOFS_SUPPORTEDSIGNINGALGORITHMS`      
+Description: Comma separated list of the signing algorithms that can be used with JWT or Attestation Proofs.      
+Default value: `ES256`  
+Allowed values:
+* `ES256`
+* `ES384`
+* `ES512`
+
+Variable: `ISSUER_MDL_REUSEPOLICY_ENABLED`  
+Description: Whether to enable support for Credential Reuse Policy for mDLs.    
+Default value: `false`    
+
+Variable: `ISSUER_MDL_REUSEPOLICY_TYPE`  
+Description: The type of Credential Reuse Policy.  
+Default value: `ArfAnnex2`  
+
+Variable: `ISSUER_MDL_REUSEPOLICY_OPTIONS_XX_DETAILS`  
+Description: Comma separated list of policy types.   
+Possible values: `once_only`, `limited_time`, `rotating_batch`, `per_relying_party`  
+Default value: N/A  
+
+Variable: `ISSUER_MDL_REUSEPOLICY_OPTIONS_XX_BATCHSIZE`  
+Description: The size of the batch of credentials to be issued.  
+Default value: N/A  
+
+Variable: `ISSUER_MDL_REUSEPOLICY_OPTIONS_XX_REISSUETRIGGERUNUSED`  
+Description: The number of unused credentials that triggers a reissue.  
+Default value: N/A  
+
+Variable: `ISSUER_MDL_REUSEPOLICY_OPTIONS_XX_REISSUETRIGGERLIFETIMELEFT`  
+Description: The remaining lifetime of the credential (in seconds) that triggers a reissue.  
+Default value: N/A  
+
+Variable: `ISSUER_LEARNINGCREDENTIAL_ENABLED`      
+Description: Whether to enable support for issuing Learning Credentials.      
+Default value: `true`  
+
+Variable: `ISSUER_LEARNINGCREDENTIAL_SIGNING_KEY_ALIAS`  
+Description: Alias of the key-pair for signing Learning Credentials.       
+Default value: N/A
+
+Variable: `ISSUER_LEARNINGCREDENTIAL_SIGNING_KEY_PASSWORD`  
+Description: Password of the key-pair for signing Learning Credentials.       
+Default value: N/A
+
+Variable: `ISSUER_LEARNINGCREDENTIAL_SDJWTVC_ENCODER_DIGESTS_HASHALGORITHM`  
+Description: Hash algorithm used to calculate the disclosure digests of Learning Credentials issued in *SD-JWT VC* format.    
+Allowed values: `sha-256`, `sha-384`, `sha-512`, `sha3-256`, `sha3-384`, `sha3-512`   
+Default value: `sha-256`
+
+Variable: `ISSUER_LEARNINGCREDENTIAL_VALIDITY`    
+Description: Validity of Learning Credentials issued. Uses Period syntax.      
+Default value: `P31D`
+
+Variable: `ISSUER_LEARNINGCREDENTIAL_NOTIFICATIONS_ENABLED`    
+Description: Whether to enable Notifications Endpoint support for issued Learning Credentials.    
+Default value: `true`
+
+Variable: `ISSUER_LEARNINGCREDENTIAL_PROOFS_SUPPORTEDSIGNINGALGORITHMS`      
+Description: Comma separated list of the signing algorithms that can be used with JWT or Attestation Proofs.      
+Example: `ES256`  
+Allowed values:
+* `ES256`
+* `ES384`
+* `ES512`
+
+Variable: `ISSUER_LEARNINGCREDENTIAL_REUSEPOLICY_ENABLED`  
+Description: Whether to enable support for Credential Reuse Policy for Learning Credentials.  
+Default value: `false`  
+
+Variable: `ISSUER_LEARNINGCREDENTIAL_REUSEPOLICY_TYPE`  
+Description: The type of Credential Reuse Policy.  
+Default value: `ArfAnnex2`  
+
+Variable: `ISSUER_LEARNINGCREDENTIAL_REUSEPOLICY_OPTIONS_XX_DETAILS`  
+Description: Comma separated list of policy types.   
+Possible values: `once_only`, `limited_time`, `rotating_batch`, `per_relying_party`  
+Default value: N/A  
+
+Variable: `ISSUER_LEARNINGCREDENTIAL_REUSEPOLICY_OPTIONS_XX_BATCHSIZE`  
+Description: The size of the batch of credentials to be issued.  
+Default value: N/A  
+
+Variable: `ISSUER_LEARNINGCREDENTIAL_REUSEPOLICY_OPTIONS_XX_REISSUETRIGGERUNUSED`  
+Description: The number of unused credentials that triggers a reissue.  
+Default value: N/A  
+
+Variable: `ISSUER_LEARNINGCREDENTIAL_REUSEPOLICY_OPTIONS_XX_REISSUETRIGGERLIFETIMELEFT`  
+Description: The remaining lifetime of the credential (in seconds) that triggers a reissue.  
+Default value: N/A  
+
+Variable: `ISSUER_CREDENTIALOFFER_DEFAULTURI`    
+Description: URI to use when generating Credential Offers.    
+Default value: `eu-eaa-offer://`
+
+Variable: `ISSUER_CREDENTIALOFFER_ALLOWEDSCHEMES`    
+Description: Comma-separated list of allowed schemes for using custom URIs for Credential Offers.       
+Default value: `https,eu-eaa-offer`   
+Allowed values:
+* `openid-credential-offer`
+* `haip-vci`
+* `eu-eaa-offer`
+* `https`
+
+Variable: `ISSUER_SIGNED_METADATA_ISSUER`  
+Description: Value of the `iss` claim of the signed metadata. **Must be a valid Https URL**.  
+Default value: Value of `ISSUER_PUBLICURL`
+
+Variable: `ISSUER_ACCESS_CERTIFICATE_ALIAS`  
+Description: Alias of the key-pair for signing metadata.       
+Default value: N/A
+
+Variable: `ISSUER_ACCESS_CERTIFICATE_PASSWORD`  
+Description: Password of the key-pair for signing metadata.       
+Default value: N/A
+
+Variable: `ISSUER_KEYCLOAK_SERVER_URL`  
+Description: URL of the Keycloak authorization server  
+Default value: N/A  
+Example: https://localhost/idp  
+
+Variable: `ISSUER_KEYCLOAK_AUTHENTICATION_REALM`  
+Description: Authentication realm for the administrator user of Keycloak  
+Default value: N/A  
+Example: master  
+
+Variable: `ISSUER_KEYCLOAK_CLIENT_ID`  
+Description: Id of the OAuth 2.0 client used for management of Keycloak   
+Default value: N/A  
+Example: admin-cli  
+
+Variable: `ISSUER_KEYCLOAK_USERNAME`  
+Description: Username of the Keycloak administrator user  
+Default value: N/A  
+Example: admin  
+
+Variable: `ISSUER_KEYCLOAK_PASSWORD`  
+Description: Password of the Keycloak administrator user  
+Default value: N/A  
+Example: password
+
+Variable: `ISSUER_KEYCLOAK_USER_REALM`  
+Description: Realm of the administered users in Keycloak   
+Default value: N/A  
+Example: pid-issuer-realm  
+
+Variable: `ISSUER_DPOP_REALM`  
+Description: Realm to report in the WWW-Authenticate header in case of DPoP authentication/authorization failure         
+Default value: N/A
+
+Variable: `ISSUER_DPOP_NONCE_ENABLED`  
+Description: Whether Nonce values are required for DPoP authentication    
+Default value: `true`
+
+Variable: `ISSUER_DPOP_NONCE_EXPIRATION`  
+Description: Duration after which Nonce values for DPoP authentication expire    
+Default value: `PT5M`
+
+Variable: `ISSUER_CREDENTIALENDPOINT_BATCHISSUANCE_ENABLED`  
+Description: Whether to enable batch issuance support in the credential endpoint         
+Default value: `true`
+
+Variable: `ISSUER_CREDENTIALENDPOINT_BATCHISSUANCE_BATCHSIZE`  
+Description: Maximum number of attested keys that will be used by credential endpoint when batch issuance support is enabled. 
+This value is overridden by any applicable Credential Reuse Policy.          
+Default value: `10`
+
+Variable: `ISSUER_CNONCE_EXPIRATION`  
+Description: Duration after which CNonce values expire    
+Default value: `PT5M`
+
+Variable: `ISSUER_STATUSLIST_SERVICE_GENERATE_URI`  
+Description: URI of the service used to generate (take) Status List Tokens  
+Example: `https://issuer.eudiw.dev/token_status_list/take`
+
+Variable: `ISSUER_STATUSLIST_SERVICE_REVOKE_URI`  
+Description: URI of the service used to revoke (set) Status List Tokens  
+Example: `https://issuer.eudiw.dev/token_status_list/set`
+
+Variable: `ISSUER_STATUSLIST_SERVICE_APIKEY`  
+Description: API Key of the service used to generate/revoke Status List Tokens
+
+Variable: `ISSUER_REVOCATIONJOB_CRON`  
+Description: Cron expression controlling how often the revocation job runs  
+Default value: `0 * */8 * * *` (every 8 hours)
+
+Variable: `ISSUER_CREDENTIALREQUESTENCRYPTION_JWKS_ALIAS`  
+Description: Alias of the key-pair for credential request encryption.    
+Default value: N/A  
+
+Variable: `ISSUER_CREDENTIALREQUESTENCRYPTION_JWKS_PASSWORD`  
+Description: Password of the key-pair for credential request encryption.  
+Default value: N/A
+
+Variable: `ISSUER_CREDENTIALREQUESTENCRYPTION_JWKS_ALGORITHM`  
+Description: The algorithm of the key for credential request encryption.  
+Default value: `ECDH-ES`
+
+Variable: `ISSUER_CREDENTIALREQUESTENCRYPTION_ENCRYPTIONMETHODS`  
+Description: Comma separated list of supported encryption method for credential request encryption.      
+Default value: `A128GCM,A256GCM`
+
+Variable: `ISSUER_CREDENTIALREQUESTENCRYPTION_ZIPALGORITHMSSUPPORTED`  
+Description: Comma separated list of supported compression algorithms for credential request encryption.      
+Default value: N/A  
+Allowed values:
+* `DEF`
+
+Variable: `ISSUER_NONCE_ENCRYPTION_KEY_ALIAS`  
+Description: Alias of the EC key-pair for nonce encryption.  
+Default value: N/A
+
+Variable: `ISSUER_NONCE_ENCRYPTION_KEY_PASSWORD`  
+Description: Password of the EC key-pair for nonce encryption.  
+Default value: N/A  
+
+Variable: `ISSUER_WRPRC`  
+Description: The Registration Certificate of the Credential Issuer serialized using JWS Compact Serialization.  
+Default value: N/A  
+
+### Configuring trust
+
+PID Issuer verifies whether a Wallet Provider's Wallet Unit Attestation is trusted or not using an external service.  
+Currently, only [eudi-srv-trust-validator](https://github.com/eu-digital-identity-wallet/eudi-srv-trust-validator) is supported.  
+
+To configure the service, use the following environment variable:  
+
+Variable: `ISSUER_TRUST_SERVICE_URL`  
+Description: The URL of the trust service endpoint for trust verification. If no URL is configured, no trust verification is performed.  
+Default value: N/A  
+
+### Metadata configuration
+
+Variable: `ISSUER_METADATA_PREFERRED_CLIENT_STATUS_PERIOD`  
+Description: Preferred Client Status maintenance period. Can not be less than 31 days.  
+Default value: `P31D`  
+
+You can configure the display objects of the Credential Issuer Metadata of PID Issuer, using the following 
+environment variables. 
+For each display object you must configure as a bare minimum either the name or the logo uri.
+Only one display object can be configured per locale.
+
+Replace `XX` with the index of the display object you want to configure.
+
+Variable: `ISSUER_METADATA_DISPLAY_XX_NAME` (e.g. `ISSUER_METADATA_DISPLAY_0_NAME`)    
+Description: Display name for the Credential Issuer  
+
+Variable: `ISSUER_METADATA_DISPLAY_XX_LOCALE` (e.g. `ISSUER_METADATA_DISPLAY_0_LOCALE`)    
+Description: Language tag of this display object  
+
+Variable: `ISSUER_METADATA_DISPLAY_XX_LOGO_URI` (e.g. `ISSUER_METADATA_DISPLAY_0_LOGO_URI`)  
+Description: URI where the Wallet can obtain the logo of the Credential Issuer  
+
+Variable: `ISSUER_METADATA_DISPLAY_XX_LOGO_ALTERNATIVETEXT` (e.g. `ISSUER_METADATA_DISPLAY_0_LOGO_ALTERNATIVETEXT`)  
+Description: Alternative text for the logo image  
+
+### SD-JWT VC Type Metadata configuration
+
+You can configure the Type Metadata of PID Issuer, using the following
+environment variables.  
+Each VCT should be configured once.
+
+Variable: `ISSUER_SD_JWT_VC_TYPE_METADATA_XX_VCT` (e.g. `ISSUER_SD_JWT_VC_TYPE_METADATA_0_VCT`)  
+Description: The VCT of the type metadata property 
+Example: `urn:eudi:pid:1`  
+
+Variable: `ISSUER_SD_JWT_VC_TYPE_METADATA_XX_RESOURCE` (e.g. `ISSUER_SD_JWT_VC_TYPE_METADATA_0_RESOURCE`)  
+Description: Resource of the type metadata, using spring framework resource notation 
+Example: `classpath:/vct/pid_v1.4.json` or `file:///vct/pid_v1.4.json`
+
+### Proxy configuration
+
+Variable: `ISSUER_HTTP_PROXY_URL`  
+Description: Set verifier proxy URL to use  
+Example: `http://exmaple.com`
+
+Variable: `ISSUER_HTTP_PROXY_USERNAME`  
+Description: Set proxy username for proxy to use  
+Example: `username`
+
+Variable: `ISSUER_HTTP_PROXY_PASSWORD`  
+Description: Set proxy password for proxy to use  
+Example: `passwd`
+
+### Signing Key
+
+EC Keys are required to sign the issued credentials.
+
+> [!TIP]
+> Make sure to use EC Keys that use one of the following curves:
+>
+> - *P-256/secp256r1*
+> - *P-384/secp384r1*
+> - *P-521/secp521r1*
+
+The EC Key used determines the signing algorithm. The server will use one of the following signing algorithms:
+- *ES256*
+- *ES384*
+- *ES512*
+
+To generate an EC Key and self-signed certificate using `keytool` you can use the following command:
+
+```bash
+keytool -genkeypair \
+  -alias signingKey \
+  -keyalg EC \
+  -groupname secp256r1 \
+  -sigalg SHA256withECDSA \
+  -validity 365 \
+  -dname "CN=pid-issuer" \
+  -storetype JKS \
+  -keystore signingKey.jks \
+  -storepass 123456 \
+  -keypass 654321
+```
+
+This command will create a *JKS* keystore named *signingKey.jks* in the current directory, protected by the 
+password *123456*. The keystore will contain an EC Key generated using the curve *P-256/secp256r1* and a self-signed
+certificate signed using the algorithm *SHA256withECDSA*, with the alias *signingKey*, protected with the 
+password *654321*.
+
+__Note__: When loading an EC Key and certificate from a keystore, make sure the certificate chain is associated with
+the EC Key alias.
+
+### Database configuration
+
+PID-Issuer is compatible with PostgreSQL and supports connection pooling.  
+It uses Spring Data with [R2DBC](https://r2dbc.io/).  
+
+The schema must be created manually before starting the server.    
+DDL scripts are located in `docker-compose/postgresql/schema`.  
+
+When running the server with the provided Docker Compose yaml file, the database is initialized automatically.    
+
+To configure the database, use the following environment variables:  
+
+Variable: `SPRING_R2DBC_URL`   
+Description: R2DBC URL used to connect to the database.   
+Allowed protocols: `r2dbc`  
+
+Available database drivers are:  
+- `postgresql`
+- `pool`  
+
+Connection pooling can be configured using the [r2dbc-pool](https://github.com/r2dbc/r2dbc-pool) driver.
+Example value: `r2dbc:pool:postgresql://localhost:5432/pid_issuer`  
+
+Variable: `SPRING_R2DBC_USERNAME`  
+Description: Username of the database user.  
+
+Variable: `SPRING_R2DBC_PASSWORD`    
+Description: Password of the database user.   
+
+## Endpoints
+
+### Credential Issuer MetaData
+
+```bash
+curl http://localhost:8080/.well-known/openid-credential-issuer | jq .
+```
+
+### Protected Resource Metadata
+
+```bash
+curl http://localhost:8080/.well-known/oauth-protected-resource | jq .
+```
+
+### Credential Endpoint
+
+### Credentials Offer
+
+Generate sample offer
+
+```bash
+curl http://localhost:8080/issuer/credentialsOffer | jq .
+```
+
+### Retrieve Type MetaData
+
+```bash
+curl http://localhost:8080/type-metadata/urn:eudi:pid:1
+```
+
+## Protected Resource Metadata
+
+pid-issuer supports [RFC9728: Protected Resource Metadata](https://www.rfc-editor.org/rfc/rfc9728.html), and provides the following metadata:
+
+* `resource`: The public URL of pid-issuer
+* `authorization_servers`: URLs of the Authorization Servers used by pid-issuer
+* `scopes_supported`: OAuth 2.0 client scopes supported by pid-issuer
+* `dpop_signing_alg_values_supported`: DPoP Access Token JWS Algorithms supported by pid-issuer. Currently set to `ES256`, `ES384`, and `ES512`.
+* `dpop_bound_access_tokens_required`: Whether pid-issuer requires DPoP Access Tokens. Current set to `true`.
+
+pid-issuer exposes Protected Resource Metadata at `/.well-known/oauth-protected-resource`. Per Section 3 of [RFC9728: Protected Resource Metadata](https://www.rfc-editor.org/rfc/rfc9728.html):
+
+> Protected resources supporting metadata MUST make a JSON document containing metadata as specified in Section 2 available
+> at a URL formed by inserting a well-known URI string into the protected resource's resource identifier between the host
+> component and the path and/or query components, if any. By default, the well-known URI string used is
+> /.well-known/oauth-protected-resource. The syntax and semantics of .well-known are defined in RFC8615.
+
+When pid-issuer is not deployed under the root path, a reverse proxy must be configured appropriately to rewrite the
+Protected Resource Metadata well-known URL to what pid-issuer exposes.
+
+For instance:
+
+Public URL of pid-issuer is: `https://example.com/pid-issuer`  
+Protected Resource Metadata URL is `https://example.com/.well-known/oauth-protected-resource/pid-issuer`  
+Reverse Proxy rewritten Protected Resource Metadata URL is: `https://example.com/pid-issuer/.well-known/oauth-protected-resource`
+
+## How to contribute
+
+We welcome contributions to this project. To ensure that the process is smooth for everyone
+involved, follow the guidelines found in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+### License details
+
+Copyright (c) 2023-2026 European Commission
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

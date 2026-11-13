@@ -1,0 +1,8 @@
+//[wallet-core](../../../index.md)/[eu.europa.ec.eudi.wallet.transfer.openId4vp](../index.md)/[OpenId4VpManager](index.md)/[readerTrustStore](reader-trust-store.md)
+
+# readerTrustStore
+
+[release]\
+open override var [readerTrustStore](reader-trust-store.md): ReaderTrustStore?
+
+The trust store used for verifying reader certificates. Delegates to the request processor.

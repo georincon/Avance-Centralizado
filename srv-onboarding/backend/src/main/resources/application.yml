@@ -1,0 +1,97 @@
+spring:
+  application:
+    name: onboarding-backend
+
+  web:
+    resources:
+      # webroot/ se monta en /webroot (ver docker-compose); si no existe, se ignora.
+      static-locations: classpath:/static/,file:${WEBROOT_PATH:/webroot}/
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/onboarding}
+    username: ${DB_USER:onboarding}
+    password: ${DB_PASSWORD:onboarding}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  servlet:
+    multipart:
+      max-file-size: 12MB
+      max-request-size: 24MB
+
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+server:
+  port: ${SERVER_PORT:8090}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
+  health:
+    mail:
+      enabled: false   # el correo solo se usa con OTP_PROVIDER=email
+
+# ---------------------------------------------------------------------------
+# Configuracion propia del dominio de onboarding.
+# Los "provider" permiten cambiar entre implementaciones libres (dev) y APIs
+# externas sin tocar el resto del codigo.
+# ---------------------------------------------------------------------------
+onboarding:
+  session-ttl-minutes: 60
+  otp:
+    provider: ${OTP_PROVIDER:logging}   # logging | email
+    length: 6
+    ttl-minutes: 5
+    max-attempts: 5
+    hash-pepper: ${OTP_HASH_PEPPER:dev-pepper-change-me}
+    # Solo para DESARROLLO: devuelve el codigo OTP en la respuesta para que la app
+    # movil pueda completar el flujo sin SMS/correo. NO usar en produccion.
+    expose-code: ${OTP_EXPOSE_CODE:false}
+  ocr:
+    provider: pdf417
+  biometric:
+    provider: http
+    http-base-url: ${BIOMETRIC_HTTP_URL:http://localhost:8100}
+    # SFace (coseno): >= 0.363 es la misma persona segun el modelo; entre 0.363 y
+    # review-below se envia a revision manual.
+    face-match-threshold: 0.363
+    face-match-review-below: 0.40
+    liveness-threshold: 0.50
+  # Endpoints server-to-server del issuer (comparar la selfie guardada con la foto del registro). Sin clave: 503.
+  internal:
+    api-key: ${ONBOARDING_INTERNAL_API_KEY:}
+  # «Perdi mi celular»: revocacion de credenciales sin la wallet (CIR 2024/2979 art. 6(3)(b)(c)).
+  # Si falta issuer-url o issuer-api-key, los endpoints /api/v1/lost-device/** responden 503.
+  lost-device:
+    issuer-url: ${ONBOARDING_LOSTDEVICE_ISSUER_URL:}
+    issuer-api-key: ${ONBOARDING_LOSTDEVICE_ISSUER_APIKEY:}
+    max-per-document-per-hour: 3
+    max-per-ip-per-hour: 10
+  storage:
+    provider: local
+    local-path: ${STORAGE_LOCAL_PATH:./data/uploads}

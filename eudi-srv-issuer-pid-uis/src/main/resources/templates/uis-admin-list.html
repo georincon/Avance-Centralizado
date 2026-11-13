@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/main.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/uis-admin.css}">
+    <title>UIS :: Estudiantes</title>
+</head>
+<body class="uis-admin">
+<div class="uis-topbar"><div class="inner">
+    <img th:src="@{/public/img/uis-credential-blanco.png}" alt="Universidad Industrial de Santander">
+    <h1>Universidad Industrial de Santander<small>Registro académico · Estudiantes</small></h1>
+    <div class="acciones"><form method="post" th:action="@{/uis/admin/logout}"><button class="btn btn-claro btn-sm" type="submit">Salir</button></form></div>
+</div><div class="accent"></div></div>
+<th:block th:replace="~{uis-admin-nav :: nav('estudiantes')}"/>
+<main>
+    <div class="d-flex align-items-center mb-3">
+        <h1 class="titulo mb-0 me-auto">Estudiantes <small class="text-body-secondary fs-6" th:text="'(' + ${total} + ')'"></small></h1>
+        <a class="btn btn-primary" th:href="@{/uis/admin/estudiantes/nuevo}">+ Nuevo estudiante</a>
+    </div>
+    <div class="tarjeta">
+        <form class="d-flex gap-2 mb-3" method="get" th:action="@{/uis/admin/estudiantes}">
+            <input class="form-control" name="q" placeholder="Buscar por documento, nombre o apellido" th:value="${query}">
+            <button class="btn btn-outline-primary" type="submit">Buscar</button>
+        </form>
+        <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Documento</th><th>Tipo</th><th>Nombre</th><th>Ingreso a la wallet</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="e : ${estudiantes}">
+                <td class="fw-semibold" th:text="${e.numeroIdentificacion}"></td>
+                <td th:text="${e.tipoIdentificacion}"></td>
+                <td th:text="${e.nombres + ' ' + e.apellidos}"></td>
+                <td><span class="etiqueta" th:classappend="${sinPid.contains(e.tipoIdentificacion)} ? 'etiqueta-codigo' : 'etiqueta-pid'"
+                          th:text="${sinPid.contains(e.tipoIdentificacion)} ? 'Código de activación' : 'Cédula digital (PID)'"></span></td>
+                <td class="text-end"><a class="btn btn-outline-primary btn-sm"
+                    th:href="@{/uis/admin/estudiantes/{n}/editar(n=${e.numeroIdentificacion})}">Editar</a></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(estudiantes)}"><td colspan="5" class="text-body-secondary text-center py-4">Sin resultados.</td></tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+</main>
+<p class="pie">Panel del registro académico · Datos de prueba, no uses información real.</p>
+</body>
+</html>

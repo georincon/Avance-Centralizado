@@ -1,0 +1,6 @@
+.env
+node_modules/
+# La CA y la clave de firma del gimnasio (scripts/generar-claves.sh)
+secretos/
+# Socios, membresías y registro de accesos
+datos/

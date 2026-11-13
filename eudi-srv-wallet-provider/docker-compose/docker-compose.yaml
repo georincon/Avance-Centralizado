@@ -1,0 +1,145 @@
+name: spartans
+
+# Spartans Wallet Provider: el UNICO wallet provider del ecosistema EUDI de Avance.
+#
+# Publica sus metadatos y endpoints de emision de WUA (Wallet Unit Attestations) y Key Attestations
+# bajo https://civica-desarrollo.avance.org.co/wallet-provider, a traves del proxy unico nw-nginx.
+# Los tres servicios llevan `restart: unless-stopped`: si el PC o Docker se reinician, vuelven solos.
+# (Antes no tenian politica de reinicio y se quedaban caidos tras cada reinicio.)
+# Los puertos de este compose no se publican en el host: se acceden por la red compartida
+# 'avance-eudi', donde el proxy los alcanza por nombre de servicio.
+#
+# Requisito previo: ./scripts/generar-pki-spartans.sh  (crea docker/spartans/keystore.jks y
+# las claves del servicio de listas de estado en docker/status-list/certs/).
+
+networks:
+  spartans:
+    name: spartans_default
+    external: true
+  avance-eudi:
+    name: avance-eudi
+    external: true
+
+services:
+  postgres-spartans:
+    image: postgres:18.4-alpine3.24
+    container_name: postgres-spartans
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${SPARTANS_DB_PORT:-5435}:5432"
+    environment:
+      - POSTGRES_DB=spartans
+      - POSTGRES_USER=spartans
+      - POSTGRES_PASSWORD=spartans
+    volumes:
+      - ../schemas/postgresql/V1.sql:/docker-entrypoint-initdb.d/01-V1.sql:RO
+      - postgres-spartans:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U spartans -d spartans" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - spartans
+
+  status-list-spartans:
+    build:
+      context: ../docker/status-list
+      dockerfile: Dockerfile
+      args:
+        VERSION: v0.9.0
+    image: status-list-spartans:v0.9.0
+    container_name: status-list-spartans
+    restart: unless-stopped
+    environment:
+      API_key: spartans-status-list-key
+      # URL publica: la compone el servicio como <base>token_status_list/<country>/<doctype>/<list>.
+      # El proxy unico enruta ese prefijo a este servicio.
+      STATUS_LIST_PUBLIC_URL: https://civica-desarrollo.avance.org.co/status-list/wallet-provider/
+    volumes:
+      - ../docker/status-list/config/config_service.py:/status-list/app/config_service.py
+      - ../docker/status-list/certs:/status-list/certs
+      - status-lists-spartans:/var/opt/status_lists
+      - status-lists-backups-spartans:/var/opt/status_list_backup
+    # Sin curl ni wget en la imagen: se comprueba que el puerto acepte conexiones.
+    healthcheck:
+      test: [ "CMD", "python3", "-c", "import socket; socket.create_connection(('localhost', 5000), 2)" ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+    networks:
+      - spartans
+      - avance-eudi
+
+  spartans-wallet-provider:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: spartans-wallet-provider:local
+    container_name: spartans-wallet-provider
+    restart: unless-stopped
+    depends_on:
+      postgres-spartans:
+        condition: service_healthy
+      status-list-spartans:
+        condition: service_healthy
+    volumes:
+      - ../docker/spartans/keystore.jks:/keystore.jks:ro
+    environment:
+      - SERVER_PORT=8080
+      # Base de datos
+      - DATABASE_URL=r2dbc:pool:postgresql://postgres-spartans:5432/spartans
+      - DATABASE_USERNAME=spartans
+      - DATABASE_PASSWORD=spartans
+      # Llave de firma de las attestations
+      - SIGNINGKEY_KEYSTOREFILE=/keystore.jks
+      - SIGNINGKEY_KEYSTOREPASSWORD=spartans-keys
+      - SIGNINGKEY_KEYSTORETYPE=JKS
+      - SIGNINGKEY_KEYALIAS=spartans-wallet-provider
+      - SIGNINGKEY_KEYPASSWORD=spartans-signing
+      - SIGNINGKEY_ALGORITHM=ES256
+      # Identidad del Wallet Provider (unica en el ecosistema)
+      - ISSUER_PUBLICURL=https://civica-desarrollo.avance.org.co/wallet-provider
+      - ISSUER_NAME=Spartans Wallet Provider
+      - CLIENTID=eudiw-abca
+      # Wallet Instance Attestation
+      - WALLETINSTANCEATTESTATION_WALLETNAME=Spartans Wallet
+      - WALLETINSTANCEATTESTATION_WALLETLINK=https://civica-desarrollo.avance.org.co
+      - WALLETINSTANCEATTESTATION_WALLETVERSION=1.0.0
+      - WALLETINSTANCEATTESTATION_WALLETSOLUTIONCERTIFICATIONINFORMATION=https://civica-desarrollo.avance.org.co/wallet-provider/certification
+      # Key Attestation
+      - KEYATTESTATION_CERTIFICATION=https://civica-desarrollo.avance.org.co/wallet-provider/certification
+      # Status list propio (servicio local del provider)
+      - TOKENSTATUSLISTSERVICE_SERVICEURL=http://status-list-spartans:5000/token_status_list/take
+      - TOKENSTATUSLISTSERVICE_APIKEY=spartans-status-list-key
+      - TOKENSTATUSLISTSERVICE_COUNTRY=FC
+      # Endpoint interno de revocacion de instancias de wallet (solo red docker; ARF WURevocation_07)
+      - WALLETPROVIDER_REVOCATION_APIKEY=${WALLETPROVIDER_REVOCATION_APIKEY:-wp-dev-revocation-key-change-me}
+      # Plataforma Android: la wallet de Avance y la New Wallet (un solo provider, dos apps)
+      - PLATFORMKEYATTESTATIONVALIDATION_ANDROID_APPLICATIONS_0_PACKAGENAME=co.org.avance.wallet.dev
+      - PLATFORMKEYATTESTATIONVALIDATION_ANDROID_APPLICATIONS_0_SIGNINGCERTIFICATEDIGESTS_0=xUMzSllGJMaZkE7gIcekICf1Rs6jjvcvM9wzmiQwmbk=
+      - PLATFORMKEYATTESTATIONVALIDATION_ANDROID_APPLICATIONS_1_PACKAGENAME=co.org.newwallet.app.dev
+      - PLATFORMKEYATTESTATIONVALIDATION_ANDROID_APPLICATIONS_1_SIGNINGCERTIFICATEDIGESTS_0=AdMZodoCPiGYIScQeMtugvDUZSGcxrht-KxtASkKi1k=
+      # La MISMA app en el flavor V2 (paquete distinto, para que conviva con la
+      # anterior en el telefono). Se valida por PAQUETE, no por nombre de app, asi que
+      # el paquete nuevo necesita su propia entrada. La firma es la misma: el APK V2
+      # se firma con el mismo keystore (keystore/newwallet-dev.jks).
+      - PLATFORMKEYATTESTATIONVALIDATION_ANDROID_APPLICATIONS_2_PACKAGENAME=co.org.newwallet.app.dev.v2
+      - PLATFORMKEYATTESTATIONVALIDATION_ANDROID_APPLICATIONS_2_SIGNINGCERTIFICATEDIGESTS_0=AdMZodoCPiGYIScQeMtugvDUZSGcxrht-KxtASkKi1k=
+      # wallet-auditoria: la misma app que reporta su actividad al centro de auditoria (srv-auditoria). Paquete propio
+      # `.dev.auditoria` para convivir con las otras en el telefono; misma firma (keystore/newwallet-dev.jks).
+      - PLATFORMKEYATTESTATIONVALIDATION_ANDROID_APPLICATIONS_3_PACKAGENAME=co.org.newwallet.app.dev.auditoria
+      - PLATFORMKEYATTESTATIONVALIDATION_ANDROID_APPLICATIONS_3_SIGNINGCERTIFICATEDIGESTS_0=AdMZodoCPiGYIScQeMtugvDUZSGcxrht-KxtASkKi1k=
+      # Solo desarrollo: aceptar emuladores / bootloader desbloqueado
+      - PLATFORMKEYATTESTATIONVALIDATION_ANDROID_SOFTWAREATTESTATIONENABLED=true
+      - PLATFORMKEYATTESTATIONVALIDATION_ANDROID_UNLOCKEDBOOTLOADERALLOWED=true
+
+    networks:
+      - spartans
+      - avance-eudi
+
+volumes:
+  postgres-spartans:
+  status-lists-spartans:
+  status-lists-backups-spartans:

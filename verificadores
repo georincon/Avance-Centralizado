@@ -1,0 +1,81 @@
+ los 12 portales de verificación tiene ahora su propia base de datos Postgres, en su propio contenedor, con puerto, usuario, contraseña y volumen, igual que los emisores. Todos están en marcha y los 12 portales y sus historiales responden 200.
+
+Datos para DBeaver
+
+Servidor 127.0.0.1 (solo desde este equipo). En cada una, la base, el usuario y la contraseña son el mismo texto.
+
+┌──────────────┬────────┬─────────────────────────────┐
+│    Portal    │ Puerto │ Base / usuario / contraseña │
+├──────────────┼────────┼─────────────────────────────┤
+│ acceso       │ 5461   │ verif_acceso                │
+├──────────────┼────────┼─────────────────────────────┤
+│ aerolinea    │ 5462   │ verif_aerolinea             │
+├──────────────┼────────┼─────────────────────────────┤
+│ banco        │ 5463   │ verif_banco                 │
+├──────────────┼────────┼─────────────────────────────┤
+│ beca         │ 5464   │ verif_beca                  │
+├──────────────┼────────┼─────────────────────────────┤
+│ cancilleria  │ 5465   │ verif_cancilleria           │
+├──────────────┼────────┼─────────────────────────────┤
+│ contratacion │ 5466   │ verif_contratacion          │
+├──────────────┼────────┼─────────────────────────────┤
+│ discoteca    │ 5467   │ verif_discoteca             │
+├──────────────┼────────┼─────────────────────────────┤
+│ eps          │ 5468   │ verif_eps                   │
+├──────────────┼────────┼─────────────────────────────┤
+│ gym          │ 5469   │ verif_gym                   │
+├──────────────┼────────┼─────────────────────────────┤
+│ migracion    │ 5470   │ verif_migracion             │
+├──────────────┼────────┼─────────────────────────────┤
+│ notaria      │ 5471   │ verif_notaria               │
+├──────────────┼────────┼─────────────────────────────┤
+│ pensiones    │ 5472   │ verif_pensiones             │
+└──────────────┴────────┴─────────────────────────────┘
+
+Dentro de cada base:
+- Tabla evento: una fila por hecho, con la persona atendida, la credencial, el resultado, el error, la duración y los nombres de los datos pedidos y recibidos.
+- Vistas v_verificaciones y v_emisiones: el mismo contenido filtrado por rol.
+- Solo inserción: la tabla rechaza modificar y borrar. Lo comprobé con un DELETE, que fallaó con el mensaje de la regla.
+
+
+las 12 vistas de historial de verificadores están desarrolladas y responden. Las comprobé ahora una por una: todas dan 200 y devuelven datos.
+
+Ninguna pide usuario ni clave. Se abren directo con la URL, pero el proxy central solo las deja ver desde IPs de administración: la red local, la IP pública del sitio y las de ips-admin-permitidas.conf. Desde otra IP darían 403. Ese bloqueo por IP lo configuré, pero no lo he probado desde una IP externa.
+
+Base: https://civica-desarrollo.avance.org.co/<portal>/auditoria/
+
+┌─────────────────────┬──────────────────────────┬──────────────────────────────────────────────────────────┬───────────────┐
+│     Verificador     │          Enlace          │                       Qué verifica                       │ Registros hoy │
+├─────────────────────┼──────────────────────────┼──────────────────────────────────────────────────────────┼───────────────┤
+│ Discoteca           │ /discoteca/auditoria/    │ PID, solo «mayor de edad»                                │ 10            │
+├─────────────────────┼──────────────────────────┼──────────────────────────────────────────────────────────┼───────────────┤
+│ Banco               │ /banco/auditoria/        │ PID (ingreso y apertura de cuenta); también emite        │ 2             │
+├─────────────────────┼──────────────────────────┼──────────────────────────────────────────────────────────┼───────────────┤
+│ Contratación        │ /contratacion/auditoria/ │ PID y formación académica                                │ 0             │
+├─────────────────────┼──────────────────────────┼──────────────────────────────────────────────────────────┼───────────────┤
+│ EPS                 │ /eps/auditoria/          │ PID, carné de afiliado e historia clínica; también emite │ 0             │
+├─────────────────────┼──────────────────────────┼──────────────────────────────────────────────────────────┼───────────────┤
+│ Notaría             │ /notaria/auditoria/      │ PID y documentos notariales; también emite               │ 0             │
+├─────────────────────┼──────────────────────────┼──────────────────────────────────────────────────────────┼───────────────┤
+│ Aerolínea           │ /aerolinea/auditoria/    │ PID y tiquetes; también emite                            │ 0             │
+├─────────────────────┼──────────────────────────┼──────────────────────────────────────────────────────────┼───────────────┤
+│ Becas e inscripción │ /beca/auditoria/         │ PID y credencial académica                               │ 0             │
+├─────────────────────┼──────────────────────────┼──────────────────────────────────────────────────────────┼───────────────┤
+│ Control de acceso   │ /acceso/auditoria/       │ PID y credenciales de acceso                             │ 2             │
+├─────────────────────┼──────────────────────────┼──────────────────────────────────────────────────────────┼───────────────┤
+│ Pensiones           │ /pensiones/auditoria/    │ PID, fe de vida y supervivencia                          │ 0             │
+├─────────────────────┼──────────────────────────┼──────────────────────────────────────────────────────────┼───────────────┤
+│ Cancillería         │ /cancilleria/auditoria/  │ PID y documentos del trámite; también emite              │ 0             │
+├─────────────────────┼──────────────────────────┼──────────────────────────────────────────────────────────┼───────────────┤
+│ Migración           │ /migracion/auditoria/    │ PID y control migratorio                                 │ 0             │
+├─────────────────────┼──────────────────────────┼──────────────────────────────────────────────────────────┼───────────────┤
+│ Gimnasio            │ /gym/auditoria/          │ PID y tarjeta de socio; también emite                    │ 0             │
+└─────────────────────┴──────────────────────────┴──────────────────────────────────────────────────────────┴───────────────┘
+
+Cada página muestra totales, filtros por emisión o verificación, resultado, fechas y texto, y el detalle de cada registro. Se actualiza sola cada 10 segundos. Los que también emiten muestran sus emisiones en la misma página.
+
+Dos aclaraciones
+- Contadores en cero: casi todos están en cero porque la limpieza borró el historial y todavía no has probado cada portal con la wallet.
+- Fuera de esta lista: los dos verificadores independientes, verifier-uis y verifier-firma, no tienen vista propia. Son el verifier oficial, que guarda las presentaciones solo en memoria. Sus verificaciones salen en el Panorama de /srv-auditoria/ si pasan por un portal. Las verificaciones de verifier-firma, que usa Andes SCD, no están enganchadas a la auditoría.
+
+Si quieres que los 12 enlaces estén en un solo sitio, por ejemplo una página índice, dímelo.

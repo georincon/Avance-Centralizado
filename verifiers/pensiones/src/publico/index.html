@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{NOMBRE}} · Prueba de supervivencia</title>
+<link rel="icon" href="{{BASE}}/publico/marca.svg">
+<style>
+  :root { --azul: #0b2a5b; --azul-2: #123a7a; --amarillo: #ffd200; --amarillo-osc: #e6bc00; --gris: #f1f2f4; --linea: #dcdfe4; --tinta: #1f2937; --suave: #5f6b7a; --ok: #146c3a; --ok-f: #e6f4ea; --mal: #b3261e; --mal-f: #fdecea; }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: var(--tinta); background: #fff; font: 16px/1.5 "Montserrat", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+  a { color: inherit; text-decoration: none; }
+  .contenedor { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+  /* franja superior */
+  .franja { background: var(--azul); color: #cfd9ec; font-size: .78rem; } .franja .contenedor { display: flex; justify-content: space-between; gap: 16px; padding-top: 7px; padding-bottom: 7px; flex-wrap: wrap; } .franja b { color: var(--amarillo); }
+  /* cabecera */
+  header { background: #fff; border-bottom: 1px solid var(--linea); position: sticky; top: 0; z-index: 5; }
+  .cab { display: flex; align-items: center; gap: 28px; padding-top: 12px; padding-bottom: 12px; }
+  @media (max-width: 1280px) { .cab { gap: 14px; } nav a { padding: 9px 9px; font-size: .88rem; } .marca strong { font-size: 1.1rem; } }
+  @media (max-width: 1080px) { nav a { padding: 8px 6px; font-size: .82rem; } .usuario .claro { padding: 8px 10px; font-size: .85rem; } }
+  .marca { display: flex; align-items: center; gap: 10px; } .marca img { width: 46px; height: 46px; } .marca strong { display: block; color: var(--azul); font-size: 1.2rem; line-height: 1.05; font-weight: 800; } .marca small { color: var(--suave); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
+  nav { display: flex; gap: 4px; margin-left: auto; flex-wrap: nowrap; white-space: nowrap; } nav a { padding: 9px 13px; border-radius: 6px; font-weight: 600; font-size: .92rem; color: var(--azul); } nav a:hover, nav a.activo { background: var(--gris); } nav a.activo { box-shadow: inset 0 -3px 0 var(--amarillo); border-radius: 6px 6px 0 0; }
+  .usuario { display: flex; align-items: center; gap: 10px; font-size: .9rem; } .usuario b { color: var(--azul); } .usuario .claro { padding: 7px 14px; }
+  .doc { border: 2px solid var(--azul); border-radius: 10px; padding: 26px; background: #fff; } .doc h3 { margin: 0; color: var(--azul); text-align: center; font-size: 1.15rem; letter-spacing: .04em; } .doc .ent { text-align: center; color: var(--suave); margin-bottom: 16px; font-size: .9rem; }
+  .doc p.texto { text-align: justify; margin: 14px 0; } .estado { display: inline-block; padding: 3px 10px; border-radius: 4px; font-weight: 800; background: var(--ok-f); color: var(--ok); } .estado.no { background: var(--mal-f); color: var(--mal); }
+  table.t { width: 100%; border-collapse: collapse; font-size: .9rem; margin: 10px 0; } table.t th, table.t td { padding: 7px 8px; border-bottom: 1px solid var(--linea); text-align: left; } table.t td.n, table.t th.n { text-align: right; font-variant-numeric: tabular-nums; } table.t tfoot td { font-weight: 800; border-top: 2px solid var(--azul); }
+  .meses { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 14px; } .meses button { padding: 7px 12px; background: var(--gris); color: var(--azul); border: 1px solid var(--linea); } .meses button.sel { background: var(--azul); color: #fff; }
+  @media print { body * { visibility: hidden; } #resultado, #resultado * { visibility: visible; } #resultado { position: absolute; left: 0; top: 0; width: 100%; } .acciones { display: none !important; } }
+  .buscar { width: 100%; padding: 11px 14px; border: 1px solid var(--linea); border-radius: 8px; font: inherit; margin-bottom: 12px; } details.p { border-bottom: 1px solid var(--linea); padding: 10px 0; } details.p summary { cursor: pointer; font-weight: 700; color: var(--azul); } details.p p { margin: 8px 0 2px; color: var(--tinta); } .cat { font-size: .74rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--suave); margin: 16px 0 2px; }
+  /* héroe */
+  .heroe { background: linear-gradient(110deg, var(--azul) 0%, var(--azul-2) 60%, #1f56a8 100%); color: #fff; position: relative; overflow: hidden; }
+  .heroe::after { content: ""; position: absolute; right: -90px; top: -90px; width: 380px; height: 380px; border-radius: 50%; background: var(--amarillo); opacity: .95; }
+  .heroe::before { content: ""; position: absolute; right: 150px; bottom: -120px; width: 240px; height: 240px; border-radius: 50%; background: rgba(255,255,255,.08); }
+  .heroe .contenedor { position: relative; z-index: 1; padding-top: 54px; padding-bottom: 60px; display: grid; grid-template-columns: 1.2fr .8fr; gap: 30px; align-items: center; }
+  @media (max-width: 860px) { .heroe .contenedor { grid-template-columns: 1fr; } .heroe::after { width: 220px; height: 220px; right: -70px; top: -70px; } }
+  .insignia { display: inline-block; background: var(--amarillo); color: var(--azul); font-weight: 800; font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; padding: 5px 12px; border-radius: 4px; margin-bottom: 14px; }
+  .heroe h1 { font-size: clamp(1.9rem, 4.2vw, 2.9rem); line-height: 1.1; margin: 0 0 14px; font-weight: 800; } .heroe p { max-width: 54ch; color: #d6e0f3; margin: 0 0 22px; font-size: 1.05rem; }
+  .tarjeta-hero { background: #fff; color: var(--tinta); border-radius: 12px; padding: 20px 22px; box-shadow: 0 14px 40px rgba(0,0,0,.25); border-top: 6px solid var(--amarillo); } .tarjeta-hero h3 { margin: 0 0 8px; color: var(--azul); font-size: 1.05rem; } .tarjeta-hero ol { margin: 0; padding-left: 20px; font-size: .92rem; } .tarjeta-hero li { margin: 6px 0; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 6px; font-weight: 700; } button:focus-visible, a:focus-visible { outline: 3px solid var(--azul); outline-offset: 3px; }
+  .sol { background: var(--amarillo); color: var(--azul); padding: 14px 28px; font-size: 1rem; box-shadow: 0 3px 0 var(--amarillo-osc); } .sol:hover { background: #ffdc33; }
+  .claro { background: #fff; color: var(--azul); border: 1px solid var(--linea); padding: 10px 18px; } .claro:hover { border-color: var(--azul); }
+  /* accesos rápidos */
+  .accesos { margin-top: -30px; position: relative; z-index: 2; } .accesos .contenedor { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; } @media (max-width: 860px) { .accesos .contenedor { grid-template-columns: repeat(2, 1fr); } }
+  .acceso { background: #fff; border: 1px solid var(--linea); border-radius: 10px; padding: 16px; box-shadow: 0 6px 18px rgba(11,42,91,.08); display: flex; gap: 12px; align-items: center; border-bottom: 4px solid var(--amarillo); }
+  .acceso.principal { background: var(--azul); color: #fff; border-color: var(--amarillo); } .acceso .ic { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--gris); display: grid; place-items: center; color: var(--azul); } .acceso.principal .ic { background: var(--amarillo); }
+  .acceso b { display: block; font-size: .92rem; line-height: 1.2; } .acceso span { font-size: .76rem; opacity: .75; }
+  /* contenido */
+  main { padding: 40px 0 56px; } .rejilla { display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; align-items: start; } @media (max-width: 900px) { .rejilla { grid-template-columns: 1fr; } }
+  h2.seccion { margin: 0 0 14px; color: var(--azul); font-size: 1.4rem; font-weight: 800; } h2.seccion::after { content: ""; display: block; width: 46px; height: 4px; background: var(--amarillo); margin-top: 6px; border-radius: 2px; }
+  .panel { background: #fff; border: 1px solid var(--linea); border-radius: 10px; padding: 22px; margin-bottom: 18px; } .panel h2 { margin: 0 0 6px; font-size: 1.2rem; color: var(--azul); } .sub { color: var(--suave); margin: 0 0 14px; font-size: .92rem; }
+  .veredicto { display: flex; gap: 12px; align-items: center; padding: 14px 16px; border-radius: 8px; font-weight: 800; font-size: 1.1rem; margin-bottom: 8px; background: var(--ok-f); color: var(--ok); } .veredicto.no { background: var(--mal-f); color: var(--mal); }
+  .criterio { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--linea); } .criterio:last-of-type { border-bottom: 0; }
+  .criterio .m { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: .8rem; background: var(--ok); } .criterio.no .m { background: var(--mal); }
+  .criterio b { display: block; } .criterio span { color: var(--suave); font-size: .88rem; }
+  dl { margin: 12px 0 0; } .fila { display: flex; justify-content: space-between; gap: 18px; padding: 8px 0; border-bottom: 1px solid var(--linea); } .fila:last-child { border-bottom: 0; } dt { color: var(--suave); } dd { margin: 0; text-align: right; font-weight: 700; }
+  ul.lista { list-style: none; margin: 0; padding: 0; } ul.lista li { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--linea); } ul.lista li:last-child { border-bottom: 0; } ul.lista small { color: var(--suave); display: block; }
+  .vacio { color: var(--suave); text-align: center; padding: 16px 0; }
+  .aviso { background: #fff8d6; border: 1px solid #ecd978; color: #6b5a05; border-radius: 8px; padding: 10px 14px; font-size: .9rem; margin: 10px 0; }
+  .noticias { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 34px; } @media (max-width: 860px) { .noticias { grid-template-columns: 1fr; } }
+  .noticia { background: var(--gris); border-radius: 10px; padding: 18px; border-left: 5px solid var(--amarillo); } .noticia small { color: var(--suave); } .noticia b { display: block; color: var(--azul); margin: 4px 0; }
+  dialog { border: 0; border-radius: 12px; padding: 0; width: min(480px, calc(100vw - 28px)); box-shadow: 0 24px 70px rgba(0,0,0,.4); border-top: 6px solid var(--amarillo); } dialog::backdrop { background: rgba(11,42,91,.72); }
+  .modal { padding: 26px; text-align: center; } .modal h2 { margin: 0 0 4px; color: var(--azul); } .modal .qr { width: 250px; max-width: 100%; border: 1px solid var(--linea); border-radius: 10px; padding: 6px; margin: 10px auto; display: block; }
+  .pide { text-align: left; background: var(--gris); border-radius: 8px; padding: 10px 14px; font-size: .86rem; color: var(--suave); margin: 10px 0; } .pide b { color: var(--tinta); } .cuenta { color: var(--suave); font-size: .85rem; min-height: 1.3em; }
+  .solo-movil { display: none; } .boton-wallet { display: block; background: var(--amarillo); color: var(--azul); padding: 14px 28px; border-radius: 6px; font-weight: 800; box-shadow: 0 3px 0 var(--amarillo-osc); margin: 12px 0; }
+  .acciones { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+  footer { background: var(--azul); color: #b9c6e0; font-size: .85rem; border-top: 6px solid var(--amarillo); } footer .contenedor { padding-top: 26px; padding-bottom: 26px; display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 20px; } @media (max-width: 860px) { footer .contenedor { grid-template-columns: 1fr; } } footer b { color: #fff; display: block; margin-bottom: 6px; } footer a { display: block; padding: 2px 0; }
+</style>
+</head>
+<body>
+<div class="franja"><div class="contenedor"><span><b>Entidad ficticia</b> · para probar el ecosistema EUDI Wallet</span><span>Línea de atención de prueba · 000 0000</span></div></div>
+<header><div class="contenedor cab">
+  <a class="marca" href="{{BASE}}/"><img src="{{BASE}}/publico/marca.svg" alt=""><div><strong>{{NOMBRE}}</strong><small>Pensiones y cesantías</small></div></a>
+  <nav aria-label="Principal"><a href="#">Inicio</a><a href="#">Pensionados</a><a href="#">Afiliados</a><a class="activo" href="#prueba">Prueba de supervivencia</a><a href="#prueba" id="nav-ayuda">Ayuda</a><a href="{{BASE}}/auditoria/" id="nav-historial" hidden>Historial</a></nav>
+  <div class="usuario" id="usuario"><button class="claro" id="ingresar">Ingresar con mi wallet</button></div>
+</div></header>
+<section class="heroe">
+  <div class="contenedor">
+    <div>
+      <span class="insignia">Servicio digital</span>
+      <h1>Compruebe que está con vida sin filas ni papeles</h1>
+      <p>Para seguir recibiendo su mesada, {{NOMBRE}} necesita saber que usted está con vida. Con su <b>fe de vida notarial</b> y su documento de identidad en la wallet, lo hace en segundos.</p>
+      <button class="sol" id="comprobar">Comprobar mi supervivencia</button>
+    </div>
+    <div class="tarjeta-hero"><h3>¿Cómo funciona?</h3><ol><li>Pida su fe de vida en una notaría (vale 30 días) y recíbala en la wallet.</li><li>Aquí escanee un código con la wallet.</li><li>El fondo comprueba que la constancia es de una notaría de confianza, está vigente y es suya.</li></ol></div>
+  </div>
+</section>
+<section class="accesos"><div class="contenedor">
+  <a class="acceso principal" href="#prueba"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0b2a5b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.600-9-9.200C1.800 8.200 3.900 5 7 5c2 0 3.400 1.100 5 3 1.600-1.900 3-3 5-3 3.100 0 5.200 3.200 4 6.800C19 16.400 12 21 12 21z"/></svg></span><div><b>Prueba de supervivencia</b><span>Disponible ahora</span></div></a>
+  <a class="acceso" href="#prueba" id="acc-cert"><span class="ic">▤</span><div><b>Certificado de pensionado</b><span>Disponible ahora</span></div></a>
+  <a class="acceso" href="#prueba" id="acc-desp"><span class="ic">$</span><div><b>Desprendible de mesada</b><span>Disponible ahora</span></div></a>
+  <a class="acceso" href="#prueba" id="acc-faq"><span class="ic">?</span><div><b>Preguntas frecuentes</b><span>Disponible ahora</span></div></a>
+</div></section>
+<main id="prueba"><div class="contenedor">
+  <div class="rejilla">
+    <div><h2 class="seccion">Resultado de la comprobación</h2><div id="resultado"><div class="panel"><p class="sub">Aquí aparece el resultado.</p><div class="aviso">Se pide la fe de vida (titular, vigencia, constancia) y, del documento de identidad, solo nombre y número de documento. No se guarda nada.</div></div></div></div>
+    <div><h2 class="seccion">Registro de la jornada</h2><div class="panel"><p class="sub">Supervivencias acreditadas hoy (solo iniciales y últimos dígitos).</p><ul class="lista" id="registro"></ul><div class="vacio" id="vacio">Todavía no hay pruebas acreditadas.</div></div></div>
+  </div>
+  <div class="noticias">
+    <div class="noticia"><small>Aviso</small><b>La fe de vida vale 30 días</b>Haga la comprobación dentro de ese plazo.</div>
+    <div class="noticia"><small>Privacidad</small><b>No guardamos sus datos</b>Cierre la página y el resultado se borra.</div>
+    <div class="noticia"><small>Seguridad</small><b>Constancia verificable</b>Solo se aceptan constancias de notarías de confianza.</div>
+  </div>
+</div></main>
+<footer><div class="contenedor"><div><b>{{NOMBRE}}</b>Fondo ficticio para probar el ecosistema EUDI Wallet. No paga pensiones reales y sus resultados no tienen validez legal.</div><div><b>Servicios</b><a href="#prueba">Prueba de supervivencia</a><a href="#">Pensionados</a></div><div><b>Contacto</b><a href="#">Línea de prueba 000 0000</a><a href="#">Aviso de privacidad</a></div></div></footer>
+<dialog id="modal" aria-labelledby="m-titulo"><div class="modal" id="m"></div></dialog>
+<script>
+(() => {
+  const BASE = '{{BASE}}'
+  const $ = (id) => document.getElementById(id)
+  const modal = $('modal'), m = $('m')
+  const MOVIL = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+  let sondeo = null, cuenta = null, pensionado = null
+  const guardar = (a) => { try { sessionStorage.setItem('pensiones_despues', a) } catch {} }
+  const tomar = () => { try { const a = sessionStorage.getItem('pensiones_despues'); sessionStorage.removeItem('pensiones_despues'); return a } catch { return null } }
+  const pesos = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(n)
+  function el(tag, props = {}, ...hijos) {
+    const e = document.createElement(tag)
+    for (const [k, v] of Object.entries(props)) { if (k === 'class') e.className = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v) }
+    for (const h of hijos.flat()) if (h != null && h !== false) e.append(h.nodeType ? h : document.createTextNode(String(h)))
+    return e
+  }
+  const api = async (ruta, o = {}) => { const r = await fetch(BASE + ruta, o); return { ok: r.ok, cuerpo: await r.json().catch(() => ({})) } }
+  const parar = () => { clearInterval(sondeo); clearInterval(cuenta); sondeo = cuenta = null }
+  modal.addEventListener('close', parar)
+  const cerrar = () => { parar(); if (modal.open) modal.close() }
+  const fecha = (f) => (f ? new Date(`${f}T12:00:00Z`).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : '—')
+
+  function pintarUsuario() {
+    $('usuario').replaceChildren(...(pensionado
+      ? [el('span', {}, 'Hola, ', el('b', {}, pensionado.nombre), ` · doc. ${pensionado.documento}`), el('button', { class: 'claro', onclick: salir }, 'Salir')]
+      : [el('button', { class: 'claro', onclick: () => comprobar('ingreso') }, 'Ingresar con mi wallet')]))
+  }
+  async function salir() {
+    await api('/api/salir', { method: 'POST' }); pensionado = null; pintarUsuario()
+    $('resultado').replaceChildren(el('div', { class: 'panel' }, el('p', { class: 'sub' }, 'Aquí aparece el resultado.')))
+  }
+  async function sesion() { pensionado = (await api('/api/sesion')).cuerpo.pensionado ?? null; pintarUsuario() }
+
+  async function despues(a) {
+    if (a === 'certificado') return certificado()
+    if (a === 'desprendible') return desprendibles()
+    if (a === 'supervivencia') return comprobar('supervivencia')
+    $('resultado').replaceChildren(el('div', { class: 'panel' }, el('div', { class: 'aviso' }, `Sesión iniciada como ${pensionado?.nombre ?? ''}. Ahora puedes comprobar tu supervivencia o consultar tu certificado y desprendibles.`)))
+  }
+  const protegido = (accion, fn) => () => { if (!pensionado) { guardar(accion); comprobar('ingreso') } else fn() }
+  async function preguntas(q = '') {
+    const { cuerpo } = await api('/api/preguntas?q=' + encodeURIComponent(q))
+    const lista = cuerpo.preguntas ?? []
+    const buscador = $('buscar-faq') ?? el('input', { class: 'buscar', id: 'buscar-faq', type: 'search', placeholder: 'Busca tu pregunta…', 'aria-label': 'Buscar en preguntas frecuentes' })
+    const items = el('div', { id: 'faq-items' })
+    let cat = null
+    for (const x of lista) {
+      if (x.categoria !== cat) { cat = x.categoria; items.append(el('div', { class: 'cat' }, cat)) }
+      items.append(el('details', { class: 'p' }, el('summary', {}, x.pregunta), el('p', {}, x.respuesta)))
+    }
+    if (!lista.length) items.append(el('div', { class: 'vacio' }, 'No encontramos coincidencias. Prueba con otra palabra.'))
+    if (!$('buscar-faq')) {
+      buscador.addEventListener('input', () => { clearTimeout(buscador._t); buscador._t = setTimeout(() => preguntas(buscador.value), 200) })
+      $('resultado').replaceChildren(el('div', { class: 'panel' }, el('h2', {}, 'Preguntas frecuentes'), buscador, items))
+      $('prueba').scrollIntoView()
+    } else $('faq-items').replaceWith(items)
+  }
+  async function certificado() {
+    const { ok, cuerpo: c } = await api('/api/certificado')
+    if (!ok) { pensionado = null; pintarUsuario(); return }
+    const activo = c.estado === 'ACTIVO'
+    $('resultado').replaceChildren(el('div', { class: 'panel' }, el('div', { class: 'doc' },
+      el('h3', {}, 'CERTIFICADO DE PENSIONADO'), el('div', { class: 'ent' }, c.entidad),
+      el('p', { class: 'texto' }, `${c.entidad} certifica que `, el('b', {}, c.pensionado), `, identificado(a) con documento n.º ${c.documento}, es titular de una ${c.tipo.toLowerCase()} con mesada mensual de `, el('b', {}, pesos(c.mesada)), '.'),
+      el('dl', {}, el('div', { class: 'fila' }, el('dt', {}, 'Estado de la mesada'), el('dd', {}, el('span', { class: `estado${activo ? '' : ' no'}` }, c.estado))),
+        el('div', { class: 'fila' }, el('dt', {}, 'Supervivencia vigente hasta'), el('dd', {}, c.supervivencia_vence ? fecha(c.supervivencia_vence) : 'Sin prueba vigente')),
+        el('div', { class: 'fila' }, el('dt', {}, 'Fecha de expedición'), el('dd', {}, fecha(c.emitido))),
+        el('div', { class: 'fila' }, el('dt', {}, 'Código de verificación'), el('dd', {}, c.codigo))),
+      activo ? null : el('div', { class: 'aviso' }, 'Para que la mesada quede activa, acredita tu supervivencia con tu fe de vida.'),
+      el('p', { class: 'cuenta' }, 'Documento de prueba generado en un entorno ficticio; sin validez legal.')),
+      el('div', { class: 'acciones', style: 'justify-content:flex-start' }, el('button', { class: 'sol', onclick: () => print() }, 'Imprimir / guardar PDF'), activo ? null : el('button', { class: 'claro', onclick: () => comprobar('supervivencia') }, 'Comprobar mi supervivencia'))))
+    $('prueba').scrollIntoView()
+  }
+  async function desprendibles(sel) {
+    const { ok, cuerpo: d } = await api('/api/desprendibles')
+    if (!ok) { pensionado = null; pintarUsuario(); return }
+    const x = d.desprendibles.find((q) => q.clave === sel) ?? d.desprendibles[0]
+    $('resultado').replaceChildren(el('div', { class: 'panel' },
+      el('div', { class: 'meses' }, ...d.desprendibles.map((q) => el('button', { class: q.clave === x.clave ? 'sel' : '', onclick: () => desprendibles(q.clave) }, q.periodo))),
+      el('div', { class: 'doc' }, el('h3', {}, 'DESPRENDIBLE DE MESADA'), el('div', { class: 'ent' }, `Periodo: ${x.periodo}`),
+        el('dl', {}, el('div', { class: 'fila' }, el('dt', {}, 'Pensionado'), el('dd', {}, d.pensionado)), el('div', { class: 'fila' }, el('dt', {}, 'Documento'), el('dd', {}, d.documento)),
+          el('div', { class: 'fila' }, el('dt', {}, 'Estado'), el('dd', {}, el('span', { class: `estado${x.estado === 'pagada' ? '' : ' no'}` }, x.estado === 'pagada' ? `PAGADA ${fecha(x.pago)}` : 'RETENIDA'))))
+        , el('table', { class: 't' }, el('thead', {}, el('tr', {}, el('th', {}, 'Concepto'), el('th', { class: 'n' }, 'Devengado'), el('th', { class: 'n' }, 'Deducción'))),
+          el('tbody', {}, ...x.conceptos.map((c) => el('tr', {}, el('td', {}, c.concepto), el('td', { class: 'n' }, c.devengado ? pesos(c.devengado) : ''), el('td', { class: 'n' }, c.deduccion ? pesos(c.deduccion) : '')))),
+          el('tfoot', {}, el('tr', {}, el('td', {}, 'Totales'), el('td', { class: 'n' }, pesos(x.total_devengado)), el('td', { class: 'n' }, pesos(x.total_deducciones))), el('tr', {}, el('td', {}, 'Neto a pagar'), el('td', { class: 'n', colspan: 2 }, pesos(x.neto))))),
+        x.nota ? el('div', { class: 'aviso' }, x.nota) : null, el('p', { class: 'cuenta' }, 'Valores simulados; sin validez legal.')),
+      el('div', { class: 'acciones', style: 'justify-content:flex-start' }, el('button', { class: 'sol', onclick: () => print() }, 'Imprimir / guardar PDF'), x.estado === 'retenida' ? el('button', { class: 'claro', onclick: () => comprobar('supervivencia') }, 'Comprobar mi supervivencia') : null)))
+    $('prueba').scrollIntoView()
+  }
+
+  async function comprobar(tipo) {
+    tipo = tipo === 'ingreso' || !pensionado ? 'ingreso' : 'supervivencia'
+    const ingreso = tipo === 'ingreso'
+    parar(); m.replaceChildren(el('p', { class: 'cuenta' }, 'Preparando el código…')); if (!modal.open) modal.showModal()
+    const { ok, cuerpo } = await api('/api/solicitud', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ dispositivo: MOVIL ? 'mismo' : 'otro', tipo }) })
+    if (!ok) { m.replaceChildren(el('h2', {}, 'No se pudo'), el('div', { class: 'aviso' }, cuerpo.error ?? 'Error'), el('div', { class: 'acciones' }, el('button', { class: 'claro', onclick: cerrar }, 'Cerrar'))); return }
+    const restante = el('div', { class: 'cuenta' })
+    m.replaceChildren(el('h2', { id: 'm-titulo' }, ingreso ? 'Ingresar con mi wallet' : 'Prueba de supervivencia'), el('p', { class: 'cuenta' }, ingreso ? (MOVIL ? 'Abre tu wallet y comparte tu documento de identidad (PID). Volverás aquí automáticamente.' : 'Escanea con tu wallet y comparte tu documento de identidad (PID).') : (MOVIL ? 'Abre tu wallet y elige tu fe de vida. Volverás aquí automáticamente.' : 'Escanea con tu wallet y elige tu fe de vida.')),
+      MOVIL ? el('a', { class: 'boton-wallet solo-movil', style: 'display:block', href: cuerpo.enlace }, 'Abrir mi wallet') : el('img', { class: 'qr', src: cuerpo.qr, alt: 'Código QR' }), restante,
+      el('div', { class: 'pide' }, el('b', {}, 'Se pide: '), ingreso ? 'de tu documento de identidad (PID), nombre y número de documento.' : 'tu fe de vida notarial (constancia, titular, vigencia).'),
+      el('div', { class: 'acciones' }, el('button', { class: 'claro', onclick: () => navigator.clipboard?.writeText(cuerpo.enlace) }, 'Copiar enlace'), el('button', { class: 'claro', onclick: cerrar }, 'Cancelar')))
+    const limite = Date.now() + cuerpo.vence_en * 1000
+    cuenta = setInterval(() => { const s = Math.max(0, Math.round((limite - Date.now()) / 1000)); restante.textContent = `El código vence en ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` }, 1000)
+    if (MOVIL) return   // la wallet vuelve a /volver y la página recoge el resultado al cargar
+    sondeo = setInterval(async () => {
+      const { cuerpo: r } = await api('/api/solicitud/' + cuerpo.id)
+      if (r.estado === 'listo') { parar(); modal.close(); if (r.ingreso) { await sesion(); await despues(tomar()) } else { mostrar(r.supervivencia); cargar() } }
+      else if (r.estado === 'rechazada') { parar(); m.replaceChildren(el('h2', {}, 'No se pudo verificar'), el('div', { class: 'aviso' }, r.motivo), el('div', { class: 'acciones' }, el('button', { class: 'sol', onclick: () => comprobar(ingreso ? 'ingreso' : undefined) }, 'Generar un código nuevo'), el('button', { class: 'claro', onclick: cerrar }, 'Cerrar'))) }
+    }, 2000)
+  }
+  function mostrar(s) {
+    $('resultado').replaceChildren(el('div', { class: 'panel' },
+      el('div', { class: `veredicto${s.acreditada ? '' : ' no'}` }, s.acreditada ? '✔' : '✖', s.acreditada ? 'Supervivencia acreditada: tu mesada sigue activa' : 'No se pudo acreditar la supervivencia'),
+      ...s.criterios.map((c) => el('div', { class: `criterio${c.cumple ? '' : ' no'}` }, el('div', { class: 'm' }, c.cumple ? '✔' : '✖'), el('div', {}, el('b', {}, c.nombre), el('span', {}, c.detalle)))),
+      el('dl', {}, el('div', { class: 'fila' }, el('dt', {}, 'Pensionado'), el('dd', {}, s.datos.pensionado)), el('div', { class: 'fila' }, el('dt', {}, 'Documento'), el('dd', {}, s.datos.documento)),
+        el('div', { class: 'fila' }, el('dt', {}, 'Diligencia notarial'), el('dd', {}, fecha(s.datos.diligencia))), el('div', { class: 'fila' }, el('dt', {}, 'Constancia n.º'), el('dd', {}, s.datos.notaria_numero)),
+        el('div', { class: 'fila' }, el('dt', {}, 'Próxima prueba antes del'), el('dd', {}, fecha(s.datos.vence)))),
+      s.acreditada ? el('div', { class: 'aviso' }, 'La mesada del próximo mes queda habilitada (simulado). No se guarda ningún dato: cierra la página y se borra.') : null,
+      el('div', { class: 'acciones', style: 'justify-content:flex-start' }, el('button', { class: 'sol', onclick: () => comprobar() }, 'Comprobar de nuevo'))))
+  }
+  async function cargar() {
+    const { cuerpo } = await api('/api/acreditados')
+    const l = cuerpo.acreditados ?? []
+    $('vacio').hidden = l.length > 0
+    $('registro').replaceChildren(...l.map((x) => el('li', {}, el('div', {}, el('b', {}, x.pensionado), el('small', {}, `Documento ${x.documento} · próxima antes del ${fecha(x.vence)}`)), el('small', {}, new Date(x.hora).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })))))
+  }
+  // Al volver de la wallet (mismo teléfono): /volver redirige con ?volvio=1 (resultado ya liberado) o ?error=…
+  async function alVolver() {
+    const q = new URLSearchParams(location.search)
+    if (!q.has('volvio') && !q.has('error')) return
+    history.replaceState(null, '', BASE + '/')
+    $('prueba').scrollIntoView()
+    if (q.has('error')) { $('resultado').replaceChildren(el('div', { class: 'panel' }, el('div', { class: 'aviso' }, q.get('error')), el('div', { class: 'acciones', style: 'justify-content:flex-start' }, el('button', { class: 'sol', onclick: () => comprobar() }, 'Intentar de nuevo')))); return }
+    const { ok, cuerpo } = await api('/api/pendiente')
+    if (ok && cuerpo.estado === 'listo' && cuerpo.ingreso) { await sesion(); const a = tomar(); if (a) await despues(a); else $('resultado').replaceChildren(el('div', { class: 'panel' }, el('div', { class: 'aviso' }, `Sesión iniciada como ${cuerpo.ingreso.nombre}. Ahora puedes comprobar tu supervivencia o consultar tu certificado y desprendibles.`))) }
+    else if (ok && cuerpo.estado === 'listo') mostrar(cuerpo.supervivencia)
+    else $('resultado').replaceChildren(el('div', { class: 'panel' }, el('div', { class: 'aviso' }, cuerpo.motivo ?? 'No se pudo recuperar el resultado.'), el('div', { class: 'acciones', style: 'justify-content:flex-start' }, el('button', { class: 'sol', onclick: () => comprobar() }, 'Intentar de nuevo'))))
+  }
+  $('comprobar').addEventListener('click', (e) => { e.preventDefault(); if (!pensionado) guardar('supervivencia'); comprobar() })
+  $('nav-ayuda').addEventListener('click', () => preguntas())
+  $('acc-faq').addEventListener('click', () => preguntas())
+  $('acc-cert').addEventListener('click', protegido('certificado', certificado))
+  $('acc-desp').addEventListener('click', protegido('desprendible', () => desprendibles()))
+  sesion().then(alVolver); cargar()
+})()
+</script>
+<script>
+// Enlace «Historial»: solo se muestra a quien puede abrirlo (el proxy responde 403 fuera de las IPs de administración).
+try { fetch('{{BASE}}/auditoria/api/ping', { cache: 'no-store' }).then((r) => { if (r.ok) { const a = document.getElementById('nav-historial'); if (a) a.hidden = false } }).catch(() => {}) } catch (e) {}
+</script>
+</body>
+</html>

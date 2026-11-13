@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#163d69"><title>Avance · Recursos del ecosistema</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="recursos.css"></head>
+<body class="vista-recursos">
+<header class="r-cabecera">
+  <a class="r-volver" href="/" title="Volver al panel de control" aria-label="Volver al panel de control"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg><span>Panel de control</span></a>
+  <div class="r-titulo"><h1>Recursos del ecosistema</h1><p>Contenedores, redes y volúmenes de Docker con su servicio, host, puertos y tiempo de actividad.</p></div>
+  <div class="r-vivo" id="vivo" role="status"><i></i><span>Conectando…</span></div>
+  <button class="boton-salir" id="salir" type="button" title="Cerrar la sesión en este navegador"><span aria-hidden="true">⎋</span> Salir</button>
+</header>
+<main class="r-main">
+  <section class="r-kpis" id="kpis" aria-label="Resumen"></section>
+  <div class="r-barra">
+    <nav class="r-tabs" role="tablist" aria-label="Tipo de recurso">
+      <button role="tab" data-tab="contenedores" aria-selected="true">Contenedores <span id="n-contenedores">0</span></button>
+      <button role="tab" data-tab="redes" aria-selected="false">Redes <span id="n-redes">0</span></button>
+      <button role="tab" data-tab="volumenes" aria-selected="false">Volúmenes <span id="n-volumenes">0</span></button>
+    </nav>
+    <div class="r-filtros">
+      <label class="search"><span>⌕</span><input id="buscar" placeholder="Buscar proyecto, base, host, puerto…" aria-label="Buscar"></label>
+      <select id="filtro-estado" aria-label="Filtrar por estado"><option value="todos">Todos los estados</option><option value="activos">Activos</option><option value="detenidos">Detenidos</option><option value="problemas">Con problemas</option></select>
+      <select id="filtro-tipo" aria-label="Filtrar por tipo"><option value="todos">Todos los tipos</option></select>
+      <select id="filtro-grupo" aria-label="Filtrar por grupo"><option value="todos">Todos los grupos</option></select>
+    </div>
+  </div>
+  <div class="r-tabla" id="tabla"><div class="loading"><span class="spinner"></span>Consultando Docker…</div></div>
+  <p class="r-pie" id="pie"></p>
+</main>
+<div class="toast" id="toast" role="status"></div>
+<script src="recursos.js" defer></script>
+</body></html>

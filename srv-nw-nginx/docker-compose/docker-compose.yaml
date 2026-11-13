@@ -1,0 +1,56 @@
+name: nw-nginx
+
+# Punto de entrada UNICO del ecosistema EUDI de Avance.
+#
+# - Publica 80 y 443 en el host. El proxy publico (190.29.100.206) reenvia a este equipo el
+#   trafico de civica-desarrollo.avance.org.co, de modo que el dominio sirve tanto desde la LAN
+#   como desde fuera de ella, sin IPs sueltas.
+# - Se une a la red externa compartida 'avance-eudi' (ver README.md). Todos los servicios del
+#   ecosistema se conectan a esa misma red, asi que el proxy los alcanza por nombre de servicio.
+# - El proxy no invierte TLS: el borde publico termina TLS con el certificado *.avance.org.co y
+#   reenvia a este puerto 443. Aqui solo se acepta el handshake y se enruta por prefijo de ruta.
+#
+# Requisito previo: ./scripts/generar-certificados.sh  (crea certs/live/<dominio>/...)
+
+services:
+  nw-nginx:
+    image: nginx:1.27-alpine
+    container_name: nw-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ../nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../ips-admin-permitidas.conf:/etc/nginx/ips-admin-permitidas.conf:ro
+      - ../certs:/etc/letsencrypt:ro
+      - ../webroot:/var/www/certbot:ro
+    networks:
+      - avance-eudi
+
+  certbot-renew:
+    build: ../certbot-renew
+    container_name: nw-certbot-renew
+    restart: unless-stopped
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        while true; do
+          certbot renew --quiet --deploy-hook "docker exec nw-nginx nginx -s reload"
+          sleep 12h
+        done
+    volumes:
+      - ../certs:/etc/letsencrypt
+      - ../webroot:/var/www/certbot
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - nwnginx
+
+networks:
+  nwnginx:
+    name: nw-nginx_default
+    external: true
+  avance-eudi:
+    name: avance-eudi
+    external: true

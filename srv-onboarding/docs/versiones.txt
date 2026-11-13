@@ -1,0 +1,142 @@
+Onboarding - Registro de versiones (última arriba)
+==================================================
+
+v0.21.0-M20  (2026-10-14)
+  - Fecha de nacimiento con selector de calendario (solo fechas pasadas), formato DD-MM-AAAA.
+  - La app apunta a la IP del servidor en la red local (detectada al compilar; -PbackendHost para forzarla).
+    Ya no depende del túnel USB (adb reverse).
+
+v0.20.0-M19  (2026-10-14)
+  - Resultado: "Fecha de expedición" y "Lugar de expedición" en filas separadas.
+  - Resultado: bloque final "Selfie vs. foto de la cédula" con similitud (%), puntaje y mínimo requerido.
+  - Todas las pantallas se pueden desplazar verticalmente (scroll).
+
+v0.19.0-M18  (2026-10-13)
+  - OCR del texto impreso del reverso (RapidOCR): lugar de nacimiento, estatura, RH, expedición.
+  - Resultado simplificado con signo de decisión; se restauran celular y correo con código emulado.
+  - Backend: migración V3 (campos impresos).
+
+v0.18.0-M17  (2026-10-13)
+  - Datos escritos por el usuario se envían al backend y se comparan con el PDF417.
+  - Biometría real (OpenCV YuNet + SFace) en lugar del mock; lector PDF417 robusto (rotaciones, TRY_HARDER, Rh con signo).
+  - Se elimina el recorte ciego de la foto y la contraseña (se guardaba en claro).
+  - Corrige M16, que no compilaba (faltaba exifinterface).
+
+--- Historial anterior (M0-M16), del proyecto original ---
+v0.16.0-M15  (2026-10-11)
+  - Añadido campo "Fecha de nacimiento" (DD-MM-AAAA) en el paso "Cuéntanos sobre ti" y en el Resumen.
+  - Ajustado el texto del paso Nombres: "No es necesario que sean exactamente iguales a la cédula".
+  - APK: deliveries/onboarding-0.16.0-M15.apk
+
+v0.14.0-M13  (2026-10-11)
+  - INTEGRACIÓN con el backend por la red local (WiFi). La app habla con
+    http://192.168.1.7:8095 (Spring Boot). Permiso INTERNET + cleartext.
+  - Al llegar a "Procesando", la app ejecuta el flujo real: crea sesión, verifica
+    contacto (OTP), consentimiento, sube cédula frente/reverso y selfie, y consulta
+    el resultado. La pantalla "Resultado" muestra decisión + datos del OCR + biometría.
+  - OCR REAL: el backend lee el código de barras PDF417 del reverso (ZXing) y devuelve
+    número, nombres, apellidos, fecha de nacimiento, etc. (probado con la cédula real).
+  - Biometría: por ahora proveedor simulado (siempre SUCCESS); luego motor real.
+  - Backend: se agrega `onboarding.otp.expose-code` (dev) para que la app complete el OTP.
+  - Nota: el puerto 8090 lo ocupa otro proyecto; se usa 8095.
+  - APK: deliveries/onboarding-0.14.0-M13.apk
+
+v0.13.0-M12  (2026-10-11)
+  - NUEVA FASE: el RESUMEN ahora permite REVISAR y EDITAR los datos antes de validar
+    (celular, cédula, nombres, apellidos y correo). "Continuar" se habilita solo con
+    datos válidos y los guarda.
+  - APK: deliveries/onboarding-0.13.0-M12.apk
+
+v0.12.0-M11  (2026-10-11)
+  - Líneas del modelo MÁS DELGADAS (~mitad): se erosiona el trazo (vecindad 8) al generar
+    guide_front/guide_back. Siguen blancas y casi transparentes (alfa máx 60/255).
+  - Marco en horizontal con MARGEN mínimo arriba/abajo: se usa BoxWithConstraints para
+    respetar ≤88% del ancho y, si la pantalla es ancha/baja, limitar por el alto (16dp
+    de margen vertical). Nunca deformado.
+  - APK: deliveries/onboarding-0.12.0-M11.apk
+
+v0.11.0-M10  (2026-10-11)
+  - NO se entra directo a la cámara: se agrega pantalla de instrucciones con botón
+    "Tomar foto" (y "Tomar selfie") antes de abrir cada cámara.
+  - Cámara de CÉDULA en HORIZONTAL (frente y reverso). Selfie en VERTICAL.
+  - El marco sigue proporcional (88% del ancho, sin deformar); el usuario decide el
+    momento de la captura con el obturador.
+  - APK: deliveries/onboarding-0.11.0-M10.apk
+
+v0.10.0-M9  (2026-10-11)
+  - Orientación: VERTICAL por defecto al entrar; botón "Horizontal"/"Vertical" para que
+    el usuario elija cómo sostener el teléfono (ya no gira sola).
+  - Marco proporcional y sin deformar (88% del ancho, ContentScale.Fit); el usuario lo
+    acerca/aléjale hasta encajar la cédula. Texto guía actualizado.
+  - La cámara espera la decisión del usuario (obturador); no captura sola.
+  - APK: deliveries/onboarding-0.10.0-M9.apk
+
+v0.9.0-M8  (2026-10-11)
+  - Guía de cédula: líneas BLANCAS, DELGADAS y CASI TRANSPARENTES (alfa máx ~65/255).
+  - El marco YA NO ocupa el 100% del ancho: se muestra al 88% del ancho, CENTRADO y sin
+    deformar (ContentScale.Fit), para que el usuario se acerque/aleje hasta alinear.
+  - Se ELIMINA el forzado de orientación: el usuario decide cómo sostener el teléfono
+    (ya no gira sola a horizontal). Selfie sigue con óvalo.
+  - APK: deliveries/onboarding-0.9.0-M8.apk
+
+v0.8.0-M7  (2026-10-11)
+  - Captura de CÉDULA a PANTALLA COMPLETA y en HORIZONTAL (la app gira sola al entrar).
+  - El MODELO se estira para cubrir toda la pantalla (ContentScale.FillBounds).
+  - Vista previa de cámara a pantalla completa, sin barra ni botones de la plantilla;
+    obturador circular flotante y flecha atrás sobre el video.
+  - Selfie: se mantiene en VERTICAL con guía de óvalo.
+  - Tras capturar: "Repetir" (vuelve a la vista previa, NO dispara la foto) y "Continuar".
+  - APK: deliveries/onboarding-0.8.0-M7.apk
+
+v0.7.0-M6  (2026-10-11)
+  - Overlay del MODELO de cédula: se analizó modelo.png, se detectaron las 2 tarjetas
+    (frente 466x271, reverso 465x269) y se generaron guías de LÍNEA GRIS TRANSPARENTE
+    (res/drawable/guide_front.png y guide_back.png).
+  - La pantalla de captura de cédula ahora muestra el modelo superpuesto para alinear.
+  - CORRECCIÓN: "Volver a tomar" ya NO dispara la captura; vuelve a la vista previa
+    para enfocar y alinear antes de tocar el botón.
+  - Selfie conserva la guía de óvalo.
+  - Herramientas de análisis en tools/ (inspect_images.py, ascii_art.py, make_guide.py).
+  - APK: deliveries/onboarding-0.7.0-M6.apk
+
+v0.6.0-M5  (2026-10-11)
+  - Cámara DENTRO de la app (CameraX) con vista previa, en lugar de la cámara del sistema.
+  - Guía superpuesta: MARCO de cédula (con recuadros de foto y huella + firma) para el
+    frente/reverso, y ÓVALO para la selfie.
+  - NUEVA captura de SELFIE (M6) con cámara frontal.
+  - Permiso de cámara solicitado en la app; guarda imágenes en filesDir/images/.
+  - APK: deliveries/onboarding-0.6.0-M5.apk
+
+v0.5.0-M4  (2026-10-11)
+  - Captura de la cédula (FRENTE y REVERSO) con la cámara del sistema (sin CameraX).
+  - Guarda la imagen a resolución completa en filesDir/images/ (FileProvider).
+  - Muestra miniatura y permite "Volver a tomar"; el boton pasa a "Continuar".
+  - APK: deliveries/onboarding-0.5.0-M4.apk
+
+v0.4.0-M3  (2026-10-11)
+  - Nuevo paso de CONSENTIMIENTO (Ley 1581): casilla obligatoria + texto informativo,
+    ubicado entre contraseña y captura de documentos.
+  - APK: deliveries/onboarding-0.4.0-M3.apk
+
+v0.3.0-M2  (2026-10-11)
+  - Captura de datos en pantallas: celular, OTP celular, cédula, nombres/apellidos,
+    correo, OTP correo, resumen y contraseña.
+  - OTP SIMULADO: se genera código local de 6 dígitos (sin SMS/correo) y se muestra
+    en pantalla para pruebas; se valida lo ingresado.
+  - Persistencia en ALMACENAMIENTO INTERNO: filesDir/onboarding.json (estado guardado
+    tras cada cambio; sobrevive al cierre de la app).
+  - Botón Continuar se habilita solo con datos válidos; la app muestra su versión.
+  - APK: deliveries/onboarding-0.3.0-M2.apk
+
+v0.2.0-M1  (2026-10-10)
+  - Navegación del flujo de Addi (reducido, sin crédito) con 14 pantallas conectadas.
+  - Pantallas: celular, OTP, intro de perfil, cédula, nombres, correo, OTP correo,
+    resumen, contraseña, captura doc (frente), reverso, selfie, procesando, resultado.
+  - Aún sin lógica ni almacenamiento (solo navegación adelante/atrás).
+  - APK: deliveries/onboarding-0.2.0-M1.apk
+
+v0.1.0-M0  (2026-10-10)
+  - Proyecto Android en Kotlin + Jetpack Compose.
+  - Pantalla única de prueba ("M0 compila y se ejecuta").
+  - Toolchain: Kotlin 2.4.0, AGP 9.4.1, Gradle 9.7.1, compileSdk 37.
+  - APK: deliveries/onboarding-0.1.0-M0.apk

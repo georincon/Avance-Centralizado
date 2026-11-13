@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2025-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.walletprovider.domain.walletinstanceattestation
+
+import at.asitplus.signum.indispensable.josef.JwsCompactTyped
+import com.eygraber.uri.Url
+import eu.europa.ec.eudi.walletprovider.domain.*
+import eu.europa.ec.eudi.walletprovider.domain.specification.*
+import eu.europa.ec.eudi.walletprovider.domain.tokenstatuslist.Status
+import kotlinx.serialization.Required
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
+
+@Serializable
+data class WalletInstanceAttestationClaims(
+    @Required @SerialName(RFC7519.ISSUER) val issuer: Issuer,
+    @Required @SerialName(RFC7519.SUBJECT) val subject: ClientId,
+    @Required @SerialName(RFC7519.EXPIRES_AT) val expiresAt: EpochSecondsInstant,
+    @Required @SerialName(RFC7800.CONFIRMATION) val confirmation: Confirmation,
+    @SerialName(RFC7519.ISSUED_AT) val issuedAt: EpochSecondsInstant? = null,
+    @SerialName(RFC7519.NOT_BEFORE) val notBefore: EpochSecondsInstant? = null,
+    @Required @SerialName(OpenId4VCI.WALLET_NAME) val walletName: WalletName,
+    @SerialName(OpenId4VCI.WALLET_LINK) val walletLink: WalletLink? = null,
+    @SerialName(TokenStatusList.STATUS) val status: Status? = null,
+    @Required @SerialName(TS3.WALLET_VERSION) val walletVersion: WalletVersion,
+    @Required @SerialName(TS3.WALLET_SOLUTION_CERTIFICATION_INFORMATION) val walletSolutionCertificationInformation:
+        CertificationInformation,
+    @Required @SerialName(TS3.CLIENT_STATUS) val clientStatus: ClientStatus,
+    @SerialName(OpenId4VP.WALLET_METADATA) val walletMetadata: WalletMetadata? = null,
+)
+
+@Serializable
+data class ClientStatus(
+    @Required @SerialName(TokenStatusList.STATUS) val status: Status,
+    @Required @SerialName(RFC7519.EXPIRES_AT) val expiresAt: EpochSecondsInstant,
+)
+
+typealias WalletName = NonBlankString
+typealias WalletLink = Url
+typealias WalletVersion = NonBlankString
+
+/**
+ * Custom metadata provided by the Wallet to be included in the issued Wallet Instance Attestation.
+ *
+ * Can be any valid JSON value (object, array, string, number, boolean, or null).
+ */
+typealias WalletMetadata = JsonElement
+
+typealias WalletInstanceAttestation = JwsCompactTyped<WalletInstanceAttestationClaims>

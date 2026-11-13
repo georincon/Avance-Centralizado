@@ -1,0 +1,58 @@
+[versions]
+coroutines = "1.11.0"
+kotlin = "2.4.0"
+arrow = "2.2.3"
+springboot = "4.1.0"
+spotless = "8.8.0"
+java = "25"
+kotlinxSerialization = "1.11.0"
+ktlint = "1.8.0"
+nimbusJoseJwt = "10.9.1"
+nimbusOAuth2 = "11.37.2"
+eudiSdJwt = "0.20.1"
+statium = "0.5.1"
+ktor = "3.5.1"
+bouncyCastle = "1.84"
+dependencyCheck = "12.2.2"
+bootstrap = "5.3.8"
+waltid = "0.11.0"
+uri-kmp = "0.0.21"
+zxing = "3.5.4"
+tink = "1.22.0"
+kover = "0.9.8"
+cose-java = "1.1.0"
+kotlinx-datetime = "0.8.0-0.6.x-compat"
+
+[libraries]
+kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
+kotlinx-coroutines-bom = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-bom", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test" }
+kotlinx-serialization-bom = { module = "org.jetbrains.kotlinx:kotlinx-serialization-bom", version.ref = "kotlinxSerialization" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+arrow-stack = { module = "io.arrow-kt:arrow-stack", version.ref = "arrow" }
+arrow-core  = { module = "io.arrow-kt:arrow-core" }
+arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines" }
+arrow-core-serialization = { module = "io.arrow-kt:arrow-core-serialization" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json" }
+nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbusJoseJwt" }
+nimbus-oauth2 = { module = "com.nimbusds:oauth2-oidc-sdk", version.ref = "nimbusOAuth2" }
+eudi-sdjwt = { module = "eu.europa.ec.eudi:eudi-lib-jvm-sdjwt-kt", version.ref = "eudiSdJwt" }
+bouncy-castle = { module = "org.bouncycastle:bcpkix-jdk18on", version.ref = "bouncyCastle" }
+bootstrap = { module = "org.webjars:bootstrap", version.ref = "bootstrap" }
+tink = { module = "com.google.crypto.tink:tink", version.ref = "tink" }
+waltid-mdoc-credentials = { module = "id.walt.mdoc-credentials:waltid-mdoc-credentials-jvm", version.ref = "waltid" }
+uri-kmp = { module = "com.eygraber:uri-kmp", version.ref = "uri-kmp" }
+zxing = { module = "com.google.zxing:javase", version.ref = "zxing" }
+cose-java = { module = "com.augustcellars.cose:cose-java", version.ref = "cose-java" }
+statium = { module = "eu.europa.ec.eudi:eudi-lib-kmp-statium-jvm", version.ref = "statium" }
+ktor-client-java = { module = "io.ktor:ktor-client-java", version.ref = "ktor" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "springboot" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-plugin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+dependency-check = { id = "org.owasp.dependencycheck", version.ref = "dependencyCheck" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+

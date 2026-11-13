@@ -1,0 +1,131 @@
+                                                                                     Identificación OID:   1.3.6.1.4.1.31144.3.2.002.1.1
+                                                                                                 Fecha:    02-01-2020
+                                       ESPECIFICACION DE REQUISITOS                            Versión:    1.1
+                                                SOFTWARE                                  Clasificación:   Interno
+                                                  (ERSo)                                       Elaboró:    Arquitecto software
+                                                                                                Revisó:    Líder de proyecto
+                                                                                                Aprobó:    Representante Legal
+
+
+PROYECTO                               Identidad Digital Soberana SSI                                ERSo                2026-008
+TITULO                                 Ciclo de vida y trazabilidad de versiones del DID Document
+DESARROLLADOR                          Geovani Rincón
+FECHA ERSO                             Viernes, 18 de septiembre de 2026
+FECHA DESARROLLO                       Miércoles, 23 de septiembre de 2026 7:30 a.m
+FECHA DE PRUEBA                        Viernes, 25 de septiembre de 2026 7:30 a.m
+
+
+CAPACIDADES DEL                        Se requiere habilitar el ciclo de vida del DID Document institucional, cubriendo publicación
+PROCESO                                autenticada, actualización controlada, desactivación y trazabilidad de versiones, de modo que la
+                                       traza permita reconstruir el estado en cada momento.
+                                       Entre las capacidades del proceso se encuentran:
+                                            •   Publicación autenticada del documento.
+                                            •   Actualización controlada del documento.
+                                            •   Desactivación del documento mediante operación específica sobre el recurso.
+                                            •   Trazabilidad de versiones del documento publicado.
+                                            •   Comprobación de posesión mediante desafío de un solo uso, con tipo y audiencia
+                                                específicos.
+                                            •   Confirmación de publicación mediante lectura de la URL calculada y comparación de
+                                                contenido y hash.
+
+
+CONDICIONES DEL                             •   Precondiciones: cuenta de entidad habilitada con namespace único, ruta did:web
+PROCESO                                         reservada, perfil y métodos de verificación definidos, y canal de escritura restringido con
+                                                lectura pública por canal separado.
+                                            •   Condiciones por operación: cada paso se valida con una única condición (desafío
+                                                autorizado y de un solo uso, documento sin claves privadas, prueba firmada sobre
+                                                desafío y hash, escritura con versión esperada y clave de idempotencia, confirmación
+                                                por lectura y hash, cierre pendiente si no hay respuesta en plazo).
+                                            •   Regla transversal: un historial en estado terminal no vuelve a estado activo sin nueva
+                                                instancia.
+
+
+
+
+DESCRIPCION DEL PROCESO
+Contexto y propósito funcional. El documento publicado no es estático: se crea, se actualiza y se da de baja, y debe poder
+reconstruirse qué estado tenía en cada momento. El propósito es gestionar ese ciclo de vida con escritura autenticada,
+actualización condicionada a la versión esperada, desactivación explícita y una traza de versiones que permita auditar.
+Advertencia importante para el desarrollador: rotar el documento actual no ofrece por sí solo validación histórica, y la
+recuperación ante pérdida de clave no se resuelve guardando un documento público.
+
+
+
+
+FSOF-FO-002 OID 1.3.6.1.4.1.31144.3.2.002.1.1          FORMATO ESPECIFICACION REQUISITOS SOFTWARE                       Página 1 de 3
+                                                                                      Identificación OID:   1.3.6.1.4.1.31144.3.2.002.1.1
+                                                                                                  Fecha:    02-01-2020
+                                       ESPECIFICACION DE REQUISITOS                             Versión:    1.1
+                                                SOFTWARE                                   Clasificación:   Interno
+                                                  (ERSo)                                        Elaboró:    Arquitecto software
+                                                                                                 Revisó:    Líder de proyecto
+                                                                                                Aprobó:     Representante Legal
+
+
+Literatura y temas a consultar. Consultar en la web: W3C DIDs v1.1 (operaciones de creación, actualización y desactivación del
+método), DID Resolution v1, y patrones de control de concurrencia optimista (versión esperada / ETag / If-Match) y claves de
+idempotencia para escrituras. Revisar también el uso de pruebas de posesión con nonce de un solo uso (challenge–response) y
+de revocación/desactivación de identificadores.
+
+
+Qué debe hacer.
+      1.   Verificar las precondiciones (cuenta de entidad, namespace único, ruta did:web reservada, perfil y métodos definidos,
+           canal de escritura restringido).
+      2.   Solicitar el desafío indicando el propósito (CREATE, UPDATE o DEACTIVATE).
+      3.   Construir o actualizar el documento con el identificador y los controladores del recurso autorizado, sin claves privadas.
+      4.   Firmar la prueba de posesión sobre el desafío y el hash del documento de la operación.
+      5.   Escribir en el registro con la versión esperada y la clave de idempotencia, y recibir versión, hash y URL pública.
+      6.   Confirmar la publicación leyendo el documento desde la URL calculada y comparando contenido y hash.
+      7.   Si no hay respuesta en plazo, dejar la operación en estado pendiente y reconciliar la versión efectivamente publicada.
+      8.   Conservar la secuencia de versiones para reconstruir la traza de cada estado.
+
+
+Criterios de aceptación
+
+
+                       N.º                  Criterio de aceptación
+                       1                    Las precondiciones se cumplen; si alguna falla no se emite desafío;
+                                            evidencia: verificación de cuenta y canal.
+
+                       2                    El desafío es de un solo uso, con tipo y audiencia específicos de la
+                                            operación DID; evidencia: registro de emisión del desafío.
+                       3                    El documento no incluye claves privadas y el id y los controladores
+                                            corresponden al recurso autorizado; evidencia: documento de la
+                                            operación.
+                       4                    La escritura exige la versión esperada y devuelve versión, hash y URL
+                                            pública; evidencia: respuesta del registro.
+                                            La publicación se confirma por lectura de la URL y comparación de hash;
+                       5                    evidencia: comparación de contenido y hash.
+                       6                    Si no hay respuesta en plazo, la operación queda pendiente y no se da
+                                            por publicada; evidencia: estado de la operación.
+                       7                    La traza permite reconstruir el estado en cada momento; evidencia:
+                                            historial de versiones.
+
+
+
+
+Actividad                                       Responsable                               Fecha y hora                    Firma
+Análisis y diseño ERSo                          Karen Flórez Madiedo
+
+FSOF-FO-002 OID 1.3.6.1.4.1.31144.3.2.002.1.1           FORMATO ESPECIFICACION REQUISITOS SOFTWARE                       Página 2 de 3
+                                                                                  Identificación OID:   1.3.6.1.4.1.31144.3.2.002.1.1
+                                                                                              Fecha:    02-01-2020
+                                       ESPECIFICACION DE REQUISITOS                         Versión:    1.1
+                                                SOFTWARE                               Clasificación:   Interno
+                                                  (ERSo)                                    Elaboró:    Arquitecto software
+                                                                                             Revisó:    Líder de proyecto
+                                                                                            Aprobó:     Representante Legal
+
+
+Asignar desarrollador ERSo                      Rocío Villamizar
+Implementar ERSo                                Geovani Rincón
+Aceptar archivos al repositorio central         Rocío Villamizar
+Elaborar plantilla de pruebas                   Luis González
+Realizar pruebas funcionales                    Luis González
+Archivo de ERSo                                 Rocío Villamizar
+
+
+
+
+FSOF-FO-002 OID 1.3.6.1.4.1.31144.3.2.002.1.1          FORMATO ESPECIFICACION REQUISITOS SOFTWARE                    Página 3 de 3
+

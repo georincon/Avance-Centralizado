@@ -1,0 +1,386 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "EUDI Provider Management",
+    "version": "0.9.0"
+  },
+  "paths": {
+    "/v1/providers": {
+      "get": {
+        "operationId": "listProviders",
+        "description": "List providers according to filter criteria. If none are given, all providers will be returned.",
+        "parameters": [
+          {
+            "name": "country",
+            "description": "Filter for providers in the given country.",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "description": "Filter for a provider containing the requested parameter in its name.",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageOffset",
+            "description": "Page offset starting with 0",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          },
+          {
+            "name": "pageSize",
+            "description": "Size of the returned pages. Implementations may want to limit the maximum page size.",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Result of the provider listing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderSearchPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Query submitted"
+          },
+          "404": {
+            "description": "Listing did not return any results"
+          }
+        }
+      }
+    },
+    "/v1/{country}/providers": {
+      "post": {
+        "operationId": "createProvider",
+        "description": "Create a provider.",
+        "parameters": [
+          {
+            "name": "country",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnyProvider"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Provider has been created successfully.",
+            "headers": {
+              "Location": {
+                "description": "Points to the newly created resource. This points to the getProvider operation.",
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderCreated"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Provider definition is invalid."
+          },
+          "409": {
+            "description": "Provider definition conflicts with the servers database."
+          }
+        }
+      }
+    },
+    "/v1/{country}/providers/{providerId}": {
+      "get": {
+        "operationId": "getProvider",
+        "description": "Gets data of a provider.",
+        "parameters": [
+          {
+            "name": "country",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "providerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "description": "If-None-Match according to RFC 9110.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider data successfully retrieved.",
+            "headers": {
+              "ETag": {
+                "description": "ETag according to RFC 9110.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnyProvider"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Provider ETag matches, the clients cache is up to date, so the provider is not returned."
+          },
+          "404": {
+            "description": "The requested provider does not exist."
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateProvider",
+        "description": "Update data of a provider. An ETag must be retrieved first, so parallel updates can be prevented by the server. The server may limit which modifications can be made.",
+        "parameters": [
+          {
+            "name": "country",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "providerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "If-Match according to RFC 9110. This makes sure, that client and server have an identical state.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnyProvider"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Update has been processed successfully."
+          },
+          "400": {
+            "description": "Provider definition is invalid."
+          },
+          "404": {
+            "description": "The requested provider does not exist. Updates can only be performed on created providers."
+          },
+          "409": {
+            "description": "Provider definition conflicts with the servers database."
+          },
+          "412": {
+            "description": "Provided ETag differs from the server state. The client needs to update it's state first and try again."
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteProvider",
+        "parameters": [
+          {
+            "name": "country",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "providerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "If-Match according to RFC 9110. This can be used to make sure, that client and server have an identical state.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Update has been processed successfully."
+          },
+          "404": {
+            "description": "The requested provider does not exist."
+          },
+          "412": {
+            "description": "Provided ETag differs from the server state. The client needs to update it's state first and try again."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ProviderSearchPage": {
+        "description": "Pagination of provider search results.",
+        "type": "object",
+        "required": [
+          "pageNum",
+          "numPages",
+          "numResults",
+          "providers"
+        ],
+        "properties": {
+          "pageNum": {
+            "description": "The number of the current page.",
+            "type": "integer"
+          },
+          "numPages": {
+            "description": "Number of pages available.",
+            "type": "integer"
+          },
+          "numResults": {
+            "description": "The total number of providers found for this search query.",
+            "type": "integer"
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProviderEntry"
+            }
+          }
+        }
+      },
+      "ProviderCreated": {
+        "description": "Information of the newly created provider entry.",
+        "type": "object",
+        "required": [
+          "country",
+          "providerId"
+        ],
+        "properties": {
+          "country": {
+            "description": "Country of the provider. For use in the API.",
+            "type": "string"
+          },
+          "providerId": {
+            "description": "Id of the provider. For use in the API.",
+            "type": "string"
+          }
+        }
+      },
+      "AnyProvider": {
+        "required": [
+          "providerType"
+        ],
+        "discriminator": {
+          "propertyName": "providerType"
+        },
+        "oneOf": [
+          {
+            "$ref": "ts2-eudi-provider.json#/definitions/WRPRegistrar"
+          },
+          {
+            "$ref": "ts2-eudi-provider.json#/definitions/WalletProvider"
+          },
+          {
+            "$ref": "ts2-eudi-provider.json#/definitions/PIDProvider"
+          },
+          {
+            "$ref": "ts2-eudi-provider.json#/definitions/PubEEAProvider"
+          },
+          {
+            "$ref": "ts2-eudi-provider.json#/definitions/TrustServiceProvider"
+          },
+          {
+            "$ref": "ts2-eudi-provider.json#/definitions/WRPAccCertProvider"
+          }
+        ]
+      },
+      "ProviderEntry": {
+        "description": "Entry of a provider with additional information needed for the management API.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ProviderCreated"
+          },
+          {
+            "type": "object",
+            "required": [
+              "location",
+              "provider"
+            ],
+            "properties": {
+              "location": {
+                "description": "URL pointing to the getProvider operation.",
+                "type": "string"
+              },
+              "provider": {
+                "$ref": "#/components/schemas/AnyProvider"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

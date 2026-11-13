@@ -1,0 +1,57 @@
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+.junie
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Other ###
+application-prod.properties
+
+### UIS CA - clave privada de la raiz, nunca se comparte ###
+docker-compose/uis-issuer/secretos/
+
+### Status-list CA - clave privada de la raiz, nunca se comparte ###
+docker-compose/status-list/secretos/
+
+### Secretos de despliegue - no versionar (se generan con scripts/) ###
+docker-compose/*/certs/
+docker-compose/uis-issuer/*.jks
+docker-compose/uis-issuer/*.jks.*
+src/main/resources/*.jks.*
+
+### Herramientas locales ###
+.claude/
+.agents/

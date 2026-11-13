@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% include 'partials/cabeza.html' %}
+    <title>Ocurrió un error · Notaría Avance</title>
+</head>
+<body>
+    {% include 'partials/cabecera.html' %}
+    <main class="pagina estrecha" role="main">
+        <h1>Ocurrió un error</h1>
+        <div class="aviso error">{{ error if error is defined else 'No se pudo completar la solicitud.' }}</div>
+        <div class="acciones"><a class="btn" href="{{ url_for('initial_page') }}">Volver al inicio</a></div>
+    </main>
+    {% include 'partials/pie.html' %}
+</body>
+</html>

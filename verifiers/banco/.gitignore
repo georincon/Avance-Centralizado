@@ -1,0 +1,5 @@
+.env
+node_modules/
+# clientes.json: lo crea el banco con cada cuenta abierta
+datos/
+secretos/

@@ -1,0 +1,90 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "eudi-experto",
+  "references": {
+    "arf": {
+      "path": "referencia/eudi-doc-architecture-and-reference-framework",
+      "description": "ARF (Architecture and Reference Framework) de la EUDI Wallet, v3.0.0. Fuente principal: capitulos, anexos 1-6, rulebooks PID y mDL, discusion topics, requisitos funcionales."
+    },
+    "eidas2-sts": {
+      "path": "referencia/eudi-doc-standards-and-technical-specifications",
+      "description": "Reglamento 910/2014 (eIDAS) modificado por 2024/1183, analisis de brechas de standards/technical specs y roadmap de normalizacion frente a las Implementing Acts (2024/2977, 2979, 2980, 2982, 2025/848)."
+    },
+    "rulebooks": {
+      "path": "referencia/eudi-doc-attestation-rulebooks-catalog",
+      "description": "Catalogo de attestation rulebooks para EAAs de la EUDI Wallet, incluido el template oficial para redactar rulebooks de nuevo credenciales/atributos."
+    },
+    "fcaf": {
+      "path": "referencia/eudi-doc-functional-conformance-assessment",
+      "description": "FCAF (Functional Conformance Assessment Framework): casos de prueba compartidos y certificacion funcional de las Wallet Solutions (seccion 7.5 del ARF, CIR 2024/2981)."
+    },
+    "roadmap-ri": {
+      "path": "referencia/eudi-wallet-reference-implementation-roadmap",
+      "description": "Roadmap publico de la referencia de implementacion EUDI Wallet: features planeadas/en desarrollo del ecosistema de codigo."
+    },
+    "android-wallet": {
+      "path": "referencia/eudi-lib-android-wallet-core",
+      "description": "Referencia de implementacion Android: eudi-lib-android-wallet-core (wallet core en Kotlin, billetera del ciudadano)."
+    },
+    "ios-wallet": {
+      "path": "referencia/eudi-lib-ios-wallet-kit",
+      "description": "Referencia de implementacion iOS: eudi-lib-ios-wallet-kit (wallet kit en Swift, billetera del ciudadano)."
+    },
+    "oid4vci-kt": {
+      "path": "referencia/eudi-lib-jvm-openid4vci-kt",
+      "description": "OpenID4VCI (emision de credenciales) en Kotlin/JVM usado por la referencia EUDI Wallet."
+    },
+    "oid4vp-kt": {
+      "path": "referencia/eudi-lib-jvm-openid4vp-kt",
+      "description": "OpenID4VP (presentacion de credenciales en rich apps) en Kotlin/JVM usado por la referencia EUDI Wallet."
+    },
+    "issuer-ri": {
+      "path": "referencia/eudi-srv-web-issuing-eudiw-py",
+      "description": "Servidor de emision (issuer) de referencia EUDI Wallet en Python (interfaz web de emision de PID y EAA)."
+    },
+    "verifier-web": {
+      "path": "referencia/eudi-web-verifier",
+      "description": "Verificador (relying party) web de referencia de la EUDI Wallet en TypeScript."
+    },
+    "sdjwt-kt": {
+      "path": "referencia/eudi-lib-jvm-sdjwt-kt",
+      "description": "SD-JWT (Selective Disclosure JWT) en Kotlin/JVM: firma, revocacion, presentacion de credenciales con divulgacion selectiva."
+    },
+    "pres-exch-kt": {
+      "path": "referencia/eudi-lib-jvm-presentation-exchange-kt",
+      "description": "Presentation Exchange en Kotlin/JVM: definicion y evaluacion de presentation definitions/requests subyacentes a OpenID4VP."
+    },
+    "pid-issuer": {
+      "path": "referencia/eudi-srv-pid-issuer",
+      "description": "Servidor de emision del PID de referencia en Kotlin (issuer del Person Identification Data)."
+    },
+    "wallet-provider": {
+      "path": "referencia/eudi-srv-wallet-provider",
+      "description": "Servicio de Wallet Provider de referencia: gestion de Wallet Units, emision de KA y WIA."
+    },
+    "verifier-endpoint": {
+      "path": "referencia/eudi-srv-verifier-endpoint",
+      "description": "Endpoint de verificacion (backend) de referencia del ecosistema EUDI Wallet."
+    },
+    "verifier-core": {
+      "path": "referencia/eudi-lib-android-verifier-core",
+      "description": "Core de verificacion en Android/Kotlin del ecosistema EUDI Wallet."
+    },
+    "rp-registration": {
+      "path": "referencia/eudi-srv-web-relyingparty-registration-py",
+      "description": "Servicio de registro de Wallet-Relying Parties en Python (registro, certificados de registro, CIR 2025/848)."
+    },
+    "trustedlist-manager": {
+      "path": "referencia/eudi-srv-web-trustedlist-manager-py",
+      "description": "Gestor de listas de confianza (Trusted Lists / LOTL) en Python para el ecosistema EUDI Wallet."
+    },
+    "demo-booking": {
+      "path": "referencia/eudi-web-booking-service-demo",
+      "description": "Demo web de servicio de reservas (relying party de ejemplo) que usa la EUDI Wallet para presentar atributos."
+    },
+    "verifier-multiplatform-ui": {
+      "path": "referencia/eudi-app-multiplatform-verifier-ui",
+      "description": "UI multiplataforma del verificador de referencia (Kotlin Multiplatform)."
+    }
+  }
+}

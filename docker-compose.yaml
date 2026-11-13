@@ -1,0 +1,91 @@
+# Ecosistema EUDI de Avance — el compose raíz.
+#
+# QUÉ ES
+#
+# Un solo `docker compose up -d` en la raíz levanta TODO el ecosistema. Los
+# stacks se incluyen con `include`, así que cada uno conserva su fichero, sus
+# variables de entorno y sus secretos: este fichero no duplica nada, solo los
+# reúne.
+#
+#   docker compose up -d        levanta el ecosistema (sin el stack de la UIS)
+#   docker compose down          baja todo lo que esté en pie, UIS incluida
+#   docker compose ps           qué hay en pie
+#
+# O, con los scripts de siempre (que además son idempotentes):
+#
+#   ./up.sh                      levanta el ecosistema
+#   ./up.sh --build              lo levanta reconstruyendo las imágenes
+#   ./down.sh                    lo baja
+#   ./estado.sh                  qué hay en pie
+#
+# LO QUE NO SE LEVANTA
+#
+# El stack de la UIS (`eudi-srv-issuer-pid-uis`) NO se incluye: se levanta a
+# mano, cuando hace falta, con su propio compose. Es el stack que más recursos
+# consume (su Keycloak, sus dos Postgres y su issuer) y el que se para cuando
+# se trabaja con el de la Registraduría.
+#
+#   docker compose -f eudi-srv-issuer-pid-uis/docker-compose/docker-compose.yaml up -d
+#
+# LAS REDES
+#
+# Cada stack declara SU red, con nombre explícito (`registraduria_default`,
+# `spartans_default`...). No es cosmético: `include` fusiona los proyectos en
+# uno, y si todos usaran la red `default` acabarían compartiendo red, con lo
+# que el issuer de la Registraduría podría alcanzar el Postgres de la UIS.
+#
+# Los volúmenes también llevan su nombre real, para que al fusionar no cambien
+# de sitio y los datos sigan donde estaban.
+#
+# LA RED COMPARTIDA
+#
+# `avance-eudi` es externa: no pertenece a este proyecto y ningún `down` la
+# borra. La crea el `up.sh` si no existe.
+
+name: avance
+
+include:
+  # ── Servicios de identidad ──
+  - path: eudi-srv-issuer-pid-registraduria/docker-compose/docker-compose.yaml
+  - path: eudi-srv-issuer-pid-transito/docker-compose/docker-compose.yaml
+  # ── Servicios de wallet ──
+  - path: eudi-srv-wallet-provider/docker-compose/docker-compose.yaml
+  # ── Aplicaciones ──
+  - path: srv-onboarding/docker-compose/docker-compose.yaml
+  - path: app-new-wallet/docker-compose/docker-compose.yaml
+  # ── Servicios de confianza ──
+  - path: srv-tl-publisher/docker-compose/docker-compose.yaml
+  - path: eudi-srv-trust-validator/docker-compose/docker-compose.yaml
+  # ── Auditoría centralizada de las wallets (monitoreo; no toca emisores ni listas de confianza) ──
+  - path: srv-auditoria/docker-compose/docker-compose.yaml
+  # ── Gateway y operación ──
+  - path: srv-nw-nginx/docker-compose/docker-compose.yaml
+  - path: panel-control/docker-compose/docker-compose.yaml
+
+networks:
+  avance-eudi:
+    name: avance-eudi
+    external: true
+
+volumes:
+  # Los volúmenes con su nombre real: `include` fusiona los proyectos, y sin
+  # esto los datos de las bases de datos se quedarian en volumenes con otro
+  # nombre y los stacks arrancarian vacios.
+  onboarding_pg:
+    name: onboarding_onboarding_pg
+  onboarding_uploads:
+    name: onboarding_onboarding_uploads
+  postgres:
+    name: registraduria_postgres
+  status-lists:
+    name: registraduria_status-lists
+  status-lists-backups:
+    name: registraduria_status-lists-backups
+  postgres-spartans:
+    name: spartans_postgres-spartans
+  status-lists-spartans:
+    name: spartans_status-lists-spartans
+  status-lists-backups-spartans:
+    name: spartans_status-lists-backups-spartans
+  tlp-db-data:
+    name: srv-tl-publisher_tlp-db-data

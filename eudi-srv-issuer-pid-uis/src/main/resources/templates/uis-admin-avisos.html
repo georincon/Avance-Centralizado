@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/main.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/uis-admin.css}">
+    <title>UIS :: Avisos de revocación</title>
+</head>
+<body class="uis-admin">
+<div class="uis-topbar"><div class="inner">
+    <img th:src="@{/public/img/uis-credential-blanco.png}" alt="Universidad Industrial de Santander">
+    <h1>Universidad Industrial de Santander<small>Registro académico · Avisos de revocación</small></h1>
+    <div class="acciones"><form method="post" th:action="@{/uis/admin/logout}"><button class="btn btn-claro btn-sm" type="submit">Salir</button></form></div>
+</div><div class="accent"></div></div>
+<th:block th:replace="~{uis-admin-nav :: nav('avisos')}"/>
+<main>
+    <div class="d-flex align-items-center mb-1">
+        <h1 class="titulo mb-0 me-auto">Avisos de revocación</h1>
+    </div>
+    <p class="text-body-secondary">
+        Cuando se revoca una credencial de la UIS hay que <strong>informar al titular, con el motivo, dentro de las 24 horas
+        siguientes</strong> (CIR 2024/2977, art. 5(3)). El emisor no guarda datos de contacto de los estudiantes, así que estos avisos
+        quedan <strong>pendientes</strong>: avísale por tu cuenta (correo, llamada, en persona) con el texto indicado y marca el aviso como hecho.
+    </p>
+
+    <div class="alert alert-danger" role="alert" th:if="${abiertos > 0}">
+        <span th:text="${abiertos} + ' aviso(s) sin entregar.'">0 aviso(s) sin entregar.</span>
+    </div>
+    <div class="alert alert-success" role="alert" th:if="${abiertos == 0}">No hay avisos pendientes.</div>
+
+    <div class="tarjeta">
+        <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead>
+            <tr>
+                <th>Estudiante</th>
+                <th>Credenciales</th>
+                <th>Motivo</th>
+                <th>Revocada</th>
+                <th>Plazo para avisar</th>
+                <th>Estado</th>
+                <th>Texto del aviso</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="aviso : ${avisos}">
+                <td class="fw-semibold" th:text="${aviso.subject}">documento</td>
+                <td th:text="${aviso.credentials}">credenciales</td>
+                <td th:text="${aviso.reason}">motivo</td>
+                <td th:text="${aviso.revokedAt}">fecha</td>
+                <td>
+                    <span th:text="${aviso.deadlineAt}">fecha</span>
+                    <span class="etiqueta estado-RETIRADO" th:if="${aviso.overdue}">VENCIDO</span>
+                </td>
+                <td>
+                    <span class="etiqueta" th:classappend="${aviso.open} ? 'estado-PAUSA' : 'estado-ACTIVO'"
+                          th:text="${aviso.status == 'PENDING' ? 'Pendiente' : aviso.status == 'FAILED' ? 'Falló la entrega' : aviso.status == 'SENT' ? 'Enviado' : 'Hecho a mano'}">Pendiente</span>
+                    <div class="small text-body-secondary" th:if="${aviso.detail != null}" th:text="${aviso.detail}"></div>
+                </td>
+                <td class="small" style="max-width: 28rem;" th:text="${aviso.message}">texto</td>
+                <td class="text-end">
+                    <form method="post" class="d-inline" th:if="${aviso.open}"
+                          th:action="@{/uis/admin/avisos/{id}/notificado(id=${aviso.id})}"
+                          onsubmit="return confirm('¿Confirmas que ya informaste al estudiante de la revocación y de su motivo?');">
+                        <button type="submit" class="btn btn-outline-primary btn-sm">Ya le avisé</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(avisos)}"><td colspan="8" class="text-body-secondary text-center py-4">Sin avisos de revocación.</td></tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+</main>
+<p class="pie">Panel del registro académico · Datos de prueba, no uses información real.</p>
+</body>
+</html>

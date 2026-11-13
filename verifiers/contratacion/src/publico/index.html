@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{NOMBRE}} · Verificación de formación académica</title>
+<link rel="icon" href="{{BASE}}/publico/img/avance.png">
+<style>
+  /* Identidad corporativa imaginada a partir del logo de Avance: el azul del cuadrado, el amarillo-lima de sus
+     líneas de velocidad y el blanco de la pirámide escalonada. Concepto: avanzar peldaño a peldaño. */
+  :root {
+    --azul: #0A63A8; --azul-osc: #0B4F8A; --noche: #062B52; --cielo: #3AA6E6; --lima: #DDE94B; --lima-osc: #A9B80F;
+    --fondo: #F2F7FC; --superficie: #ffffff; --texto: #0E2238; --suave: #54697F; --borde: #D6E3F0;
+    --marca: var(--azul); --marca-oscuro: var(--azul-osc); --ok: #0F7B4B; --ok-fondo: #E4F6EC; --error: #B42318; --error-fondo: #FDECEA;
+    --sombra: 0 1px 2px rgba(6,43,82,.06), 0 10px 28px rgba(6,43,82,.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --fondo: #08182B; --superficie: #0E2742; --texto: #E8F0F9; --suave: #9DB4CC; --borde: #1D3A5B;
+      --marca: #5BB6EE; --marca-oscuro: #8BCDF5; --ok: #4CC38A; --ok-fondo: #12301F; --error: #FF8A80; --error-fondo: #3A1B19; --sombra: none; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 16px/1.5 "Nunito", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+  /* Cabecera: logo y, debajo, tres líneas que se acortan, como las del logo */
+  body > header { background: var(--superficie); position: relative; }
+  .barra { max-width: 1120px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; gap: 14px; }
+  .logo { width: 64px; height: 64px; border-radius: 12px; background: #fff; padding: 2px; box-shadow: 0 0 0 1px var(--borde); flex: none; }
+  .logo img { width: 100%; height: 100%; display: block; object-fit: contain; }
+  .barra strong { font-size: 1.15rem; letter-spacing: -.2px; color: var(--azul); display: block; line-height: 1.15; }
+  .barra span { color: var(--suave); font-size: .9rem; }
+  .barra .lema { margin-left: auto; font-weight: 800; font-style: italic; letter-spacing: .02em; color: var(--azul); display: flex; align-items: center; gap: 10px; }
+  [hidden] { display: none !important; }
+  .historial { color: var(--azul); font-weight: 800; font-size: .9rem; text-decoration: none; border: 2px solid var(--borde); border-radius: 10px; padding: 6px 14px; }
+  .historial:hover { border-color: var(--azul); background: var(--fondo); }
+  .lineas { height: 12px; background: var(--noche); position: relative; overflow: hidden; }
+  .lineas::before, .lineas::after { content: ""; position: absolute; left: 0; height: 3px; border-radius: 0 3px 3px 0; background: var(--lima); }
+  .lineas::before { top: 2px; width: 46%; } .lineas::after { top: 7px; width: 30%; opacity: .8; }
+  /* Portada */
+  .portada { background: radial-gradient(900px 420px at 85% 0%, #0E5E9E 0%, transparent 65%), linear-gradient(115deg, var(--noche), #08386B 60%, var(--azul-osc)); color: #fff; overflow: hidden; position: relative; }
+  .portada .in { max-width: 1120px; margin: 0 auto; padding: 46px 20px 54px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 30px; align-items: center; }
+  .portada .etq { display: inline-flex; gap: 8px; align-items: center; background: rgba(221,233,75,.16); border: 1px solid rgba(221,233,75,.5); color: var(--lima); border-radius: 999px; padding: 4px 14px; font-weight: 800; font-size: .82rem; letter-spacing: .05em; text-transform: uppercase; }
+  .portada h1 { font-size: clamp(1.9rem, 4.4vw, 3rem); line-height: 1.08; margin: 16px 0 14px; letter-spacing: -1px; }
+  .portada h1 em { font-style: normal; color: var(--lima); }
+  .portada p { color: #cfe2f4; max-width: 56ch; margin: 0 0 8px; font-size: 1.05rem; }
+  .portada p strong { color: #fff; }
+  .portada img { width: 100%; max-width: 480px; justify-self: center; filter: drop-shadow(0 18px 28px rgba(0,0,0,.35)); }
+  .portada::after { content: ""; position: absolute; width: 380px; height: 380px; border-radius: 50%; left: -150px; bottom: -230px; background: rgba(255,255,255,.05); }
+  .cintas { background: var(--lima); color: var(--noche); }
+  .cintas ul { max-width: 1120px; margin: 0 auto; padding: 12px 20px; list-style: none; display: flex; gap: 10px 34px; flex-wrap: wrap; justify-content: space-between; font-weight: 800; font-size: .92rem; }
+  .cintas li { display: flex; align-items: center; gap: 8px; } .cintas svg { width: 20px; height: 20px; flex: none; }
+  body { display: flex; flex-direction: column; min-height: 100vh; }
+  main { max-width: 1120px; width: 100%; flex: 1; margin: 0 auto; padding: 34px 20px 56px; }
+  .titulo { display: flex; align-items: center; gap: 14px; margin: 0 0 6px; }
+  .titulo h2 { margin: 0; font-size: 1.5rem; color: var(--azul); letter-spacing: -.4px; }
+  .titulo::before { content: ""; width: 34px; height: 8px; border-radius: 4px; background: var(--lima-osc); box-shadow: 0 -12px 0 -1px var(--lima-osc), 0 12px 0 -1px var(--lima-osc); opacity: .9; margin-right: 6px; }
+  .sub-titulo { color: var(--suave); margin: 0 0 22px; max-width: 70ch; }
+  /* La escalera: cada nivel es un peldaño más alto que el anterior */
+  .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; align-items: end; margin: 8px 0 34px; }
+  .nivel { position: relative; text-align: left; background: var(--superficie); color: var(--texto); border: 1px solid var(--borde); border-bottom: 5px solid var(--cielo);
+    border-radius: 14px 14px 6px 6px; padding: 14px 14px 16px; cursor: pointer; box-shadow: var(--sombra); font: inherit;
+    min-height: calc(138px + var(--i, 0) * 28px); display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; transition: transform .14s, border-color .14s, box-shadow .14s; overflow: hidden; }
+  .nivel::before { content: attr(data-n); position: absolute; top: 10px; left: 12px; font-weight: 800; font-size: 1.7rem; color: var(--cielo); opacity: .35; line-height: 1; }
+  .nivel:hover:not(:disabled) { transform: translateY(-4px); border-color: var(--azul); border-bottom-color: var(--lima-osc); }
+  .nivel:focus-visible { outline: 3px solid var(--marca); outline-offset: 2px; }
+  .nivel b { display: block; font-size: 1.05rem; color: var(--azul); }
+  .nivel small { color: var(--suave); font-size: .82rem; line-height: 1.3; }
+  .nivel:disabled { opacity: .6; cursor: not-allowed; box-shadow: none; border-bottom-color: var(--borde); }
+  .nivel:last-child:not(:disabled):not(.ok) { background: linear-gradient(160deg, var(--azul), var(--noche)); border-bottom-color: var(--lima); color: #fff; }
+  .nivel:last-child:not(:disabled):not(.ok) b, .nivel:last-child:not(:disabled):not(.ok) small { color: #fff; }
+  .nivel:last-child:not(:disabled):not(.ok)::before { color: var(--lima); opacity: .9; }
+  .nivel.ok, .nivel.ok:disabled { background: var(--ok-fondo); border-color: var(--ok); border-bottom-color: var(--ok); color: var(--texto); opacity: 1; cursor: default; box-shadow: none; transform: none; }
+  .nivel.ok b { color: var(--ok); } .nivel.ok small { color: var(--ok); font-weight: 800; } .nivel.ok::before { color: var(--ok); }
+  @media (max-width: 900px) { .portada .in { grid-template-columns: 1fr; } .portada img { max-width: 340px; order: -1; } .grid { grid-template-columns: repeat(2, 1fr); } .nivel { min-height: 96px; } }
+  .privacidad { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 680px) { .privacidad { grid-template-columns: 1fr; } .barra .lema { display: none; } }
+  .caja { background: var(--superficie); border: 1px solid var(--borde); border-radius: 16px; padding: 20px 22px; border-top: 5px solid var(--ok); }
+  .caja.no { border-top-color: var(--error); }
+  .caja h2 { font-size: 1.05rem; margin: 0 0 8px; }
+  .caja ul { margin: 0; padding-left: 20px; color: var(--suave); } .caja li { margin: 4px 0; }
+  .caja.si h2 { color: var(--ok); } .caja.no h2 { color: var(--error); }
+  dialog { border: 0; border-radius: 20px; padding: 0; width: min(520px, calc(100vw - 28px)); background: var(--superficie); color: var(--texto); box-shadow: 0 20px 60px rgba(0,0,0,.4); border-top: 6px solid var(--lima); overflow: hidden; }
+  dialog::backdrop { background: rgba(6,43,82,.65); }
+  .cuerpo { padding: 24px; } .cuerpo h2 { margin: 0 0 4px; font-size: 1.25rem; color: var(--azul); }
+  .sub { color: var(--suave); margin: 0 0 16px; font-size: .95rem; }
+  .qr { display: block; margin: 8px auto 12px; width: 260px; max-width: 100%; height: auto; border-radius: 14px; background: #fff; padding: 8px; box-shadow: 0 0 0 2px var(--cielo); }
+  .pasos { color: var(--suave); font-size: .92rem; margin: 0 0 12px; padding-left: 20px; }
+  .pide { background: var(--fondo); border-radius: 12px; padding: 10px 14px; font-size: .9rem; color: var(--suave); margin: 0 0 14px; }
+  .pide b { color: var(--texto); }
+  .acciones { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; margin-top: 16px; }
+  button.p, button.s { font: inherit; font-weight: 700; border-radius: 10px; padding: 10px 18px; cursor: pointer; border: 1px solid var(--borde); }
+  button.p { background: var(--azul); color: #fff; border-color: var(--azul); } button.p:hover { background: var(--azul-osc); }
+  button.s { background: transparent; color: var(--texto); } button.s:hover { border-color: var(--azul); }
+  .sello { display: inline-flex; align-items: center; gap: 8px; background: var(--ok-fondo); color: var(--ok); font-weight: 800; padding: 6px 12px; border-radius: 999px; margin-bottom: 12px; }
+  .sello.mal { background: var(--error-fondo); color: var(--error); }
+  dl { margin: 0; } .fila { display: flex; justify-content: space-between; gap: 18px; padding: 10px 0; border-bottom: 1px solid var(--borde); }
+  .fila:last-child { border-bottom: 0; } dt { color: var(--suave); } dd { margin: 0; text-align: right; font-weight: 700; }
+  h3 { font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: var(--suave); margin: 18px 0 2px; }
+  .cuenta { color: var(--suave); font-size: .85rem; text-align: center; min-height: 1.3em; }
+  .cargando { text-align: center; color: var(--suave); padding: 30px 0; }
+  #compartidos { margin-top: 36px; } #compartidos > h2 { font-size: 1.25rem; margin: 0 0 4px; color: var(--azul); }
+  #compartidos > p { color: var(--suave); margin: 0 0 14px; }
+  .compartido { background: var(--superficie); border: 1px solid var(--ok); border-left: 6px solid var(--ok); border-radius: 14px; padding: 18px 22px; margin-bottom: 14px; }
+  .compartido.nuevo { animation: resaltar 1.6s ease-out; }
+  @keyframes resaltar { from { box-shadow: 0 0 0 4px var(--lima); } to { box-shadow: 0 0 0 0 transparent; } }
+  .compartido header { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: none; border: 0; flex-wrap: wrap; }
+  .compartido h3 { margin: 12px 0 2px; }
+  .compartido .acciones { margin-top: 12px; }
+  a.enlace { color: var(--azul); font-weight: 700; }
+  a.enlace.boton { display: inline-block; text-decoration: none; background: var(--azul); color: #fff; border-radius: 10px; padding: 10px 18px; }
+  a.enlace.boton:hover { background: var(--azul-osc); }
+  .comprobaciones { list-style: none; margin: 6px 0 0; padding: 0; font-size: .92rem; }
+  .comprobaciones li { padding: 4px 0; } .comprobaciones .bien { color: var(--ok); } .comprobaciones .mal { color: var(--error); }
+  .comprobaciones small { color: var(--suave); }
+  #cargo { width: 100%; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--borde); background: var(--fondo); color: var(--texto); }
+  .usuario { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: .9rem; } .usuario b { font-weight: 800; }
+  footer { background: var(--noche); color: #b9cfe6; }
+  footer .in { max-width: 1120px; margin: 0 auto; padding: 26px 20px; display: flex; gap: 20px; align-items: center; font-size: .88rem; }
+  footer img { width: 56px; height: 56px; border-radius: 10px; background: #fff; flex: none; }
+  footer .lineas { height: 8px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="barra"><div class="logo"><img src="{{BASE}}/publico/img/avance.png" alt="Logo de Avance"></div>
+    <div><strong>{{NOMBRE}}</strong><span>Verificación de formación académica</span></div>
+    <div class="lema">Avanzar, peldaño a peldaño</div>
+    <a class="historial" id="enlace-historial" href="{{BASE}}/auditoria/" hidden>Historial</a>
+    <div class="usuario" id="usuario"></div></div>
+  <div class="lineas" aria-hidden="true"></div>
+</header>
+<section class="portada"><div class="in">
+  <div>
+    <span class="etq">Contratación con confianza</span>
+    <h1>Comprueba la formación de una persona candidata, <em>sin papeleo</em></h1>
+    <p>Elige el nivel que necesitas verificar. Se mostrará un código QR que la persona escanea con su wallet y, si ella acepta, recibes la confirmación firmada por su universidad.</p>
+    <p>Solo se aceptan credenciales de personas <strong>graduadas</strong> en el nivel elegido.</p>
+  </div>
+  <img src="{{BASE}}/publico/img/escalera.svg" alt="Escalera de niveles académicos con un birrete en lo más alto">
+</div></section>
+<div class="cintas"><ul>
+  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5.500c0 4.200-2.900 7.600-7 9.500-4.100-1.900-7-5.300-7-9.500V6z"/><path d="M8.800 12l2.300 2.300 4.200-4.600"/></svg> Firmado por la universidad</li>
+  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Resultado en segundos</li>
+  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> No se guarda ningún dato</li>
+  <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.500"/><path d="M5 20c.8-3.600 3.700-5.500 7-5.500s6.200 1.900 7 5.500"/></svg> La persona decide qué comparte</li>
+</ul></div>
+<main>
+  <div class="titulo"><h2>¿Qué nivel quieres verificar?</h2></div>
+  <p class="sub-titulo">Cada peldaño es un nivel de formación. Toca el que necesites para generar el código.</p>
+  <div class="grid" id="niveles" role="list" aria-label="Niveles académicos"></div>
+  <section class="privacidad" aria-label="Qué datos se piden">
+    <div class="caja si"><h2>Lo que se pide</h2><ul>
+      <li>Nombre del programa y título otorgado</li><li>Fecha de grado</li><li>Universidad que emitió la credencial</li></ul></div>
+    <div class="caja no"><h2>Lo que no se pide</h2><ul>
+      <li>Nombre y documento (solo si luego confirmas la identidad)</li><li>Promedio, créditos y datos de contacto</li><li>Cualquier otro dato de la credencial</li></ul></div>
+  </section>
+  <section id="compartidos" hidden aria-live="polite">
+    <h2>Datos compartidos</h2>
+    <p>Esto es lo que cada persona compartió para comprobar su formación. Solo se muestra en esta pantalla.</p>
+    <div id="lista-compartidos"></div>
+  </section>
+</main>
+<footer><div class="lineas" aria-hidden="true"></div><div class="in"><img src="{{BASE}}/publico/img/corporacion-avance.png" alt="Corporación Avance"><p style="margin:0">Los datos no se guardan: se muestran en esta pantalla unos minutos y se borran. La wallet de la persona le muestra qué se pide y para qué antes de que acepte.</p></div></footer>
+
+<dialog id="modal" aria-labelledby="titulo"><div class="cuerpo" id="contenido"></div></dialog>
+
+<script>
+(() => {
+  const BASE = '{{BASE}}'
+  const $ = (id) => document.getElementById(id)
+  const modal = $('modal'), contenido = $('contenido')
+  let sondeo = null, cuenta = null
+  const verificados = new Map()   // clave de nivel -> { nivel, id, formacion, identidad, hora } (solo en memoria)
+  let tarjetas = []
+  // En el celular la wallet se abre con un enlace y vuelve a /volver (la página se recarga): lo verificado se
+  // recupera del servidor (/api/sesion), no de la memoria de esta pestaña.
+  const MOVIL = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+  let firmaDisponible = false
+  let persona = null
+  const guardar = (n) => { try { sessionStorage.setItem('contratacion_despues', n) } catch {} }
+  const tomar = () => { try { const n = sessionStorage.getItem('contratacion_despues'); sessionStorage.removeItem('contratacion_despues'); return n } catch { return null } }
+  const INGRESO = { clave: null, nombre: 'Ingreso' }
+
+  function el(tag, props = {}, ...hijos) {
+    const e = document.createElement(tag)
+    for (const [k, v] of Object.entries(props)) {
+      if (k === 'class') e.className = v
+      else if (k.startsWith('on')) e.addEventListener(k.slice(2), v)
+      else e.setAttribute(k, v)
+    }
+    for (const h of hijos.flat()) if (h != null) e.append(h.nodeType ? h : document.createTextNode(String(h)))
+    return e
+  }
+  const fecha = (f) => f ? new Date(f).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }) : '—'
+  const api = async (ruta, opciones) => {
+    const r = await fetch(BASE + ruta, opciones)
+    return { ok: r.ok, estado: r.status, cuerpo: await r.json().catch(() => ({})) }
+  }
+  const parar = () => { clearInterval(sondeo); clearInterval(cuenta); sondeo = cuenta = null }
+  modal.addEventListener('close', parar)
+  const cerrar = () => { parar(); modal.close() }
+
+  const fila = (k, v) => el('div', { class: 'fila' }, el('dt', {}, k), el('dd', {}, v ?? '—'))
+
+  function pintarUsuario() {
+    $('usuario').replaceChildren(...(persona
+      ? [el('span', {}, 'Hola, ', el('b', {}, `${persona.nombres} ${persona.apellidos}`)), el('button', { class: 's', onclick: salir }, 'Salir')]
+      : [el('button', { class: 'p', onclick: () => iniciar(INGRESO, 'ingreso') }, 'Ingresar con mi wallet')]))
+  }
+  async function salir() {
+    await api('/api/salir', { method: 'POST' }); persona = null; verificados.clear(); pintarUsuario(); pintar()
+  }
+  async function alIngresar(r) {
+    persona = { nombres: r.ingreso.nombres, apellidos: r.ingreso.apellidos }
+    pintarUsuario(); modal.close()
+    const n = tomar(); const nivel = n && tarjetas.find((t) => t.clave === n)
+    if (nivel && nivel.disponible && !verificados.has(nivel.clave)) iniciar(nivel)
+  }
+  async function confirmarIdentidad(nivel, previa) {
+    const { ok, cuerpo } = await api('/api/identidad', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ previa }) })
+    if (!ok) { contenido.replaceChildren(el('h2', { id: 'titulo' }, 'No se pudo'), el('p', { class: 'sub' }, cuerpo.error ?? 'Error'), el('div', { class: 'acciones' }, el('button', { class: 's', onclick: cerrar }, 'Cerrar'))); modal.showModal(); return }
+    registrar(nivel, cuerpo.id, 'identidad', cuerpo)
+  }
+
+  async function iniciar(nivel, paso = 'formacion', previa) {
+    if (paso !== 'ingreso' && !persona) { guardar(nivel.clave); return iniciar(INGRESO, 'ingreso') }
+    parar()
+    contenido.replaceChildren(el('div', { class: 'cargando' }, 'Preparando el código…'))
+    if (!modal.open) modal.showModal()
+    const { ok, cuerpo } = await api('/api/solicitud', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ nivel: nivel.clave, paso, previa, dispositivo: MOVIL ? 'mismo' : 'otro' }),
+    })
+    if (!ok) return mostrarError(cuerpo.error ?? 'No se pudo crear la solicitud.', nivel, paso, previa)
+    mostrarQr(nivel, paso, previa, cuerpo)
+  }
+
+  function mostrarQr(nivel, paso, previa, s) {
+    const ingreso = paso === 'ingreso'
+    const identidad = paso === 'identidad'
+    const pide = ingreso ? 'Nombres, apellidos y número de documento de tu documento de identidad (PID)' : identidad ? 'Nombres, apellidos y documento de identidad' : 'Programa, título y fecha de grado'
+    const restante = el('div', { class: 'cuenta' })
+    contenido.replaceChildren(
+      el('h2', { id: 'titulo' }, ingreso ? 'Ingresar con mi wallet' : identidad ? `Confirmar identidad · ${nivel.nombre}` : `Verificar ${nivel.nombre}`),
+      el('p', { class: 'sub' }, ingreso ? (MOVIL ? 'Abre tu wallet y comparte tu documento de identidad (PID).' : 'Escanea con tu wallet y comparte tu documento de identidad (PID).') : identidad ? 'Segundo paso, opcional: la persona comparte quién es.' : (MOVIL ? 'Abre tu wallet para compartir tu credencial.' : 'Muestra este código a la persona candidata.')),
+      MOVIL ? el('a', { class: 'enlace boton', style: 'display:block;text-align:center;margin:12px 0', href: s.enlace }, 'Abrir mi wallet')
+        : el('img', { class: 'qr', src: s.qr, alt: 'Código QR para escanear con la wallet' }),
+      restante,
+      el('ol', { class: 'pasos' }, el('li', {}, MOVIL ? 'Toca «Abrir mi wallet».' : 'Abre tu wallet y escanea el código.'), el('li', {}, 'Revisa lo que se pide y acepta.'), el('li', {}, MOVIL ? 'Volverás a esta página con el resultado.' : 'El resultado aparece aquí.')),
+      el('div', { class: 'pide' }, el('b', {}, 'Se pide: '), pide, el('br'), el('b', {}, 'Condición: '), ingreso ? 'documento de identidad digital (PID).' : `credencial de ${nivel.nombre} y graduado/a.`),
+      el('div', { class: 'acciones' }, el('button', { class: 's', onclick: () => navigator.clipboard?.writeText(s.enlace) }, 'Copiar enlace'), el('button', { class: 's', onclick: cerrar }, 'Cancelar')),
+    )
+    const limite = Date.now() + s.vence_en * 1000
+    cuenta = setInterval(() => {
+      const seg = Math.max(0, Math.round((limite - Date.now()) / 1000))
+      restante.textContent = `El código vence en ${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, '0')}`
+    }, 1000)
+    if (MOVIL) return   // la wallet vuelve a /volver con el código de respuesta; no se sondea
+    sondeo = setInterval(async () => {
+      const { cuerpo } = await api('/api/solicitud/' + s.id)
+      if (cuerpo.estado === 'listo') { parar(); if (paso === 'ingreso') alIngresar(cuerpo); else registrar(nivel, s.id, paso, cuerpo) }
+      else if (cuerpo.estado === 'rechazada') { parar(); mostrarError(cuerpo.motivo, nivel, paso, previa) }
+    }, 2000)
+  }
+
+  // La verificación pasa al portal: el botón del nivel se pone verde y se desactiva, y los datos que se
+  // compartieron quedan abajo.
+  function registrar(nivel, id, paso, r) {
+    const previo = verificados.get(nivel.clave)
+    verificados.set(nivel.clave, {
+      nivel,
+      id: paso === 'formacion' ? id : previo?.id ?? id,
+      formacion: r.formacion ?? previo?.formacion,
+      identidad: r.identidad ?? previo?.identidad,
+      idIdentidad: paso === 'identidad' ? id : previo?.idIdentidad,
+      contrato: previo?.contrato,
+      hora: previo?.hora ?? new Date(),
+    })
+    modal.close()
+    pintar(nivel.clave)
+  }
+
+  function pintar(nuevo) {
+    for (const t of tarjetas) {
+      const v = verificados.get(t.clave)
+      t.boton.className = v ? 'nivel ok' : 'nivel'
+      t.boton.disabled = v ? true : !t.disponible
+      t.boton.replaceChildren(el('b', {}, t.nombre), el('small', {}, v ? '✔ Verificado' : (t.disponible ? 'Generar código QR' : (t.nota ?? 'No disponible'))))
+    }
+    const lista = $('lista-compartidos')
+    $('compartidos').hidden = verificados.size === 0
+    lista.replaceChildren(...[...verificados.values()].map(({ nivel, id, formacion: f, identidad: i, hora, idIdentidad, contrato }) => {
+      const hijos = [
+        el('header', {}, el('div', {}, el('h3', { style: 'margin:0;text-transform:none;letter-spacing:0;font-size:1.1rem;color:inherit' }, `${nivel.nombre} · graduado/a`),
+          el('span', { class: 'sub' }, `Verificado a las ${hora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })} · credencial de ${f?.institucion ?? 'la universidad'}`)), el('span', { class: 'sello' }, '✔ Verificado')),
+        el('h3', {}, 'Formación compartida'),
+        el('dl', {}, fila('Programa', f?.programa), fila('Título', f?.titulo), fila('Fecha de grado', fecha(f?.fecha_grado)), fila('Institución', f?.institucion)),
+      ]
+      if (i) hijos.push(el('h3', {}, 'Identidad compartida'), el('dl', {}, fila('Nombres', i.nombres), fila('Apellidos', i.apellidos), fila('Documento', `${i.tipo_documento ? i.tipo_documento + ' ' : ''}${i.documento}`)))
+      const acciones = [el('button', { class: 's', onclick: () => { verificados.delete(nivel.clave); pintar() } }, 'Quitar de la pantalla')]
+      if (!i) acciones.unshift(el('button', { class: 'p', onclick: () => confirmarIdentidad(nivel, id) }, 'Confirmar identidad (opcional)'))
+      if (i && contrato) {
+        hijos.push(el('h3', {}, 'Contrato de trabajo'),
+          el('dl', {}, fila('Cargo', contrato.cargo), fila('Firmado por', contrato.verificacion.firmante?.nombre), fila('Sello de tiempo', contrato.verificacion.sello?.fecha ? new Date(contrato.verificacion.sello.fecha).toLocaleString('es-CO') : 'Sin sello')),
+          el('div', { class: 'acciones' }, el('span', { class: 'sello' }, '✔ Contrato firmado y verificado'), el('a', { class: 'enlace', href: contrato.descargar }, 'Descargar PDF firmado')))
+      } else if (i && firmaDisponible) {
+        acciones.unshift(el('button', { class: 'p', onclick: () => firmarContrato(nivel, idIdentidad) }, 'Firmar contrato de trabajo'))
+      }
+      hijos.push(el('div', { class: 'acciones' }, ...acciones))
+      return el('article', { class: 'compartido' + (nivel.clave === nuevo ? ' nuevo' : '') }, ...hijos)
+    }))
+    if (nuevo) lista.querySelector('.nuevo')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
+  // --- Contrato: pedir el cargo, mostrar el QR de firma y esperar el PDF firmado ------------------------
+  function firmarContrato(nivel, idIdentidad) {
+    parar()
+    const cargo = el('input', { type: 'text', id: 'cargo', maxlength: '80', placeholder: 'Por ejemplo: Ingeniero/a de sistemas', autocomplete: 'off' })
+    const aviso = el('p', { class: 'sub', style: 'color:var(--error);min-height:1.4em' })
+    const enviar = async () => {
+      aviso.textContent = ''
+      const { ok, cuerpo } = await api('/api/contrato', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ previa: idIdentidad, cargo: cargo.value }) })
+      if (!ok) { aviso.textContent = cuerpo.error ?? 'No se pudo crear el contrato.'; return }
+      mostrarQrFirma(nivel, idIdentidad, cuerpo)
+    }
+    cargo.addEventListener('keydown', (e) => { if (e.key === 'Enter') enviar() })
+    contenido.replaceChildren(
+      el('h2', { id: 'titulo' }, 'Contrato de trabajo'),
+      el('p', { class: 'sub' }, 'Se generará el contrato con la formación y la identidad ya verificadas, para que la persona lo firme desde su wallet.'),
+      el('label', { for: 'cargo', style: 'font-weight:700;display:block;margin-bottom:6px' }, 'Cargo'), cargo, aviso,
+      el('div', { class: 'acciones' }, el('button', { class: 's', onclick: cerrar }, 'Cancelar'), el('button', { class: 'p', onclick: enviar }, 'Generar contrato y código')),
+    )
+    if (!modal.open) modal.showModal()
+    cargo.focus()
+  }
+
+  function mostrarQrFirma(nivel, idIdentidad, s) {
+    const restante = el('div', { class: 'cuenta' })
+    contenido.replaceChildren(
+      el('h2', { id: 'titulo' }, 'Firmar el contrato'),
+      el('p', { class: 'sub' }, MOVIL ? 'Abre tu wallet para firmar el contrato.' : 'La persona escanea este código con su wallet para firmar el contrato.'),
+      MOVIL ? el('a', { class: 'enlace boton', style: 'display:block;text-align:center;margin:12px 0', href: s.enlace }, 'Abrir mi wallet') : el('img', { class: 'qr', src: s.qr, alt: 'Código QR para firmar con la wallet' }),
+      restante,
+      el('ol', { class: 'pasos' },
+        el('li', {}, MOVIL ? 'Toca «Abrir mi wallet».' : 'En la wallet: Inicio → Firmar → Escanear QR.'),
+        el('li', {}, 'Revisa el contrato y elige el servicio de firma.'),
+        el('li', {}, MOVIL ? 'Autoriza la firma con tu PIN y vuelve a este navegador: el resultado aparece aquí.' : 'Autoriza la firma con tu PIN. El resultado aparece aquí.')),
+      el('div', { class: 'pide' }, el('b', {}, 'Documento: '), `${s.documento.etiqueta} (${Math.round(s.documento.bytes / 1024)} KB) · `, el('a', { class: 'enlace', href: s.documento.ver, target: '_blank', rel: 'noopener' }, 'ver el contrato'), el('br'),
+        el('b', {}, 'Huella SHA-256: '), s.documento.sha256),
+      el('p', { class: 'sub', style: 'font-size:.82rem' }, 'Firma electrónica de prueba del ecosistema de pruebas: sin validez legal.'),
+      el('div', { class: 'acciones' }, el('button', { class: 's', onclick: () => navigator.clipboard?.writeText(s.enlace) }, 'Copiar enlace'), el('button', { class: 's', onclick: cerrar }, 'Cancelar')),
+    )
+    const limite = Date.now() + s.vence_en * 1000
+    cuenta = setInterval(() => {
+      const seg = Math.max(0, Math.round((limite - Date.now()) / 1000))
+      restante.textContent = `El código vence en ${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, '0')}`
+    }, 1000)
+    let miSondeo = null
+    const consultar = async () => {
+      if (!sondeo || sondeo !== miSondeo) return
+      const { cuerpo } = await api('/api/firma/' + s.id)
+      if (!sondeo || sondeo !== miSondeo) return
+      if (cuerpo.estado === 'firmado') { parar(); contratoFirmado(nivel, cuerpo) }
+      else if (cuerpo.estado === 'invalida') { parar(); mostrarFirmaInvalida(nivel, idIdentidad, cuerpo.verificacion) }
+      else if (cuerpo.estado === 'rechazada') { parar(); mostrarError(cuerpo.motivo, nivel, 'contrato', idIdentidad) }
+    }
+    sondeo = miSondeo = setInterval(consultar, 2000)
+    // En el mismo teléfono la wallet firma con el navegador en segundo plano (el sondeo se frena): al volver a esta
+    // pestaña se consulta de inmediato.
+    if (MOVIL) document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') consultar() })
+  }
+
+  const listaComprobaciones = (v) => el('ul', { class: 'comprobaciones' }, (v?.comprobaciones ?? []).map((c) =>
+    el('li', { class: c.ok ? 'bien' : 'mal' }, `${c.ok ? '✔' : '✖'} ${c.texto}`, c.detalle ? el('small', {}, ` — ${c.detalle}`) : null)))
+
+  function contratoFirmado(nivel, r) {
+    const v = verificados.get(nivel.clave)
+    if (v) v.contrato = { cargo: r.cargo, verificacion: r.verificacion, descargar: BASE + r.descargar.replace(BASE, '') }
+    const f = r.verificacion
+    contenido.replaceChildren(
+      el('span', { class: 'sello' }, '✔ Contrato firmado'),
+      el('h2', { id: 'titulo' }, 'Contrato firmado y verificado'),
+      el('p', { class: 'sub' }, 'La wallet devolvió el contrato firmado y el portal comprobó la firma.'),
+      el('dl', {}, fila('Firmado por', f.firmante?.nombre), fila('Documento', f.firmante?.documento), fila('Certificado emitido por', f.firmante?.emisor),
+        fila('Sello de tiempo', f.sello?.fecha ? new Date(f.sello.fecha).toLocaleString('es-CO') : 'Sin sello')),
+      el('h3', {}, 'Lo que se comprobó'), listaComprobaciones(f),
+      f.selloAnadidoPorPortal ? el('p', { class: 'sub', style: 'font-size:.85rem;margin-top:8px' }, 'El sello de tiempo lo añadió este portal al recibir la firma, porque la wallet firma en nivel básico (sin sello).') : null,
+      el('div', { class: 'acciones' }, el('button', { class: 's', onclick: () => { cerrar(); pintar() } }, 'Cerrar'), el('a', { class: 'enlace boton', href: BASE + r.descargar.replace(BASE, '') }, 'Descargar PDF firmado')),
+    )
+    pintar()
+  }
+
+  function mostrarFirmaInvalida(nivel, idIdentidad, verificacion) {
+    contenido.replaceChildren(
+      el('span', { class: 'sello mal' }, '✖ Firma no válida'),
+      el('h2', { id: 'titulo' }, 'La firma recibida no es válida'),
+      el('p', { class: 'sub' }, 'La wallet devolvió un documento, pero no pasó las comprobaciones:'),
+      listaComprobaciones(verificacion),
+      el('div', { class: 'acciones' }, el('button', { class: 's', onclick: cerrar }, 'Cerrar'), el('button', { class: 'p', onclick: () => firmarContrato(nivel, idIdentidad) }, 'Intentar de nuevo')),
+    )
+  }
+
+  function mostrarError(motivo, nivel, paso, previa) {
+    contenido.replaceChildren(
+      el('span', { class: 'sello mal' }, '✖ No verificado'),
+      el('h2', { id: 'titulo' }, 'No se pudo verificar'),
+      el('p', { class: 'sub' }, motivo),
+      el('div', { class: 'acciones' }, el('button', { class: 's', onclick: cerrar }, 'Cerrar'), el('button', { class: 'p', onclick: () => paso === 'contrato' ? firmarContrato(nivel, previa) : iniciar(nivel, paso, previa) }, 'Generar un código nuevo')),
+    )
+  }
+
+  api('/api/niveles').then(({ cuerpo }) => {
+    firmaDisponible = Boolean(cuerpo.firma)
+    tarjetas = [...cuerpo.niveles].reverse().map((n, i) => {
+      const boton = el('button', { class: 'nivel', role: 'listitem', 'data-n': String(i + 1), style: `--i:${i}` })
+      boton.addEventListener('click', () => { if (n.disponible && !verificados.has(n.clave)) iniciar(n) })
+      return { ...n, boton }
+    })
+    $('niveles').replaceChildren(...tarjetas.map((t) => t.boton))
+    pintarUsuario(); pintar()
+    return recuperar()
+  })
+
+  // Al volver de la wallet (o al recargar) se reconstruye lo verificado de esta sesión y se muestra el error si lo hubo.
+  async function recuperar() {
+    const q = new URLSearchParams(location.search)
+    const error = q.get('error')
+    if (q.has('error') || q.has('volvio')) history.replaceState(null, '', BASE + '/')
+    const { ok, cuerpo } = await api('/api/sesion')
+    if (ok && cuerpo.persona) { persona = cuerpo.persona; pintarUsuario() }
+    if (ok) for (const v of cuerpo.verificados ?? []) {
+      const nivel = tarjetas.find((t) => t.clave === v.nivel)
+      if (nivel) verificados.set(v.nivel, { ...v, nivel, hora: new Date(v.hora) })
+    }
+    pintar()
+    if (persona && !error && q.has('volvio')) { const n = tomar(); const nivel = n && tarjetas.find((t) => t.clave === n); if (nivel && nivel.disponible && !verificados.has(nivel.clave)) iniciar(nivel) }
+    if (error) {
+      contenido.replaceChildren(
+        el('span', { class: 'sello mal' }, '✖ No verificado'), el('h2', { id: 'titulo' }, 'No se pudo verificar'), el('p', { class: 'sub' }, error),
+        el('div', { class: 'acciones' }, el('button', { class: 'p', onclick: cerrar }, 'Cerrar')))
+      modal.showModal()
+    }
+  }
+})()
+</script>
+<script>
+try { fetch('{{BASE}}/auditoria/api/ping').then((r) => { if (r.ok) document.getElementById('enlace-historial').hidden = false }).catch(() => {}) } catch (e) {}
+</script>
+</body>
+</html>

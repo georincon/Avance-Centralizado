@@ -1,0 +1,329 @@
+{
+ "https://civica-desarrollo.avance.org.co/pid-registraduria": {
+  "configuraciones": [
+   {
+    "id": "eu.europa.ec.eudi.pid_mso_mdoc",
+    "nombre": "eu.europa.ec.eudi.pid_mso_mdoc",
+    "formato": "mso_mdoc",
+    "tipo": "eu.europa.ec.eudi.pid.1"
+   },
+   {
+    "id": "eu.europa.ec.eudi.pid_mso_mdoc_deferred",
+    "nombre": "eu.europa.ec.eudi.pid_mso_mdoc_deferred",
+    "formato": "mso_mdoc",
+    "tipo": "eu.europa.ec.eudi.pid.1"
+   },
+   {
+    "id": "eu.europa.ec.eudi.pid_vc_sd_jwt",
+    "nombre": "eu.europa.ec.eudi.pid_vc_sd_jwt",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:eudi:pid:1"
+   },
+   {
+    "id": "eu.europa.ec.eudi.pid_vc_sd_jwt_deferred",
+    "nombre": "eu.europa.ec.eudi.pid_vc_sd_jwt_deferred",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:eudi:pid:1"
+   }
+  ],
+  "leido": "2026-11-11T16:23:10+00:00"
+ },
+ "https://civica-desarrollo.avance.org.co/uis-issuer": {
+  "configuraciones": [
+   {
+    "id": "eu.europa.ec.eudi.pid_mso_mdoc",
+    "nombre": "eu.europa.ec.eudi.pid_mso_mdoc",
+    "formato": "mso_mdoc",
+    "tipo": "eu.europa.ec.eudi.pid.1"
+   },
+   {
+    "id": "eu.europa.ec.eudi.pid_mso_mdoc_deferred",
+    "nombre": "eu.europa.ec.eudi.pid_mso_mdoc_deferred",
+    "formato": "mso_mdoc",
+    "tipo": "eu.europa.ec.eudi.pid.1"
+   },
+   {
+    "id": "eu.europa.ec.eudi.pid_vc_sd_jwt",
+    "nombre": "eu.europa.ec.eudi.pid_vc_sd_jwt",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:eudi:pid:1"
+   },
+   {
+    "id": "eu.europa.ec.eudi.pid_vc_sd_jwt_deferred",
+    "nombre": "eu.europa.ec.eudi.pid_vc_sd_jwt_deferred",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:eudi:pid:1"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL",
+    "nombre": "org.iso.18013.5.1.mDL",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL_deferred",
+    "nombre": "org.iso.18013.5.1.mDL_deferred",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "urn:eu.europa.ec.eudi:learning:credential:1:dc+sd-jwt-compact",
+    "nombre": "urn:eu.europa.ec.eudi:learning:credential:1:dc+sd-jwt-compact",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:eu.europa.ec.eudi:learning:credential:1"
+   },
+   {
+    "id": "urn:eu.europa.ec.eudi:learning:credential:1:dc+sd-jwt-compact_deferred",
+    "nombre": "urn:eu.europa.ec.eudi:learning:credential:1:dc+sd-jwt-compact_deferred",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:eu.europa.ec.eudi:learning:credential:1"
+   },
+   {
+    "id": "urn:eudi:academic:credential:1:dc+sd-jwt",
+    "nombre": "urn:eudi:academic:credential:1:dc+sd-jwt",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:eudi:academic:credential:1"
+   },
+   {
+    "id": "urn:eudi:academic:credential:1:dc+sd-jwt_deferred",
+    "nombre": "urn:eudi:academic:credential:1:dc+sd-jwt_deferred",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:eudi:academic:credential:1"
+   },
+   {
+    "id": "urn:co:uis:carnet-estudiantil:1:dc+sd-jwt",
+    "nombre": "urn:co:uis:carnet-estudiantil:1:dc+sd-jwt",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:uis:carnet-estudiantil:1"
+   },
+   {
+    "id": "urn:co:uis:carnet-estudiantil:1:dc+sd-jwt_deferred",
+    "nombre": "urn:co:uis:carnet-estudiantil:1:dc+sd-jwt_deferred",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:uis:carnet-estudiantil:1"
+   }
+  ],
+  "leido": "2026-11-11T16:23:11+00:00"
+ },
+ "https://civica-desarrollo.avance.org.co/eps": {
+  "configuraciones": [
+   {
+    "id": "co.eps.carne_afiliado",
+    "nombre": "co.eps.carne_afiliado",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:eps:carne-afiliado:1"
+   },
+   {
+    "id": "co.eps.historia_clinica",
+    "nombre": "co.eps.historia_clinica",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:eps:resumen-historia-clinica:1"
+   }
+  ],
+  "leido": "2026-11-11T16:23:11+00:00"
+ },
+ "https://civica-desarrollo.avance.org.co/notaria": {
+  "configuraciones": [
+   {
+    "id": "co.notaria.declaracion_extraproceso",
+    "nombre": "co.notaria.declaracion_extraproceso",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:notaria:declaracion-extraproceso:1"
+   },
+   {
+    "id": "co.notaria.poder_especial",
+    "nombre": "co.notaria.poder_especial",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:notaria:poder-especial:1"
+   },
+   {
+    "id": "co.notaria.reconocimiento_documento",
+    "nombre": "co.notaria.reconocimiento_documento",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:notaria:reconocimiento-documento:1"
+   },
+   {
+    "id": "co.notaria.fe_de_vida",
+    "nombre": "co.notaria.fe_de_vida",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:notaria:fe-de-vida:1"
+   },
+   {
+    "id": "co.notaria.autenticacion_firma",
+    "nombre": "co.notaria.autenticacion_firma",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:notaria:autenticacion-firma:1"
+   },
+   {
+    "id": "co.notaria.constancia_copia_escritura",
+    "nombre": "co.notaria.constancia_copia_escritura",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:notaria:copia-escritura:1"
+   },
+   {
+    "id": "co.notaria.registro_civil_nacimiento",
+    "nombre": "co.notaria.registro_civil_nacimiento",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:notaria:registro-civil:1"
+   },
+   {
+    "id": "co.notaria.declaracion_convivencia",
+    "nombre": "co.notaria.declaracion_convivencia",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:notaria:convivencia:1"
+   },
+   {
+    "id": "co.notaria.permiso_salida_menor",
+    "nombre": "co.notaria.permiso_salida_menor",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:notaria:permiso-salida-menor:1"
+   }
+  ],
+  "leido": "2026-11-11T16:23:11+00:00"
+ },
+ "https://civica-desarrollo.avance.org.co/aerolinea": {
+  "configuraciones": [
+   {
+    "id": "co.aerolinea.tiquete",
+    "nombre": "co.aerolinea.tiquete",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:aerolinea:tiquete:1"
+   }
+  ],
+  "leido": "2026-11-11T16:23:11+00:00"
+ },
+ "https://civica-desarrollo.avance.org.co/cancilleria": {
+  "configuraciones": [
+   {
+    "id": "co.cancilleria.pasaporte",
+    "nombre": "co.cancilleria.pasaporte",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:cancilleria:pasaporte:1"
+   }
+  ],
+  "leido": "2026-11-11T16:23:11+00:00"
+ },
+ "https://civica-desarrollo.avance.org.co/universidad": {
+  "configuraciones": [
+   {
+    "id": "co.universidad.carnet_estudiantil",
+    "nombre": "co.universidad.carnet_estudiantil",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:universidad:carnet-estudiantil:1"
+   }
+  ],
+  "leido": "2026-10-23T21:16:40+00:00"
+ },
+ "https://civica-desarrollo.avance.org.co/gym": {
+  "configuraciones": [
+   {
+    "id": "co.gym.tarjeta_socio",
+    "nombre": "co.gym.tarjeta_socio",
+    "formato": "dc+sd-jwt",
+    "tipo": "urn:co:gym:tarjeta-socio:1"
+   }
+  ],
+  "leido": "2026-11-11T16:23:11+00:00"
+ },
+ "https://civica-desarrollo.avance.org.co/pid-transito": {
+  "configuraciones": [
+   {
+    "id": "org.iso.18013.5.1.mDL.A1",
+    "nombre": "org.iso.18013.5.1.mDL.A1",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL.A1_deferred",
+    "nombre": "org.iso.18013.5.1.mDL.A1_deferred",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL.A2",
+    "nombre": "org.iso.18013.5.1.mDL.A2",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL.A2_deferred",
+    "nombre": "org.iso.18013.5.1.mDL.A2_deferred",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL.B1",
+    "nombre": "org.iso.18013.5.1.mDL.B1",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL.B1_deferred",
+    "nombre": "org.iso.18013.5.1.mDL.B1_deferred",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL.B2",
+    "nombre": "org.iso.18013.5.1.mDL.B2",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL.B2_deferred",
+    "nombre": "org.iso.18013.5.1.mDL.B2_deferred",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL.B3",
+    "nombre": "org.iso.18013.5.1.mDL.B3",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL.B3_deferred",
+    "nombre": "org.iso.18013.5.1.mDL.B3_deferred",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL.C1",
+    "nombre": "org.iso.18013.5.1.mDL.C1",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL.C1_deferred",
+    "nombre": "org.iso.18013.5.1.mDL.C1_deferred",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL.C2",
+    "nombre": "org.iso.18013.5.1.mDL.C2",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL.C2_deferred",
+    "nombre": "org.iso.18013.5.1.mDL.C2_deferred",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL.C3",
+    "nombre": "org.iso.18013.5.1.mDL.C3",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   },
+   {
+    "id": "org.iso.18013.5.1.mDL.C3_deferred",
+    "nombre": "org.iso.18013.5.1.mDL.C3_deferred",
+    "formato": "mso_mdoc",
+    "tipo": "org.iso.18013.5.1.mDL"
+   }
+  ],
+  "leido": "2026-11-11T16:23:11+00:00"
+ }
+}

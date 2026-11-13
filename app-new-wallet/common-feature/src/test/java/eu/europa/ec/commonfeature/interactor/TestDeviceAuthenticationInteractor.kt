@@ -1,0 +1,109 @@
+/*
+ * Copyright (c) 2026 European Commission
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
+ * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work
+ * except in compliance with the Licence.
+ *
+ * You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/software/page/eupl
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the Licence is distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF
+ * ANY KIND, either express or implied. See the Licence for the specific language
+ * governing permissions and limitations under the Licence.
+ */
+
+package eu.europa.ec.commonfeature.interactor
+
+import androidx.biometric.BiometricPrompt
+import eu.europa.ec.authenticationlogic.controller.authentication.DeviceAuthenticationController
+import eu.europa.ec.authenticationlogic.controller.authentication.DeviceAuthenticationResult
+import eu.europa.ec.authenticationlogic.model.BiometricCrypto
+import eu.europa.ec.testfeature.util.mockedNotifyOnAuthenticationFailure
+import eu.europa.ec.testlogic.base.getMockedContext
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.verify
+import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.mock
+import org.robolectric.RobolectricTestRunner
+import java.security.Signature
+
+@RunWith(RobolectricTestRunner::class)
+class TestDeviceAuthenticationInteractor {
+
+    @Mock
+    lateinit var deviceAuthenticationController: DeviceAuthenticationController
+
+    @Mock
+    private lateinit var resultHandler: DeviceAuthenticationResult
+
+    private lateinit var interactor: DeviceAuthenticationInteractor
+
+    private lateinit var closeable: AutoCloseable
+
+    private lateinit var biometricCrypto: BiometricCrypto
+
+    @Before
+    fun before() {
+        closeable = MockitoAnnotations.openMocks(this)
+        interactor = DeviceAuthenticationInteractorImpl(
+            deviceAuthenticationController = deviceAuthenticationController
+        )
+
+        biometricCrypto = BiometricCrypto(BiometricPrompt.CryptoObject(mock<Signature>()))
+    }
+
+    @After
+    fun after() {
+        closeable.close()
+    }
+
+    // Case: getBiometricsAvailability behaviour
+    @Test
+    fun `Given a BiometricsAvailability listener, When getBiometricsAvailability is called, Then deviceSupportsBiometrics should be triggered`() {
+
+        // When
+        interactor.getBiometricsAvailability(biometricCrypto)
+
+        // Then
+        verify(deviceAuthenticationController).deviceSupportsBiometrics(biometricCrypto)
+    }
+
+    // Case: launchBiometricSystemScreen behaviour
+    @Test
+    fun `When launchBiometricSystemScreen is called, Then deviceAuthenticationController#launchBiometricSystemScreen is invoked`() {
+        // When
+        interactor.launchBiometricSystemScreen(biometricCrypto)
+
+        // Then
+        verify(deviceAuthenticationController).launchBiometricSystemScreen(biometricCrypto)
+    }
+
+    // Case: authenticateWithBiometrics behaviour
+    @Test
+    fun `When authenticateWithBiometrics is called, Then authenticate function should be executed`() {
+        // Given
+        val context = getMockedContext()
+
+        // When
+        interactor.authenticateWithBiometrics(
+            context = context,
+            crypto = biometricCrypto,
+            notifyOnAuthenticationFailure = mockedNotifyOnAuthenticationFailure,
+            resultHandler = resultHandler
+        )
+
+        // Then
+        verify(deviceAuthenticationController).authenticate(
+            context = context,
+            biometryCrypto = biometricCrypto,
+            notifyOnAuthenticationFailure = mockedNotifyOnAuthenticationFailure,
+            result = resultHandler
+        )
+    }
+}

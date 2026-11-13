@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2025-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.statium.misc
+
+import eu.europa.ec.eudi.statium.DEFAULT_MAXIMUM_DECOMPRESSED_SIZE
+import kotlinx.coroutines.test.runTest
+import org.junit.Test
+import java.io.ByteArrayOutputStream
+import java.util.zip.DeflaterOutputStream
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+
+class JvmAndroidDecompressTest {
+
+    @Test
+    fun testDecompress() = runTest {
+        val originalData = "Hello, this is a test of ZLIB compression and decompression!".encodeToByteArray()
+        val compressedData = compressWithZlib(originalData)
+        val decompress = JvmAndroidDecompress(coroutineContext, DEFAULT_MAXIMUM_DECOMPRESSED_SIZE)
+        val decompressedData = decompress(compressedData)
+
+        // Verify the decompressed data matches the original
+        assertContentEquals(originalData, decompressedData)
+    }
+
+    /**
+     * Helper function to compress data using ZLIB for testing
+     */
+    private fun compressWithZlib(data: ByteArray): ByteArray {
+        val outputStream = ByteArrayOutputStream()
+        DeflaterOutputStream(outputStream).use { deflaterStream ->
+            deflaterStream.write(data)
+            deflaterStream.finish()
+        }
+        return outputStream.toByteArray()
+    }
+
+    @Test
+    fun `decompress fails when decompresses array exceeds maximum allowed size`() = runTest {
+        val originalData = "Hello, this is a test of ZLIB compression and decompression!".encodeToByteArray()
+        val compressedData = compressWithZlib(originalData)
+        val decompress = JvmAndroidDecompress(coroutineContext, 16)
+        val exception = assertFailsWith<IllegalStateException> { decompress(compressedData) }
+        assertEquals("Decompressed ByteArray exceeds maximum allowed size", exception.message)
+    }
+}

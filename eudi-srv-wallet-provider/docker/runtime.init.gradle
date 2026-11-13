@@ -1,0 +1,12 @@
+// Init script: reune jar + dependencias de runtime en build/dist (el proyecto solo trae Jib).
+allprojects {
+    afterEvaluate { p ->
+        if (p.path == ':wallet-provider-service') {
+            p.tasks.register('copyRuntime', Copy) {
+                from(p.tasks.named('jar'))
+                from(p.configurations.runtimeClasspath)
+                into(p.layout.buildDirectory.dir('dist'))
+            }
+        }
+    }
+}

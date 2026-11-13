@@ -1,0 +1,60 @@
+name: Publish to container registry
+
+on:
+  push:
+    tags: [ 'v*.*.*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: 'basic'
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract Docker metadata
+        id: metadata
+        uses: docker/metadata-action@v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern=v{{version}}
+            type=edge
+            type=ref,event=branch
+      - name: Build and publish with Gradle Wrapper
+        run: |
+          echo "${{ steps.metadata.outputs.tags }}" | while read -r tag; do
+            ./gradlew wallet-provider-service:jib --image=$tag --full-stacktrace
+          done
+        if: github.event_name != 'pull_request'
+        env:
+          OCI_CREATED: ${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.created'] }}
+          OCI_DESCRIPTION: ${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.description'] }}
+          OCI_LICENSES: ${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.licenses'] }}
+          OCI_REVISION: ${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.revision'] }}
+          OCI_SOURCE: ${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.source'] }}
+          OCI_TITLE: ${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.title'] }}
+          OCI_URL: ${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.url'] }}
+          OCI_VERSION: ${{ fromJSON(steps.metadata.outputs.json).labels['org.opencontainers.image.version'] }}
+          OCI_AUTHORS: "https://digital-strategy.ec.europa.eu/en/policies/electronic-identification"
+          OCI_REF_NAME: ${{ github.repository }}
+          OCI_VENDOR: "https://digital-strategy.ec.europa.eu/en/policies/electronic-identification"

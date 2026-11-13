@@ -1,0 +1,260 @@
+name: Publish docs + PDFs
+
+on:
+  workflow_call:
+    inputs:
+      content_ref:
+        description: Branch or release tag containing docs/fcaf
+        required: false
+        type: string
+        default: submitted
+  workflow_dispatch:
+    inputs:
+      content_ref:
+        description: Branch or release tag containing docs/fcaf
+        required: true
+        type: string
+        default: submitted
+  release:
+    types: [created]
+  # Shell changes land on `site` and would otherwise never reach the live site,
+  # because publication is only ever triggered by a content push or a manual run.
+  # Scoped by path so a README or governance edit does not trigger a rebuild.
+  # No content_ref input on this path, so the compute step falls back to
+  # `submitted`, i.e. this republishes `draft` against the new shell.
+  push:
+    branches:
+      - site
+    paths:
+      - mkdocs.yml
+      - requirements.txt
+      - docs/**
+      - overrides/**
+      - hooks/**
+
+# GitHub Pages publishes directly from the gh-pages branch (build_type: legacy),
+# so this workflow only needs to push mike's output. It does not create Pages
+# deployments, hence no `pages`/`id-token` permissions.
+permissions:
+  contents: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    env:
+      MKDOCS_MATERIAL_CACHE_DIR: .cache
+
+    steps:
+      # ------------------------------------------------------------
+      # Checkout
+      # ------------------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: site
+          fetch-depth: 0
+
+      # ------------------------------------------------------------
+      # Compute version
+      # ------------------------------------------------------------
+      - name: Compute publish context
+        id: ver
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          REQUESTED_CONTENT_REF: ${{ inputs.content_ref }}
+        run: |
+          set -euo pipefail
+
+          if [ "$GITHUB_EVENT_NAME" = "release" ]; then
+            CONTENT_REF="$RELEASE_TAG"
+          else
+            CONTENT_REF="${REQUESTED_CONTENT_REF:-submitted}"
+          fi
+
+          if [ "$CONTENT_REF" = "submitted" ]; then
+            echo "kind=draft" >> "$GITHUB_OUTPUT"
+            echo "tag=draft" >> "$GITHUB_OUTPUT"
+            echo "version=draft" >> "$GITHUB_OUTPUT"
+          elif [[ "$CONTENT_REF" =~ ^v[0-9]+(\.[0-9]+)*([\-+].*)?$ ]]; then
+            echo "kind=tag" >> "$GITHUB_OUTPUT"
+            echo "tag=${CONTENT_REF}" >> "$GITHUB_OUTPUT"
+            echo "version=${CONTENT_REF#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "ERROR: content_ref must be 'submitted' or a vX.Y.Z release tag, got: '$CONTENT_REF'"
+            exit 1
+          fi
+
+          echo "content_ref=${CONTENT_REF}" >> "$GITHUB_OUTPUT"
+
+      # ------------------------------------------------------------
+      # Overlay versioned content onto the site shell
+      # ------------------------------------------------------------
+      - name: Overlay FCAF content
+        shell: bash
+        env:
+          CONTENT_REF: ${{ steps.ver.outputs.content_ref }}
+        run: |
+          set -euo pipefail
+
+          if [ -e docs/fcaf ]; then
+            echo "ERROR: site must not contain docs/fcaf before the content overlay"
+            exit 1
+          fi
+
+          git fetch --no-tags origin "$CONTENT_REF"
+          git archive --format=tar FETCH_HEAD docs/fcaf | tar -xf -
+
+          test -f docs/fcaf/.nav.yml
+          test -f docs/fcaf/index.md
+
+      # ------------------------------------------------------------
+      # System deps (Pandoc, LaTeX, SVG tools, fonts, zip)
+      # - NO Chromium install (we render mermaid via Docker image)
+      # ------------------------------------------------------------
+      - name: Install system deps (PDF + SVG)
+        if: steps.ver.outputs.kind == 'tag'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            pandoc \
+            texlive-xetex \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            texlive-fonts-extra \
+            zip \
+            librsvg2-bin \
+            fonts-noto \
+            fonts-noto-color-emoji
+
+      # ------------------------------------------------------------
+      # Provide "mmdc" via mermaid-cli Docker image (no browser install)
+      # ------------------------------------------------------------
+      - name: Provide mmdc via Docker (mermaid-cli)
+        if: steps.ver.outputs.kind == 'tag'
+        shell: bash
+        run: |
+          mkdir -p .ci/bin
+          cat > .ci/bin/mmdc <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          docker run --rm \
+            -u "$(id -u):$(id -g)" \
+            -v "$PWD:/data" \
+            -w /data \
+            ghcr.io/mermaid-js/mermaid-cli/mermaid-cli:latest \
+            "$@"
+          EOF
+          chmod +x .ci/bin/mmdc
+          echo "${GITHUB_WORKSPACE}/.ci/bin" >> "$GITHUB_PATH"
+
+          # Warm pull so the first render isn't paying the pull penalty mid-build
+          docker pull ghcr.io/mermaid-js/mermaid-cli/mermaid-cli:latest
+
+      # ------------------------------------------------------------
+      # Python setup
+      # ------------------------------------------------------------
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Cache MkDocs Material assets
+        uses: actions/cache@v4
+        with:
+          key: mkdocs-material-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+          path: .cache
+          restore-keys: |
+            mkdocs-material-${{ runner.os }}-
+
+      - name: Install Python requirements (via Makefile)
+        shell: bash
+        run: make install_deps
+
+      - name: Add venv to PATH
+        shell: bash
+        run: echo "${{ github.workspace }}/.venv/bin" >> $GITHUB_PATH
+
+      - name: Configure git identity
+        shell: bash
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      # ------------------------------------------------------------
+      # Build PDFs
+      # ------------------------------------------------------------
+      - name: Clean mermaid render cache
+        if: steps.ver.outputs.kind == 'tag'
+        shell: bash
+        run: rm -rf build/mermaid
+
+      - name: Build PDF
+        if: steps.ver.outputs.kind == 'tag'
+        shell: bash
+        run: make pdf VERSION=${{ steps.ver.outputs.version }}
+
+      - name: Zip PDFs
+        if: steps.ver.outputs.kind == 'tag'
+        shell: bash
+        run: make dist VERSION=${{ steps.ver.outputs.version }}
+
+      # ------------------------------------------------------------
+      # Deploy MkDocs versioned site
+      # ------------------------------------------------------------
+      - name: Deploy MkDocs with mike
+        shell: bash
+        # FCAF_CONTENT_REF tells hooks/fcaf_edit_urls.py which branch or tag the
+        # content pages came from, so their edit / view-source buttons point at
+        # the branch that actually holds them instead of at the shell.
+        env:
+          FCAF_CONTENT_REF: ${{ steps.ver.outputs.content_ref }}
+        run: |
+          if [ "${{ steps.ver.outputs.kind }}" = "draft" ]; then
+            make ci_mike_deploy_draft
+          else
+            make ci_mike_deploy VERSION=${{ steps.ver.outputs.version }}
+          fi        
+
+      # mike's push to gh-pages is the publication step. GitHub Pages is
+      # configured with build_type: legacy on that branch, so it picks the push
+      # up and syncs only what changed. Do NOT reintroduce
+      # upload-pages-artifact/deploy-pages here: that path re-uploads and
+      # reprocesses every mike version on every publish, which exceeded the
+      # action's fixed 10-minute deployment ceiling for this site.
+
+      # ------------------------------------------------------------
+      # Upload artifacts (Actions)
+      # ------------------------------------------------------------
+      - name: Upload PDFs (artifact)
+        if: steps.ver.outputs.kind == 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fcaf-pdfs-${{ steps.ver.outputs.tag }}
+          path: build/pdf/*.pdf
+
+      - name: Upload ZIP (artifact)
+        if: steps.ver.outputs.kind == 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fcaf-pdfs-zip-${{ steps.ver.outputs.tag }}
+          path: build/dist/*.zip
+
+      # ------------------------------------------------------------
+      # Attach to GitHub Release
+      # ------------------------------------------------------------
+      - name: Upload assets to GitHub Release
+        if: steps.ver.outputs.kind == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          files: |
+            build/pdf/*.pdf
+            build/dist/*.zip

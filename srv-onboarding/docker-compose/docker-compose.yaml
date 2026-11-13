@@ -1,0 +1,102 @@
+name: onboarding
+
+# Onboarding de usuario (identity proofing): captura de documento, OCR, selfie con liveness,
+# verificacion de contacto y consentimiento. Es un servicio TRANSVERSAL del ecosistema: lo usan
+# las wallets para dar de alta al usuario antes de pedir credenciales.
+#
+# Vive en su propio proyecto (no dentro de new-wallet) para que:
+#   - no se duplique al clonar o re-clonar una wallet,
+#   - pueda evolucionar y versionarse por separado,
+#   - quede accesible a cualquier wallet por la red compartida.
+#
+# Se accede por el proxy unico nw-nginx: https://civica-desarrollo.avance.org.co/onboarding
+# La base de datos NO se publica ni se enruta: es privada de este proyecto.
+
+networks:
+  onboarding:
+    name: onboarding_default
+    external: true
+  avance-eudi:
+    name: avance-eudi
+    external: true
+
+services:
+  onboarding-postgres:
+    image: postgres:16-alpine
+    container_name: onboarding-postgres
+    ports:
+      - "127.0.0.1:${ONBOARDING_DB_PORT:-5436}:5432"
+    environment:
+      POSTGRES_DB: onboarding
+      POSTGRES_USER: onboarding
+      POSTGRES_PASSWORD: ${ONBOARDING_DB_PASSWORD:-onboarding}
+    volumes:
+      - onboarding_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U onboarding -d onboarding"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - onboarding
+
+  onboarding-biometrics:
+    build: ../biometrics
+    container_name: onboarding-biometrics
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8100/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - onboarding
+      - avance-eudi
+
+  onboarding-backend:
+    build: ../backend
+    container_name: onboarding-backend
+    depends_on:
+      onboarding-postgres:
+        condition: service_healthy
+      onboarding-biometrics:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://onboarding-postgres:5432/onboarding
+      DB_USER: onboarding
+      DB_PASSWORD: ${ONBOARDING_DB_PASSWORD:-onboarding}
+      BIOMETRIC_HTTP_URL: http://onboarding-biometrics:8100
+      OTP_PROVIDER: logging
+      # SOLO desarrollo: la app completa el OTP sola con el codigo devuelto por la API.
+      OTP_EXPOSE_CODE: ${OTP_EXPOSE_CODE:-true}
+      OTP_HASH_PEPPER: ${OTP_HASH_PEPPER:-dev-pepper-change-me}
+      # «Perdi mi celular»: API interna de revocacion del emisor de la Registraduria (red avance-eudi).
+      # La clave es la de DESARROLLO del emisor; en cualquier otro entorno defínela en .env.
+      ONBOARDING_LOSTDEVICE_ISSUER_URL: ${ONBOARDING_LOSTDEVICE_ISSUER_URL:-http://pid-issuer:8080/pid-registraduria/internal/v1/credentials/revoke}
+      ONBOARDING_INTERNAL_API_KEY: ${ONBOARDING_INTERNAL_API_KEY:-onb-internal-dev-key-change-me}
+      ONBOARDING_LOSTDEVICE_ISSUER_APIKEY: ${REG_REVOCATION_API_KEY:-reg-dev-revocation-key-change-me}
+    volumes:
+      - onboarding_uploads:/data/uploads
+      # Paginas estaticas (perdi-mi-celular.html); el backend las sirve desde /webroot.
+      - ../webroot:/webroot:ro
+    healthcheck:
+      test:
+        - CMD
+        - bash
+        - -c
+        - exec 3<>/dev/tcp/127.0.0.1/8095 && printf 'GET /actuator/health HTTP/1.0\r\n\r\n' >&3 && grep -q '"status":"UP"' <&3
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+    networks:
+      - onboarding
+      - avance-eudi
+
+volumes:
+  onboarding_pg:
+  onboarding_uploads:

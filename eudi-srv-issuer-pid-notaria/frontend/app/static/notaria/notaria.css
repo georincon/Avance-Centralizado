@@ -1,0 +1,108 @@
+/* Identidad de la Notaría Avance (misma que verifiers/notaria): índigo, azul de enlace y dorado.
+   Se carga DESPUÉS de bootstrap 3 y lo sobrescribe: las plantillas del repo EUDI conservan su estructura. */
+@font-face { font-family: 'Nunito Sans'; font-weight: 400 800; font-display: swap; src: url('fuentes/nunito-sans-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Nunito Sans'; font-weight: 400 800; font-display: swap; src: url('fuentes/nunito-sans-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+/* Notaría Avance — escala compacta y consistente. Una sola hoja para todas las pantallas del flujo
+   (ya no se cargan bootstrap ni tailwind en ellas). */
+:root { --tinta:#1b2540; --suave:#5d6880; --borde:#d5dcec; --fondo:#f1f3f8; --papel:#fff; --vino:#2d447c; --vino-osc:#098dde;
+  --oro:#ecc366; --azul-medio:#374d95; --noche:#1d3073; --ok:#1e7a4c; --mal:#b42318; --r:8px; }
+* { box-sizing:border-box; }
+html { font-size:15px; }
+body { margin:0; background:var(--fondo); color:var(--tinta); font-family:"Nunito Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height:1.5; }
+a { color:var(--vino-osc); text-decoration:none; } a:hover { color:var(--vino); text-decoration:underline; }
+
+/* Cabecera y pie */
+.notaria-cab { background:#fff; border-bottom:1px solid var(--borde); }
+.notaria-cab .barra { max-width:960px; margin:0 auto; padding:10px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.notaria-cab .marca { display:flex; align-items:center; gap:10px; color:inherit; }
+.notaria-cab .marca:hover { text-decoration:none; }
+.notaria-cab .marca img { height:38px; width:auto; border-radius:8px; }
+.notaria-cab .marca strong { display:block; font-size:1.02rem; color:var(--vino); font-weight:800; line-height:1.15; }
+.notaria-cab .marca small { color:var(--suave); font-size:.74rem; }
+.notaria-cab nav { margin-left:auto; display:flex; gap:18px; }
+.notaria-cab nav a { color:var(--vino); font-weight:600; font-size:.86rem; padding:4px 0; border-bottom:2px solid transparent; }
+.notaria-cab nav a:hover { border-bottom-color:var(--oro); text-decoration:none; }
+.notaria-pie { max-width:960px; margin:28px auto 0; padding:14px 20px 32px; color:var(--suave); font-size:.76rem; border-top:1px solid var(--borde); line-height:1.5; }
+.notaria-pie strong { color:var(--vino); }
+
+/* Página */
+.pagina { max-width:960px; margin:0 auto; padding:22px 20px 0; }
+.pagina.estrecha { max-width:680px; }
+h1 { font-size:1.45rem; font-weight:800; color:var(--vino); margin:0 0 4px; line-height:1.25; }
+.sub { color:var(--suave); font-size:.92rem; margin:0 0 16px; max-width:640px; }
+.titulo-seccion { font-size:.72rem; letter-spacing:.1em; text-transform:uppercase; color:var(--azul-medio); font-weight:800; margin:20px 0 8px; }
+.panel { background:var(--papel); border:1px solid var(--borde); border-radius:10px; padding:16px 18px; }
+.panel + .panel { margin-top:12px; }
+
+/* Botones: tamaño normal, no gigantes */
+.btn, button, input[type=submit], input[type=button] { font:inherit; font-size:.88rem; font-weight:700; line-height:1; border-radius:var(--r); padding:10px 18px; border:1px solid transparent; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px; text-decoration:none; background:var(--vino); color:#fff; }
+.btn:hover, button:hover, input[type=submit]:hover { background:var(--vino-osc); color:#fff; text-decoration:none; }
+.btn.sec, button.sec, input[type=button].sec { background:#fff; color:var(--vino); border-color:var(--borde); }
+.btn.sec:hover, button.sec:hover { border-color:var(--vino); background:#fff; color:var(--vino); }
+button:disabled, input:disabled { opacity:.5; cursor:not-allowed; }
+.acciones { display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; align-items:center; }
+
+/* Formularios */
+.campos { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px 16px; }
+.campo { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.campo.ancho { grid-column:1 / -1; }
+.campo label { font-size:.78rem; font-weight:700; color:var(--suave); }
+.campo label .req { color:var(--mal); }
+input[type=text], input[type=date], input[type=time], input[type=number], input[type=email], select, textarea {
+  font:inherit; font-size:.9rem; width:100%; height:36px; padding:6px 10px; border:1px solid var(--borde); border-radius:var(--r); background:#fff; color:var(--tinta); }
+textarea { height:auto; min-height:64px; resize:vertical; }
+input:focus, select:focus, textarea:focus { outline:none; border-color:var(--vino-osc); box-shadow:0 0 0 3px rgba(9,141,222,.15); }
+input[readonly] { background:#f6f7fb; color:var(--suave); }
+.ayuda { font-size:.74rem; color:var(--suave); }
+
+/* Elegir documento: tarjetas seleccionables */
+.docs { display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 270px), 1fr)); gap:10px; }
+.doc { position:relative; display:flex; gap:10px; align-items:flex-start; background:#fff; border:1px solid var(--borde); border-radius:10px; padding:11px 12px 11px 14px; cursor:pointer; overflow:hidden; }
+.doc::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--franja, var(--vino)); }
+.doc:hover { border-color:var(--vino-osc); }
+.doc input { margin-top:3px; width:16px; height:16px; accent-color:var(--vino); flex:none; }
+.doc strong { display:block; font-size:.9rem; color:var(--vino); line-height:1.25; }
+.doc span { display:block; font-size:.76rem; color:var(--suave); line-height:1.35; margin-top:2px; }
+.doc:has(input:checked) { border-color:var(--vino); box-shadow:0 0 0 2px rgba(45,68,124,.15); background:#f7f9ff; }
+.opciones { display:flex; flex-direction:column; gap:8px; }
+.opcion { display:flex; gap:9px; align-items:flex-start; font-size:.9rem; cursor:pointer; }
+.opcion input { margin-top:3px; width:16px; height:16px; accent-color:var(--vino); }
+.opcion small { color:var(--suave); display:block; font-size:.74rem; }
+
+/* Revisión */
+.revision { width:100%; border-collapse:collapse; font-size:.88rem; }
+.revision th { text-align:left; width:34%; color:var(--suave); font-weight:600; padding:7px 8px 7px 0; vertical-align:top; border-bottom:1px solid #e8ecf6; }
+.revision td { padding:7px 0; border-bottom:1px solid #e8ecf6; word-break:break-word; }
+.revision tr:last-child th, .revision tr:last-child td { border-bottom:0; }
+
+/* Aviso y QR */
+.aviso { border-radius:var(--r); padding:10px 12px; font-size:.84rem; line-height:1.45; background:#fff8e8; color:#7a5a14; border:1px solid #ecd9a8; margin:14px 0; }
+.aviso.error { background:#fef3f2; color:var(--mal); border-color:#fecdca; }
+.entrega { display:grid; grid-template-columns:auto 1fr; gap:22px; align-items:center; }
+.entrega img.qr { width:210px; height:210px; border:1px solid var(--borde); border-radius:10px; padding:6px; background:#fff; }
+.pin { font-family:ui-monospace, SFMono-Regular, monospace; font-size:1.9rem; letter-spacing:.4em; font-weight:800; color:var(--vino); margin:2px 0 6px; }
+.etiqueta { font-size:.72rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--azul-medio); }
+@media (max-width:640px) {
+  .campos { grid-template-columns:1fr; }
+  .entrega { grid-template-columns:1fr; justify-items:center; text-align:center; }
+  .notaria-cab nav { margin-left:0; }
+}
+
+/* Persona identificada con la wallet */
+.notaria-cab .yo { display:flex; align-items:center; gap:10px; margin-left:auto; font-size:.8rem; color:var(--suave); background:#f1f3f8; border:1px solid var(--borde); border-radius:999px; padding:4px 6px 4px 12px; }
+.notaria-cab .yo a { color:var(--vino); font-weight:700; background:#fff; border:1px solid var(--borde); border-radius:999px; padding:2px 10px; }
+.notaria-cab .yo + nav { margin-left:0; }
+.chip { display:inline-block; margin-left:6px; font-size:.66rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--ok); background:#e8f5ee; border:1px solid #b7e1c8; border-radius:999px; padding:1px 8px; vertical-align:middle; }
+
+/* Selector de archivo con su resumen */
+.archivo { background:#f7f9ff; border:1px dashed var(--borde); border-radius:var(--r); padding:10px 12px; }
+.archivo input[type=file] { height:auto; padding:6px 0; border:0; background:transparent; font-size:.85rem; width:100%; }
+.archivo input[type=file]::file-selector-button { font:inherit; font-size:.82rem; font-weight:700; color:#fff; background:var(--vino); border:0; border-radius:var(--r); padding:7px 14px; margin-right:10px; cursor:pointer; }
+.archivo-estado { margin-top:8px; font-size:.86rem; line-height:1.45; border-radius:var(--r); padding:8px 10px; word-break:break-word; }
+.archivo-estado.ok { background:#e8f5ee; color:#14532d; border:1px solid #b7e1c8; }
+.archivo-estado.mal { background:#fef3f2; color:var(--mal); border:1px solid #fecdca; }
+.archivo-estado.calc { background:#fff8e8; color:#7a5a14; border:1px solid #ecd9a8; }
+.archivo-estado .huella { font-family:ui-monospace, monospace; font-size:.76rem; color:var(--suave); }

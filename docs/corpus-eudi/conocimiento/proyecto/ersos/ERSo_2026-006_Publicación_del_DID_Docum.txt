@@ -1,0 +1,100 @@
+                                                                                      Identificación OID:   1.3.6.1.4.1.31144.3.2.002.1.1
+                                                                                                  Fecha:    02-01-2020
+                                       ESPECIFICACION DE REQUISITOS                             Versión:    1.1
+                                                SOFTWARE                                   Clasificación:   Interno
+                                                  (ERSo)                                        Elaboró:    Arquitecto software
+                                                                                                 Revisó:    Líder de proyecto
+                                                                                                Aprobó:     Representante Legal
+
+
+PROYECTO                               Identidad Digital Soberana SSI                                ERSo                  2026-006
+TITULO                                 Publicación del DID Document institucional
+DESARROLLADOR                          Luis González
+FECHA ERSO                             Viernes, 18 de septiembre de 2026
+FECHA DESARROLLO                       Miércoles, 30 de septiembre de 2026 7:30 a.m
+FECHA DE PRUEBA                        Viernes, 2 de octubre de 2026 7:30 a.m
+
+
+CAPACIDADES DEL                        Se requiere habilitar la publicación autenticada del DID Document correspondiente a la entidad
+PROCESO                                institucional (emisor o ancla de confianza), con namespace propio, y dejar evidencia verificable
+                                       de la publicación.
+                                       Entre las capacidades del proceso se encuentran:
+                                            •   Construir el DID Document institucional con las claves públicas de la entidad en
+                                                representación Multikey.
+                                            •   Publicar el documento institucional en la ruta web calculada y servirlo por HTTPS.
+                                            •   Ejecutar la publicación mediante canal de escritura autenticado entre servicios.
+                                            •   Confirmar la publicación mediante lectura desde la URL pública y comparación de
+                                                contenido y hash.
+                                            •   Conservar la evidencia verificable de la publicación (versión, hash y URL pública).
+
+
+CONDICIONES DEL                             •   La publicación la ejecuta la entidad institucional con escritura autenticada.
+PROCESO
+                                            •   El namespace institucional es propio y no colisiona con el del titular.
+                                            •   La ruta did:web institucional se encuentra reservada en el dominio contratado.
+                                            •   La lectura pública se realiza por un canal separado del canal de escritura.
+                                            •   El documento no incluye claves privadas, credenciales personales ni datos civiles.
+
+
+
+
+DESCRIPCION DEL PROCESO
+Contexto y propósito funcional. Aquí el sujeto que publica no es una persona, sino la entidad institucional (emisor o ancla de
+confianza), que expone su propio DID Document con un espacio de nombres exclusivo. El propósito es que esa entidad tenga
+identidad verificable publicada, con escritura autenticada y lectura pública separadas, y con evidencia de cada versión publicada.
+Literatura y temas a consultar. Consultar en la web: W3C DIDs v1.1, método did:web, Multikey/multibase y buenas prácticas de
+mTLS y autenticación entre servicios (OAuth2 client credentials) para el canal de escritura. Revisar el patrón de API de
+documentos gestionados con control de versión.
+Qué debe hacer.
+      1.   Verificar las precondiciones: cuenta de entidad habilitada con namespace propio y ruta did:web reservada.
+      2.   Construir el DID Document institucional con las claves públicas de la entidad en Multikey.
+      3.   Publicar el documento por el canal de escritura autenticado (mTLS y token de servicio con permiso sobre el namespace).
+      4.   Confirmar la publicación leyendo el documento desde la URL calculada y comparando contenido y hash.
+
+FSOF-FO-002 OID 1.3.6.1.4.1.31144.3.2.002.1.1          FORMATO ESPECIFICACION REQUISITOS SOFTWARE                         Página 1 de 2
+                                                                                    Identificación OID:   1.3.6.1.4.1.31144.3.2.002.1.1
+                                                                                                Fecha:    02-01-2020
+                                       ESPECIFICACION DE REQUISITOS                           Versión:    1.1
+                                                SOFTWARE                                 Clasificación:   Interno
+                                                  (ERSo)                                      Elaboró:    Arquitecto software
+                                                                                               Revisó:    Líder de proyecto
+                                                                                              Aprobó:     Representante Legal
+
+
+      5.   Registrar la evidencia de publicación (versión, hash y URL pública).
+
+
+Criterios de aceptación
+
+
+
+
+                                   #                                     Criterio
+                                   1        El DID Document institucional se sirve por HTTPS y es resoluble;
+                                            evidencia: lectura desde la URL pública.
+                                   2        La escritura está autenticada y trazada, limitada al namespace de
+                                            la entidad; evidencia: registro de la operación.
+
+                                   3        El documento no expone material de claves privadas ni datos
+                                            civiles; evidencia: revisión del contenido
+
+                                   4        La evidencia de publicación (versión, hash y URL pública) queda
+                                            registrada; evidencia: registro de publicación.
+
+
+
+
+Actividad                                       Responsable                             Fecha y hora                    Firma
+Análisis y diseño ERSo                          Rocío Villamizar
+Asignar desarrollador ERSo                      Rocío Villamizar
+Implementar ERSo                                Luis González
+Aceptar archivos al repositorio central         Rocío Villamizar
+Elaborar plantilla de pruebas                   Geovani Rincón
+Realizar pruebas funcionales                    Geovani Rincón
+Archivo de ERSo                                 Rocío Villamizar
+
+
+
+
+FSOF-FO-002 OID 1.3.6.1.4.1.31144.3.2.002.1.1          FORMATO ESPECIFICACION REQUISITOS SOFTWARE                      Página 2 de 2
+

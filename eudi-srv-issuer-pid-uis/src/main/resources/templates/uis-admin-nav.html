@@ -1,0 +1,18 @@
+<!--
+  Código propio de este fork (emulador de la UIS). No es parte del eudi-srv-pid-issuer original de la Comisión Europea.
+  Barra de navegación del panel de administración: va en TODAS las páginas (Estudiantes, Historial de emisiones y
+  Avisos de revocación) para pasar de una a otra sin volver atrás.
+  Uso:  <th:block th:replace="~{uis-admin-nav :: nav('estudiantes')}"/>   (activo: estudiantes | historial | avisos)
+-->
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="nav(activo)">
+    <nav class="uis-nav"><div class="inner">
+        <a th:href="@{/uis/admin/estudiantes}" th:classappend="${activo == 'estudiantes'} ? 'activo'">Estudiantes</a>
+        <a th:href="@{/uis/admin/historial}" th:classappend="${activo == 'historial'} ? 'activo'">Historial de emisiones</a>
+        <a th:href="@{/uis/admin/avisos}" th:classappend="${activo == 'avisos'} ? 'activo'">Avisos de revocación</a>
+    </div></nav>
+</th:block>
+</body>
+</html>

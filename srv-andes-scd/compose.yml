@@ -1,0 +1,47 @@
+# Simulador del prestador de firma remota (Andes SCD). Cuelga de la red compartida "avance-eudi" con el
+# alias app-PREFIJO, como las demas entidades: el nginx central le pasa la ruta COMPLETA
+# https://DOMINIO/PREFIJO/... y el metadata RFC 8414 en /.well-known/oauth-authorization-server/PREFIJO.
+#
+# Monta la sub-CA QTSP del ecosistema EN ESCRITURA (anota serial, index.txt y newcerts/ al emitir) y la
+# carpeta publica de la PKI en solo lectura. La raiz NO se monta: su clave no esta al alcance de este servicio.
+#
+# Se usa con ./levantar.sh o, ya creado: docker compose -p andes-scd --env-file .env logs -f
+name: andes-scd
+
+services:
+  andes-scd:
+    build: .
+    image: srv-andes-scd:latest
+    container_name: andes-scd
+    restart: unless-stopped
+    # El dueño de la clave de la sub-CA (0400): quien ejecuto crear-pki.sh.
+    user: ${UID_GID:-1000:1000}
+    environment:
+      ANDES_DOMINIO: ${DOMINIO}
+      ANDES_PREFIJO: ${PREFIJO}
+      ANDES_CLIENT_ID: ${CLIENT_ID}
+      ANDES_CLIENT_SECRET: ${CLIENT_SECRET}
+      ANDES_REDIRECT_URIS: ${REDIRECT_URIS}
+      # Identificacion del firmante con su PID, por el verifier propio del servicio (verifiers/_comun, instancia "firma").
+      ANDES_AUTENTICACION: ${AUTENTICACION:-pid}
+      ANDES_VERIFIER_API: http://verifier-${VERIFIER_INSTANCIA:-firma}/verifier-${VERIFIER_INSTANCIA:-firma}
+      ANDES_DIR_CA: /pki/subca/qtsp
+      ANDES_DIR_PKI_PUBLICO: /pki/publico
+      ANDES_DIR_DATOS: /datos
+    volumes:
+      - ../srv-tl-publisher/pki/subca/qtsp:/pki/subca/qtsp
+      - ../srv-tl-publisher/pki/publico:/pki/publico:ro
+      - ./datos:/datos
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      avance-eudi:
+        aliases: ["app-${PREFIJO}"]
+
+networks:
+  avance-eudi:
+    name: avance-eudi
+    external: true

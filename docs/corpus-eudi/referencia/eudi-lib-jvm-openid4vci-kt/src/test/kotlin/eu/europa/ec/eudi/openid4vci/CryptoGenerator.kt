@@ -1,0 +1,235 @@
+/*
+ * Copyright (c) 2023-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.openid4vci
+
+import com.nimbusds.jose.JOSEObjectType
+import com.nimbusds.jose.JWSAlgorithm
+import com.nimbusds.jose.JWSSigner
+import com.nimbusds.jose.crypto.ECDSASigner
+import com.nimbusds.jose.jwk.Curve
+import com.nimbusds.jose.jwk.ECKey
+import com.nimbusds.jose.jwk.JWK
+import com.nimbusds.jose.jwk.KeyUse
+import com.nimbusds.jose.jwk.gen.ECKeyGenerator
+import com.nimbusds.jwt.SignedJWT
+import com.nimbusds.oauth2.sdk.id.Issuer
+import com.nimbusds.oauth2.sdk.util.X509CertificateUtils
+import eu.europa.ec.eudi.openid4vci.internal.fromNimbusEcKey
+import eu.europa.ec.eudi.openid4vci.internal.fromNimbusEcKeys
+import java.net.URI
+import java.security.KeyFactory
+import java.security.cert.CertificateFactory
+import java.security.cert.X509Certificate
+import java.security.interfaces.ECPrivateKey
+import java.security.spec.PKCS8EncodedKeySpec
+import java.time.Duration
+import java.time.Instant
+import java.time.Instant.now
+import java.util.*
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
+
+object CryptoGenerator {
+
+    fun randomECSigningKey(curve: Curve): ECKey = ECKeyGenerator(curve)
+        .keyUse(KeyUse.SIGNATURE)
+        .keyID(UUID.randomUUID().toString())
+        .issueTime(Date(System.currentTimeMillis()))
+        .generate()
+
+    fun ecSigner(curve: Curve = Curve.P_256, alg: JWSAlgorithm = JWSAlgorithm.ES256): Signer<JWK> {
+        require(alg in JWSAlgorithm.Family.EC)
+        val keyPair = randomECSigningKey(curve)
+        return Signer.fromNimbusEcKey(
+            keyPair,
+            keyPair.toPublicJWK(),
+            secureRandom = null,
+            provider = null,
+        )
+    }
+
+    fun jwtProofWithKeyAttestationSpec(
+        curve: Curve = Curve.P_256,
+        attestedKeysCount: Int = 3,
+        keyAttestationJwt: suspend (List<JWK>, Nonce?, PositiveDuration?) -> KeyAttestationJWT = CryptoGenerator::keyAttestationJwt,
+        assertions: (Nonce?, PositiveDuration?) -> Unit = { _, _ -> },
+    ): ProofSpecification.JwtProofWithKeyAttestation {
+        val ecKeys = List(attestedKeysCount) { randomECSigningKey(curve) }
+        val signerProvider: suspend (Nonce?, PositiveDuration?) -> Signer<KeyAttestationJWT> = { cNonce, preferredKeyStorageStatusPeriod ->
+            assertions(cNonce, preferredKeyStorageStatusPeriod)
+            Signer.fromNimbusEcKey(
+                ecPrivateKey = ecKeys[0],
+                keyInfo =
+                    keyAttestationJwt(
+                        ecKeys.map { it.toPublicJWK() },
+                        cNonce,
+                        preferredKeyStorageStatusPeriod,
+                    ),
+                secureRandom = null,
+                provider = null,
+            )
+        }
+        return ProofSpecification.JwtProofWithKeyAttestation(signerProvider)
+    }
+
+    fun jwtProofsWithoutKeyAttestation(
+        curve: Curve = Curve.P_256,
+        keysNo: Int = 1,
+    ): ProofSpecification.JwtProofsWithoutKeyAttestation {
+        val ecKeys = List(keysNo) { randomECSigningKey(curve) }
+        val batchSigner = BatchSigner.fromNimbusEcKeys(
+            ecKeyPairs = ecKeys.associateWith { JwtBindingKey.Jwk(it.toPublicJWK()) },
+            secureRandom = null,
+            provider = null,
+        )
+        return ProofSpecification.JwtProofsWithoutKeyAttestation(batchSigner)
+    }
+
+    fun attestationProofSpec(
+        curve: Curve = Curve.P_256,
+        keysNo: Int = 3,
+        keyAttestationJwt: suspend (List<JWK>, Nonce?, PositiveDuration?) -> KeyAttestationJWT = CryptoGenerator::keyAttestationJwt,
+        assertions: (Nonce?, PositiveDuration?) -> Unit = { _, _ -> },
+    ): ProofSpecification.AttestationProof =
+        ProofSpecification.AttestationProof { nonce, preferredKeyStorageStatusPeriod ->
+            assertions(nonce, preferredKeyStorageStatusPeriod)
+            keyAttestationJwt(
+                List(keysNo) {
+                    randomECSigningKey(curve)
+                },
+                nonce,
+                preferredKeyStorageStatusPeriod,
+            )
+        }
+
+    // Helper to load an EC private key from PEM file
+    private fun loadECPrivateKeyFromFile(resourcePath: String): ECPrivateKey {
+        val pem = CryptoGenerator::class.java.classLoader.getResource(resourcePath)?.readText()
+            ?: error("Private key file not found: $resourcePath")
+        val base64 = pem
+            .replace("-----BEGIN PRIVATE KEY-----", "")
+            .replace("-----END PRIVATE KEY-----", "")
+            .replace("\r", "")
+            .replace("\n", "")
+            .trim()
+        val keyBytes = Base64.getDecoder().decode(base64)
+        val keySpec = PKCS8EncodedKeySpec(keyBytes)
+        val kf = KeyFactory.getInstance("EC")
+        return kf.generatePrivate(keySpec) as ECPrivateKey
+    }
+
+    // Helper to load X.509 certificate from PEM file
+    private fun loadCertificateFromFile(resourcePath: String): X509Certificate {
+        val certStream = CryptoGenerator::class.java.classLoader.getResourceAsStream(resourcePath)
+            ?: error("Certificate file not found: $resourcePath")
+        val cf = CertificateFactory.getInstance("X.509")
+        return cf.generateCertificate(certStream) as X509Certificate
+    }
+
+    fun keyAttestationJwt(
+        attestedKeys: List<JWK>? = null,
+        nonce: Nonce? = null,
+        preferredKeyStorageStatusPeriod: PositiveDuration? = null,
+    ) = run {
+        val privateKey = loadECPrivateKeyFromFile("eu/europa/ec/eudi/openid4vci/internal/key_attestation_jwt.key")
+        val certificate = loadCertificateFromFile("eu/europa/ec/eudi/openid4vci/internal/key_attestation_jwt.cert")
+        val jwt = keyAttestationJwt(
+            attestedKeys = attestedKeys ?: List(3) { randomECSigningKey(Curve.P_256) },
+            certificate = certificate,
+            signer = ECDSASigner(privateKey),
+            nonce,
+            preferredKeyStorageStatusPeriod,
+            JWSAlgorithm.ES256,
+        )
+        KeyAttestationJWT(jwt.serialize())
+    }
+
+    fun keyAttestationJwt(
+        attestedKeys: List<JWK>? = null,
+        nonce: Nonce? = null,
+        preferredKeyStorageStatusPeriod: PositiveDuration? = null,
+        curve: Curve,
+    ) = run {
+        val algorithm = when (curve) {
+            Curve.P_256 -> JWSAlgorithm.ES256
+            Curve.P_384 -> JWSAlgorithm.ES384
+            Curve.P_521 -> JWSAlgorithm.ES512
+            else -> error("Unsupported Curve: $curve")
+        }
+        val privateKey = ECKeyGenerator(curve).algorithm(algorithm).generate()
+        val certificate = X509CertificateUtils.generateSelfSigned(
+            Issuer("Wallet-Provider"),
+            Date.from(Instant.now()),
+            Date.from(Instant.now().plus(Duration.ofDays(365))),
+            privateKey.toECPublicKey(),
+            privateKey.toECPrivateKey(),
+        )
+        val jwt = keyAttestationJwt(
+            attestedKeys = attestedKeys ?: List(3) { randomECSigningKey(Curve.P_256) },
+            certificate = certificate,
+            signer = ECDSASigner(privateKey),
+            nonce,
+            preferredKeyStorageStatusPeriod,
+            algorithm,
+        )
+        KeyAttestationJWT(jwt.serialize())
+    }
+
+    fun keyAttestationJwt(curve: Curve): (List<JWK>?, nonce: Nonce?, PositiveDuration?) -> KeyAttestationJWT =
+        {
+                attestedKeys,
+                nonce,
+                preferredKeyStorageStatusPeriod,
+            ->
+            keyAttestationJwt(attestedKeys, nonce, preferredKeyStorageStatusPeriod, curve)
+        }
+
+    private fun keyAttestationJwt(
+        attestedKeys: List<JWK>,
+        certificate: X509Certificate,
+        signer: JWSSigner,
+        nonce: Nonce? = null,
+        preferredKeyStorageStatusPeriod: PositiveDuration? = null,
+        algorithm: JWSAlgorithm,
+    ): SignedJWT =
+        KeyAttestationJWTBuilder(algorithm)
+            .typ(JOSEObjectType(OpenId4VCISpec.KEY_ATTESTATION_JWT_TYPE))
+            .x5c(listOf(certificate))
+            .iat(now())
+            .exp(now() + (preferredKeyStorageStatusPeriod?.value ?: 3600.seconds.toJavaDuration()))
+            .attestedKeys(attestedKeys.map { it.toPublicJWK() })
+            .keyStorage(listOf(AttackPotentialResistance.Iso18045High))
+            .userAuthentication(listOf(AttackPotentialResistance.Iso18045High))
+            .certification(URI.create("https://example.org/certification/wscd/GlobalPlatform/").toURL())
+            .apply {
+                if (null != nonce) {
+                    nonce(nonce)
+                }
+            }
+            .keyStorageStatus(
+                KeyStorageStatus(
+                    StatusClaim(
+                        StatusListTokenClaim(
+                            7u,
+                            URI.create("https://revocation_url/wua-type-statuslists/3"),
+                        ),
+                    ),
+                    now() + 90.days.toJavaDuration(),
+                ),
+            )
+            .build(signer)
+}

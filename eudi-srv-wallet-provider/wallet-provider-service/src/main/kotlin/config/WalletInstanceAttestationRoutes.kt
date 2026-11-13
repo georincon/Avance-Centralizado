@@ -1,0 +1,176 @@
+/*
+ * Copyright (c) 2025-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.walletprovider.config
+
+import arrow.core.raise.effect
+import arrow.core.raise.getOrElse
+import eu.europa.ec.eudi.walletprovider.domain.walletinstanceattestation.WalletInstanceAttestation
+import eu.europa.ec.eudi.walletprovider.port.input.walletinstanceattestation.IssueWalletInstanceAttestation
+import eu.europa.ec.eudi.walletprovider.port.input.walletinstanceattestation.WalletInstanceAttestationIssuanceFailure
+import eu.europa.ec.eudi.walletprovider.port.input.walletinstanceattestation.WalletInstanceAttestationIssuanceRequest
+import eu.europa.ec.eudi.walletprovider.port.output.platformkeyattestation.PlatformKeyAttestationValidationFailure
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import kotlinx.serialization.Required
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger("WalletInstanceAttestationRoutes")
+
+fun Application.configureWalletInstanceAttestationRoutes(issueWalletInstanceAttestation: IssueWalletInstanceAttestation) {
+    routing {
+        route("/wallet-instance-attestation") {
+            route("/platform-key-attestation/android") {
+                post {
+                    issueWalletInstanceAttestation<WalletInstanceAttestationIssuanceRequest.PlatformKeyAttestation.Android>()
+                }
+            }
+            route("/platform-key-attestation/ios") {
+                post {
+                    issueWalletInstanceAttestation<WalletInstanceAttestationIssuanceRequest.PlatformKeyAttestation.Ios>()
+                }
+            }
+            route("/jwk") {
+                post {
+                    issueWalletInstanceAttestation<WalletInstanceAttestationIssuanceRequest.Jwk>()
+                }
+            }
+        }
+    }
+}
+
+context(context: RoutingContext)
+private suspend inline operator fun <reified T : WalletInstanceAttestationIssuanceRequest> IssueWalletInstanceAttestation.invoke() {
+    val call = context.call
+    val request = call.receive<T>()
+    logger.info("Received WalletInstanceAttestationIssuanceRequest: {}", request)
+
+    effect {
+        val walletInstanceAttestation = invoke(request)
+        logger.info("Successfully issued WalletInstanceAttestation: {}", walletInstanceAttestation)
+        call.respond(HttpStatusCode.OK, walletInstanceAttestation.toWalletInstanceAttestationResponse())
+    }.getOrElse { failure ->
+        logger.warn(failure)
+        call.respond(HttpStatusCode.BadRequest, failure.toWalletInstanceAttestationErrorResponse())
+    }
+}
+
+private fun Logger.warn(failure: WalletInstanceAttestationIssuanceFailure) {
+    val (error, cause) =
+        when (failure) {
+            is WalletInstanceAttestationIssuanceFailure.UnsupportedSigningAlgorithms -> {
+                "WalletInstanceAttestationIssuanceRequest validation failed, " +
+                    "Unsupported signing algorithms. Supported: ${failure.supportedSigningAlgorithm.identifier}, " +
+                    "requested: ${failure.requestedSigningAlgorithms.joinToString { it.identifier } }" to
+                    null
+            }
+
+            is WalletInstanceAttestationIssuanceFailure.InvalidChallenge -> {
+                "WalletInstanceAttestationIssuanceRequest validation failed, " +
+                    "Challenge is not valid: ${failure.error}" to
+                    failure.cause
+            }
+
+            is WalletInstanceAttestationIssuanceFailure.InvalidPlatformKeyAttestation -> {
+                when (val platformKeyAttestationFailure = failure.error) {
+                    is PlatformKeyAttestationValidationFailure.InvalidPlatformKeyAttestation -> {
+                        "WalletInstanceAttestationIssuanceRequest validation failed, " +
+                            "Platform Key Attestation is not valid: ${platformKeyAttestationFailure.error}" to
+                            platformKeyAttestationFailure.cause
+                    }
+
+                    is PlatformKeyAttestationValidationFailure.UnsupportedPlatformAttestedKey -> {
+                        "WalletInstanceAttestationIssuanceRequest validation failed, " +
+                            "Platform Key Attestation contains an unsupported PublicKey: ${platformKeyAttestationFailure.error}" to
+                            platformKeyAttestationFailure.cause
+                    }
+                }
+            }
+
+            is WalletInstanceAttestationIssuanceFailure.UnsupportedPlatformAttestedKeyCurve -> {
+                "WalletInstanceAttestationIssuanceRequest validation failed, " +
+                    "Platform Attested Key Curve is not supported: ${failure.curve.name}" to
+                    null
+            }
+        }
+
+    warn(error, cause)
+}
+
+@Serializable
+private data class WalletInstanceAttestationResponse(
+    @Required val walletInstanceAttestation: String,
+) {
+    constructor(walletInstanceAttestation: WalletInstanceAttestation) : this(walletInstanceAttestation.toString())
+}
+
+private fun WalletInstanceAttestation.toWalletInstanceAttestationResponse(): WalletInstanceAttestationResponse =
+    WalletInstanceAttestationResponse(this)
+
+@Serializable
+private enum class WalletInstanceAttestationError {
+    @SerialName("unsupported_signing_algorithms")
+    UnsupportedSigningAlgorithms,
+
+    @SerialName("invalid_challenge")
+    InvalidChallenge,
+
+    @SerialName("invalid_platform_key_attestation")
+    InvalidPlatformKeyAttestation,
+
+    @SerialName("unsupported_platform_attested_key")
+    UnsupportedPlatformAttestedKey,
+
+    @SerialName("unsupported_platform_attested_key_curve")
+    UnsupportedPlatformAttestedKeyCurve,
+}
+
+@Serializable
+private data class WalletInstanceAttestationErrorResponse(
+    @Required val error: WalletInstanceAttestationError,
+)
+
+private fun WalletInstanceAttestationIssuanceFailure.toWalletInstanceAttestationErrorResponse(): WalletInstanceAttestationErrorResponse =
+    when (this) {
+        is WalletInstanceAttestationIssuanceFailure.UnsupportedSigningAlgorithms -> {
+            WalletInstanceAttestationError.UnsupportedSigningAlgorithms
+        }
+
+        is WalletInstanceAttestationIssuanceFailure.InvalidChallenge -> {
+            WalletInstanceAttestationError.InvalidChallenge
+        }
+
+        is WalletInstanceAttestationIssuanceFailure.InvalidPlatformKeyAttestation -> {
+            when (error) {
+                is PlatformKeyAttestationValidationFailure.InvalidPlatformKeyAttestation -> {
+                    WalletInstanceAttestationError.InvalidPlatformKeyAttestation
+                }
+
+                is PlatformKeyAttestationValidationFailure.UnsupportedPlatformAttestedKey -> {
+                    WalletInstanceAttestationError.UnsupportedPlatformAttestedKey
+                }
+            }
+        }
+
+        is WalletInstanceAttestationIssuanceFailure.UnsupportedPlatformAttestedKeyCurve -> {
+            WalletInstanceAttestationError.UnsupportedPlatformAttestedKeyCurve
+        }
+    }.let { WalletInstanceAttestationErrorResponse(it) }

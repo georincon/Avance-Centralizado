@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    {% include 'partials/cabeza.html' %}
+    <title>Notaría Avance</title>
+</head>
+
+<body id="responsive-main-nav1">
+    <div class="main container-fluid">
+        {% include 'partials/cabecera.html' %}
+        <div role="main" class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <h1>Anular documentos de tu billetera</h1>
+                    <div id="content" class="content-wrap1 content-center col-md-6 col-sm-7">
+                        <div class="genericErrors" id="genericErrorsDesc">
+                        </div>
+                        <h2>Elige el documento</h2>
+                       <form id="selectCredential" method="post" action="{{redirect_url}}" accept-charset="UTF-8" enctype="application/x-www-form-urlencoded;charset=UTF-8" autocapitalize="off" spellcheck="false">
+                            <h3>Documentos</h3>
+                                {% for credential_type in cred%}
+                                    <h4>{{credential_type}}</h4>
+                                    {% for credential_id in cred[credential_type] %}
+                                        <div class="form-check col-md-12">
+                                            <label class="form-check-label" for="flexCheckDefault">
+                                                <input class="form-check-input" id="check" type="checkbox" name="{{ credential_id }}" value="{{ credential_id }}"  style="transform: scale(1.8);">
+                                                {{ cred[credential_type][credential_id]}}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                {% endfor %}
+                            <div class="clearfix"></div>
+
+                            <span class="more-submit">
+                                <input type="submit" name="proceed" accesskey="S" value="Enviar" class="btn btn-primary" title="Submit" id="btncheck" disabled />
+                                <input type="button" name="Cancelled" accesskey="C" value="Cancelar" id="cancelBtnId" class="btn btn-cancel btn-alternate cancellable" title="Cancel" onclick="window.location.href = '/';" />
+                            </span>
+                        </form>
+                        
+                    </div>
+                    <h2 id="validation-message"></h2>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Version 9.7.1.20 - 23/03/2023 - 09:26 -->
+</body>
+<script>
+
+$(document).ready(function() {
+  $('input[type="checkbox"]').change(function() {
+    var atLeastOneChecked = $('input[type="checkbox"]:checked').length > 0;
+    $('#btncheck').prop("disabled", !atLeastOneChecked);
+  });
+});
+
+</script>
+</html>

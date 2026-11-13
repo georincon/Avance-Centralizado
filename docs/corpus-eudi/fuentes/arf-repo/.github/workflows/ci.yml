@@ -1,0 +1,251 @@
+# Validate documentation changes on pull requests to main and to the release /
+# review branches (feature/**, review/**), before they are merged.
+# Three checks run in parallel:
+#   build-docs    : fast MkDocs --strict build (broken nav / dead links / bad markdown)
+#   build-pdf     : the full Pandoc/LaTeX PDF build, using the same pinned image as the
+#                   deploy workflow, so a PR that breaks the PDF fails here instead of
+#                   only surfacing on the post-merge release build.
+#   docs-quality  : blocking link / reference / typo gate — internal links + section
+#                   anchors (MkDocs), external URLs (lychee) and typos (codespell),
+#                   scoped to the files a PR changes so the pre-existing backlog is
+#                   burned down incrementally instead of blocking unrelated PRs.
+name: CI
+
+on:
+  pull_request:
+    branches: ["main", "feature/**", "review/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0 # full history for git-revision-date-localized; --strict fails on a shallow clone
+
+      - name: Setup python environment
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: 3.x
+          cache: pip
+
+      - name: Install mkdocs theme
+        run: pip install -r requirements.txt
+
+      # Regenerate includes/references.md from the Section 10 reference tables so
+      # shorthand links like [OpenID4VCI] resolve. The file is also committed, but
+      # regenerating here keeps it in sync if the tables change without a rerun.
+      - name: Generate reference link definitions
+        run: python3 tools/gen_references.py
+
+      - name: Generate pandoc reference definitions
+        run: python3 tools/gen_pandoc_refs.py
+
+      # annex-2.02 and annex-2.03 are generated from hltr/high-level-requirements.csv
+      # but committed, since the PDF build consumes them directly. Regenerate so the
+      # build validates fresh content; the regenerate-hltr job commits the result
+      # back to the PR branch, so contributors only ever edit the CSV.
+      - name: Regenerate Annex 2 requirements markdown from the HLTR CSV
+        run: make hltr
+
+      # --strict fails on any broken link / nav / section anchor / markdown
+      # issue. The backlog is cleared and mkdocs.yml now validates anchors and
+      # absolute links, so this is a hard gate (blocking) on the real site config.
+      - name: Build site (strict)
+        # DISABLE_MKDOCS_2_WARNING: Material for MkDocs emits a MkDocs-2.0
+        # ecosystem deprecation notice that --strict would treat as a failure.
+        env:
+          DISABLE_MKDOCS_2_WARNING: "true"
+        run: mkdocs build --strict
+
+  build-pdf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read # pull the GHCR build image
+    # Same reproducible toolchain (pandoc + Eisvogel + curated TeX Live + make) as
+    # the release build in pages.yml — keep this digest in sync with pages.yml.
+    # Note: pull requests opened from forks cannot read the org's GHCR package, so
+    # this job only validates PRs from branches within this repository.
+    container:
+      image: ghcr.io/eu-digital-identity-wallet/arf-pdf-builder@sha256:e0d19dabca3a03ba8c716976b72f6b819751ff41ea223fb7fb3468122aa3ef05
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Build pdf
+        # -j"$(nproc)": the per-document and combined PDFs are independent
+        # LuaLaTeX compiles; build them in parallel (Makefile orders the zip last).
+        run: make -j"$(nproc)" pdfs
+
+  docs-quality:
+    # Link / reference / typo / lint gate (PR-only). Internal links, section
+    # anchors (MkDocs), markdown lint and the HLR CSV structure are validated
+    # repo-wide (their backlogs are cleared). External URLs (lychee) and typos
+    # (codespell) are scoped to the Markdown a PR changes, so their younger
+    # backlogs burn down incrementally. See tools/check_doc_links.py,
+    # tools/check_hltr_csv.py, .codespellrc, lychee.toml and
+    # .markdownlint-cli2.jsonc.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0 # need history back to the PR base to compute the diff
+
+      # The public mirror's CI catches links to *-private repos (they 404 there),
+      # but this private repo's CI can reach them via GITHUB_TOKEN, so lychee lets
+      # them pass. Block them here, repo-wide: use the public repo URL (drop the
+      # '-private' suffix) or a relative link.
+      - name: Block links to private repositories
+        run: |
+          if grep -rnE --include='*.md' --include='*.csv' \
+              'github\.com/eu-digital-identity-wallet/[a-z0-9-]+-private' docs/ includes/ hltr/; then
+            echo "::error::Found link(s) to a *-private repository (these 404 in the public mirror). Use the public URL or a relative link."
+            exit 1
+          fi
+
+      - name: Setup python environment
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: 3.x
+          cache: pip
+
+      - name: Install docs toolchain (mkdocs + codespell)
+        # Pin codespell so a new release's dictionary can't change the gate's
+        # verdict without an intentional bump.
+        run: pip install -r requirements.txt codespell==2.4.2
+
+      # The link build resolves [shorthand] references from includes/references.md,
+      # so regenerate it first (same as build-docs).
+      - name: Generate reference link definitions
+        run: python3 tools/gen_references.py
+
+      - name: Generate pandoc reference definitions
+        run: python3 tools/gen_pandoc_refs.py
+
+      - name: Determine changed Markdown files
+        id: changed
+        run: |
+          base_sha="${{ github.event.pull_request.base.sha }}"
+          # Exclude the generated reference-definition includes: pandoc-refs.md
+          # has only internal [topic-N]: #topic-N anchors (no external links, which
+          # makes lychee exit 1 with "No links were found"), and references.md's
+          # URLs are validated at their source in Section 10 of the main document.
+          git diff --name-only --diff-filter=ACMR "$base_sha" HEAD \
+            | grep -E '^(docs|includes)/.*\.md$' \
+            | grep -vE '^includes/(references|pandoc-refs)\.md$' > changed_md.txt || true
+          echo "Changed Markdown files:"; cat changed_md.txt || true
+          echo "count=$(wc -l < changed_md.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+          echo "files=$(paste -sd' ' changed_md.txt)" >> "$GITHUB_OUTPUT"
+
+      # 1) Internal links + section anchors (MkDocs), repo-wide: not-found /
+      #    unrecognized / nav / anchors / absolute links all block, anywhere.
+      - name: Check internal links and anchors
+        if: ${{ !cancelled() }}
+        run: python3 tools/check_doc_links.py
+
+      # 1b) [Topic N] cross-reference convention, repo-wide: every
+      #     [Topic N][topic-N] resolves to a #topic-N anchor, and no inline
+      #     [Topic N](...) link creeps back. The strict build also catches an
+      #     unresolved reference; this restates it with a Topic-specific message
+      #     and additionally forbids inline links, which no build gate flags.
+      - name: Check Topic references
+        if: ${{ !cancelled() }}
+        run: python3 tools/check_topic_refs.py
+
+      # 2) Typos on the changed Markdown (allowlist of house terminology lives in
+      #    .codespellrc, which codespell picks up from the repo root).
+      - name: Check typos
+        if: ${{ !cancelled() && steps.changed.outputs.count != '0' }}
+        run: codespell $(cat changed_md.txt)
+
+      # 3) External http(s) URLs on the changed Markdown (config in lychee.toml,
+      #    skip-list in .lycheeignore). GITHUB_TOKEN avoids github.com rate limits.
+      - name: Check external links
+        if: ${{ !cancelled() && steps.changed.outputs.count != '0' }}
+        uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
+        # Don't set lycheeVersion: this action's installer untars without
+        # --strip-components and expects the binary at the archive root, which
+        # only holds for the version it ships (v0.23.0). lychee >= v0.24 nests
+        # the binary in a platform subdir, so a newer pin fails to install. The
+        # pinned action SHA keeps the default lychee version reproducible.
+        with:
+          args: "--config lychee.toml --no-progress ${{ steps.changed.outputs.files }}"
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 4) Markdown lint, repo-wide (config in .markdownlint-cli2.jsonc — a curated,
+      #    correctness-only rule set; stylistic rules are off). The backlog is
+      #    cleared, so this is a hard gate everywhere; the generated annex-2 pages
+      #    are excluded via the config's "ignores" (their lint lives in the CSV).
+      - name: Lint markdown
+        if: ${{ !cancelled() }}
+        uses: DavidAnson/markdownlint-cli2-action@ded1f9488f68a970bc66ea5619e13e9b52e601cd # v23.2.0
+        with:
+          globs: "docs/**/*.md"
+
+      # 5) Structural check of the HLR CSV that generates annex-2.02 / 2.03.
+      #    Malformed rows (field count / header) fail; data-quality issues
+      #    (duplicate IDs, empties) are reported as warnings.
+      - name: Check the HLR CSV
+        if: ${{ !cancelled() }}
+        run: python3 tools/check_hltr_csv.py
+
+  regenerate-hltr:
+    # The Annex 2 high-level-requirements pages (annex-2.02 / annex-2.03) are
+    # generated from hltr/high-level-requirements.csv. Regenerate on every PR and
+    # commit the result back to the PR branch, so contributors only edit the CSV
+    # and the committed markdown is always derived from it. No-op when already in
+    # sync. Same-repo PRs only — GITHUB_TOKEN can't push to a fork's branch.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # commit the regenerated markdown to the PR branch
+    steps:
+      - name: Checkout the PR branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.head_ref }} # the PR's source branch, so we can push to it
+
+      - name: Setup python environment
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: 3.x
+          cache: pip
+
+      - name: Install the generator dependency
+        run: pip install jinja2==3.1.6 # the only non-stdlib import in hltr/scripts
+
+      - name: Regenerate Annex 2 markdown from the HLR CSV
+        run: make hltr
+
+      - name: Commit regenerated markdown if it changed
+        run: |
+          if git diff --quiet -- docs/annexes/annex-2/; then
+            echo "Annex 2 markdown already in sync with the CSV; nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/annexes/annex-2/
+          git commit -m "chore(hltr): regenerate Annex 2 markdown from CSV"
+          git push origin HEAD:"${{ github.head_ref }}"
+          echo "::notice::Regenerated Annex 2 markdown from the CSV and committed it to the PR."

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/main.css}">
+    <title>UIS :: Seleccionar Programa Académico</title>
+</head>
+<body>
+<main>
+    <a th:if="${studentFullName}" th:href="@{/issuer/logout}" class="btn btn-outline-secondary btn-sm logout-btn-corner">
+        Cerrar sesión
+    </a>
+    <div class="container p-4">
+
+        <!-- Header -->
+        <div class="row mb-3">
+            <div class="col text-center">
+                <img th:src="@{/public/img/uis-logo-large.svg}" alt="UIS" style="max-height: 70px;">
+                <h2 class="mb-0 mt-2" style="color: var(--uis-green); font-weight: 700;">Universidad Industrial de Santander</h2>
+                <p class="mb-0" style="color: var(--uis-blue);">Emisor de Credenciales Académicas</p>
+                <p class="mb-0 mt-2" th:if="${studentFullName}">
+                    <span style="color: var(--uis-text-light);">Bienvenido, <strong th:text="${studentFullName}" style="color: var(--uis-green-dark);">Estudiante</strong></span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Student Info -->
+        <div class="student-info" th:if="${student}">
+            <div class="row">
+                <div class="col-md-3"><strong>Nombre:</strong> <span th:text="${student.nombres} + ' ' + ${student.apellidos}"></span></div>
+                <div class="col-md-3"><strong>Documento:</strong> <span th:text="${student.tipoIdentificacion} + ' ' + ${student.numeroIdentificacion}"></span></div>
+                <div class="col-md-3"><strong>Correo:</strong> <span th:text="${student.correoElectronico} ?: 'N/A'"></span></div>
+                <div class="col-md-3 text-end"><span class="badge badge-activo">Verificado</span></div>
+            </div>
+        </div>
+
+        <!-- Credential Type Badge -->
+        <div class="mb-3" th:if="${credentialType}">
+            <span class="badge" style="background:var(--uis-green);color:white;font-size:0.9em;">
+                Tipo de Credencial: <span th:text="${credentialType}">vc_sd_jwt</span>
+            </span>
+        </div>
+
+        <!-- Title -->
+        <h3 style="color: var(--uis-green); font-weight: 700;">Seleccionar Programa Académico</h3>
+        <p class="text-muted">Seleccione el programa para el cual desea obtener la credencial digital.</p>
+
+        <!-- Program Cards -->
+        <form id="select-program-form" method="post" enctype="application/x-www-form-urlencoded" th:action="@{/issuer/credentialsOffer/selectProgram}">
+            <input type="hidden" name="usuarioAutenticacion" th:value="${student.usuarioAutenticacion}">
+            <input type="hidden" name="numeroIdentificacion" th:value="${student.numeroIdentificacion}">
+            <input type="hidden" name="credentialType" th:value="${credentialType} ?: 'vc_sd_jwt'">
+            <input type="hidden" name="credentialsOfferUri" th:value="${credentialsOfferUri} ?: 'eu-eaa-offer://'">
+            <input type="hidden" name="historialId" id="selectedHistorialId" value="">
+            <input type="hidden" name="programaId" id="selectedProgramaId" value="">
+
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3" th:each="program : ${programs}">
+                    <div class="card h-100 program-card" th:attr="data-historial=${program.historialId}, data-programa=${program.programaId}" style="cursor:pointer;border:2px solid #dee2e6;transition:all 0.2s;">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="card-title fw-bold mb-1" th:text="${program.nombrePrograma}">Programa</h6>
+                                    <small class="text-muted" th:text="'Código: ' + ${program.codigo}">Código</small>
+                                </div>
+                                <div class="d-flex flex-column align-items-stretch text-center">
+                                    <span class="badge"
+                                          th:classappend="${program.estadoAcademico == 'GRADUADO'} ? 'badge-graduado' : (${program.estadoAcademico == 'ACTIVO'} ? 'badge-activo' : (${program.estadoAcademico == 'RETIRADO'} ? 'badge-retirado' : 'badge-pausa'))"
+                                          th:text="${program.estadoAcademico}">ESTADO</span>
+                                    <!-- Carnet Estudiantil: lo emite otro servicio (con revocación); no interviene en la credencial académica.
+                                         Mismo ancho y misma letra que la insignia de estado (class badge; width:0 + min-width:100%). -->
+                                    <a th:if="${program.estadoAcademico == 'ACTIVO'}"
+                                       th:href="@{/issuer/credentialsOffer/carnet(historialId=${program.historialId}, numeroIdentificacion=${student.numeroIdentificacion}, credentialType=${credentialType}, credentialsOfferUri=${credentialsOfferUri})}"
+                                       class="badge mt-1"
+                                       style="width:0;min-width:100%;white-space:nowrap;background:#ffffff;color:#000000;border:1px solid #000000;text-decoration:none;">CARNET</a>
+                                </div>
+                            </div>
+                            <hr class="my-2">
+                            <div class="row small">
+                                <div class="col-6 mb-1"><strong class="text-muted">Nivel:</strong> <span th:text="${program.nivelAcademico}"></span></div>
+                                <div class="col-6 mb-1"><strong class="text-muted">Modalidad:</strong> <span th:text="${program.modalidad}"></span></div>
+                            </div>
+                            <div class="row small mb-1"><div class="col-12"><strong class="text-muted">Título:</strong> <span th:text="${program.tituloOtorgado}"></span></div></div>
+                            <div class="row small mb-1" th:if="${program.facultad}"><div class="col-12"><strong class="text-muted">Facultad:</strong> <span th:text="${program.facultad}"></span></div></div>
+                            <div class="row small mb-1" th:if="${program.unidadAcademica}"><div class="col-12"><strong class="text-muted">Unidad:</strong> <span th:text="${program.unidadAcademica}"></span></div></div>
+                            <div class="row small mt-2 p-2 rounded" style="background:var(--uis-gray);">
+                                <div class="col-4 text-center">
+                                    <div class="fw-bold" style="color:var(--uis-green);" th:text="${program.creditosAprobados} + '/' + ${program.totalCredits}"></div>
+                                    <small class="text-muted">Créditos</small>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="fw-bold" style="color:var(--uis-blue);" th:text="${program.semestresCursados} + '/' + ${program.duracionSemestres}"></div>
+                                    <small class="text-muted">Semestres</small>
+                                </div>
+                                <div class="col-4 text-center" th:if="${program.promedioAcumulado}">
+                                    <div class="fw-bold" style="color:var(--uis-success);" th:text="${program.promedioAcumulado}"></div>
+                                    <small class="text-muted">Promedio</small>
+                                </div>
+                            </div>
+                            <div class="row small mt-2" th:if="${program.fechaDeGrado}">
+                                <div class="col-12"><span style="color:var(--uis-success);"><strong>Fecha de Grado:</strong> <span th:text="${program.fechaDeGrado}"></span></span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row p-3 rounded" style="background:var(--uis-gray);">
+                <div class="col d-flex justify-content-start">
+                    <a th:href="@{/issuer/credentialsOffer/selectCredentialTypeBack(usuarioAutenticacion=${student.usuarioAutenticacion}, numeroIdentificacion=${student.numeroIdentificacion}, tipoDocumento=${student.tipoIdentificacion}, credentialsOfferUri=${credentialsOfferUri})}" class="btn btn-uis-outline">← Volver</a>
+                </div>
+                <div class="col d-flex justify-content-end">
+                    <button id="selectButton" type="submit" class="btn btn-uis btn-lg" disabled>Generar Credencial Académica</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="row mt-4"><div class="col"><div class="uis-footer-accent"></div></div></div>
+    </div>
+</main>
+
+<script type="application/javascript" th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+<script type="application/javascript" th:src="@{/public/js/select-academic-program.js}"></script>
+</body>
+</html>

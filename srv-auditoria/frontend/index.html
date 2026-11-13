@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Centro de Auditoría · Avance</title>
+<link rel="icon" href="logo.png">
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+<div id="login" class="login" hidden>
+  <div class="login-fila">
+  <form class="login-tarjeta" id="form-login">
+    <div class="logo-marco"><img src="logo.png" alt=""></div>
+    <h1>Centro de Auditoría</h1>
+    <p>Wallets del ecosistema Avance · consulta de solo lectura</p>
+    <label for="token">Clave de acceso</label>
+    <input id="token" type="password" autocomplete="current-password" placeholder="Pega la clave del panel" required>
+    <button class="boton boton-primario" type="submit">Ingresar</button>
+    <p class="login-error" id="login-error" role="alert"></p>
+    <a class="doc-enlace" href="modelo-entidad-relacion.pdf" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zm-1 7V3.5L18.5 9zM8 13h8v2H8zm0 4h8v2H8z"/></svg>Modelo entidad-relación de la base de datos (PDF)</a>
+  </form>
+  <section class="login-tarjeta descarga-caja" id="descarga-login" aria-label="Descarga de la wallet"></section>
+  </div>
+</div>
+
+<div id="app" class="app" hidden>
+  <aside class="lateral" id="lateral">
+    <div class="marca"><span class="logo-marco pequeno"><img src="logo.png" alt=""></span><div><strong>Auditoría</strong><small>Wallets Avance</small></div></div>
+    <nav>
+      <a href="#/panorama" data-ruta="panorama"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z"/></svg>Panorama</a>
+      <a href="#/extracto" data-ruta="extracto"><svg viewBox="0 0 24 24"><path d="M4 4h16v2H4zm0 7h16v2H4zm0 7h10v2H4z"/></svg>Actividad Wallet</a>
+      <a href="#/emisores" data-ruta="emisores"><svg viewBox="0 0 24 24"><path d="M12 3L2 8l10 5 8-4v6h2V8zM6 12.5v3.2c0 1.7 2.7 3.3 6 3.3s6-1.600 6-3.300v-3.200l-6 3z"/></svg>Actividad Emisores</a>
+      <a href="#/verificadores" data-ruta="verificadores"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.500 3.800 10.700 9 12 5.200-1.300 9-6.500 9-12V5zm-2 16l-4-4 1.400-1.400L10 14.200l6.600-6.600L18 9z"/></svg>Actividad Verificadores</a>
+      <a href="#/usuarios" data-ruta="usuarios"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-3.3 0-8 1.7-8 5v1h16v-1c0-3.3-4.7-5-8-5z"/></svg>Usuarios y wallets</a>
+      <a href="#/wallets" data-ruta="wallets"><svg viewBox="0 0 24 24"><path d="M17 1H7a2 2 0 00-2 2v18a2 2 0 002 2h10a2 2 0 002-2V3a2 2 0 00-2-2zm-5 21a1 1 0 110-2 1 1 0 010 2zm5-4H7V4h10z"/></svg>Wallets y dispositivos</a>
+      <a href="#/contrapartes" data-ruta="contrapartes"><svg viewBox="0 0 24 24"><path d="M4 7h10v2H4zm0 4h16v2H4zm0 4h10v2H4zm13-8l4 3-4 3z"/></svg>Emisores y verificadores</a>
+    </nav>
+    <div class="lateral-pie"><span class="solo-lectura">Solo lectura</span><button class="enlace" id="salir">Cerrar sesión</button></div>
+  </aside>
+  <div class="contenido">
+    <header class="tope"><button class="boton-menu" id="menu" aria-label="Menú">☰</button><h2 id="titulo"></h2><span class="vivo" id="vivo" role="status" aria-live="polite"><i></i><b>Conectando…</b></span><span class="reloj" id="reloj"></span></header>
+    <main id="vista" tabindex="-1"></main>
+  </div>
+</div>
+<div id="aviso-vivo" class="aviso-vivo" aria-live="polite"></div>
+<div id="cajon" class="cajon" hidden></div>
+<script src="app.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2025-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.walletprovider.domain.keyattestation
+
+import arrow.core.NonEmptyList
+import arrow.core.serialization.NonEmptyListSerializer
+import at.asitplus.signum.indispensable.josef.JwsCompactTyped
+import com.eygraber.uri.Url
+import eu.europa.ec.eudi.walletprovider.domain.EpochSecondsInstant
+import eu.europa.ec.eudi.walletprovider.domain.JsonWebKeyECCryptoPublicKey
+import eu.europa.ec.eudi.walletprovider.domain.specification.OpenId4VCI
+import eu.europa.ec.eudi.walletprovider.domain.specification.RFC7519
+import eu.europa.ec.eudi.walletprovider.domain.specification.TS3
+import eu.europa.ec.eudi.walletprovider.domain.specification.TokenStatusList
+import eu.europa.ec.eudi.walletprovider.domain.tokenstatuslist.Status
+import kotlinx.serialization.Required
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class KeyAttestationClaims(
+    @Required @SerialName(RFC7519.ISSUED_AT) val issuedAt: EpochSecondsInstant,
+    @Required @SerialName(RFC7519.EXPIRES_AT) val expiresAt: EpochSecondsInstant,
+    @Required @Serializable(with = NonEmptyListSerializer::class) @SerialName(OpenId4VCI.ATTESTED_KEYS)
+    val attestedKeys: NonEmptyList<JsonWebKeyECCryptoPublicKey>,
+    @Required @Serializable(with = NonEmptyListSerializer::class) @SerialName(OpenId4VCI.KEY_STORAGE)
+    val keyStorage: NonEmptyList<AttackPotentialResistance>,
+    @Required @Serializable(with = NonEmptyListSerializer::class) @SerialName(OpenId4VCI.USER_AUTHENTICATION)
+    val userAuthentication: NonEmptyList<AttackPotentialResistance>,
+    @Required @SerialName(OpenId4VCI.CERTIFICATION) val certification: Url,
+    @SerialName(OpenId4VCI.NONCE) val nonce: Nonce? = null,
+    @SerialName(TokenStatusList.STATUS) val status: Status? = null,
+    @Required @SerialName(TS3.KEY_STORAGE_STATUS)
+    val keyStorageStatus: KeyStorageStatus,
+)
+
+@Serializable
+data class KeyStorageStatus(
+    @Required
+    @SerialName(TokenStatusList.STATUS)
+    val status: Status,
+    @Required
+    @SerialName(RFC7519.EXPIRES_AT)
+    val exp: EpochSecondsInstant,
+)
+
+@JvmInline
+@Serializable
+value class AttackPotentialResistance(
+    val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "value must not be blank" }
+    }
+
+    override fun toString(): String = value
+
+    companion object {
+        val Iso18045High: AttackPotentialResistance = AttackPotentialResistance(OpenId4VCI.ATTACK_POTENTIAL_RESISTANCE_ISO_18045_HIGH)
+        val Iso18045Moderate: AttackPotentialResistance =
+            AttackPotentialResistance(OpenId4VCI.ATTACK_POTENTIAL_RESISTANCE_ISO_18045_MODERATE)
+        val Iso18045EnhancedBasic: AttackPotentialResistance =
+            AttackPotentialResistance(OpenId4VCI.ATTACK_POTENTIAL_RESISTANCE_ISO_18045_ENHANCED_BASIC)
+        val Iso18045Basic: AttackPotentialResistance = AttackPotentialResistance(OpenId4VCI.ATTACK_POTENTIAL_RESISTANCE_ISO_18045_BASIC)
+    }
+}
+
+typealias Nonce = String
+
+typealias KeyAttestation = JwsCompactTyped<KeyAttestationClaims>

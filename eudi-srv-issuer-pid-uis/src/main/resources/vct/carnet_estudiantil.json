@@ -1,0 +1,22 @@
+{
+  "vct": "urn:co:uis:carnet-estudiantil:1",
+  "name": "Carnet Estudiantil",
+  "display": [
+    { "locale": "es", "name": "Carnet Estudiantil", "description": "Carnet de estudiante activo de la Universidad Industrial de Santander" }
+  ],
+  "claims": [
+    { "path": ["issuing_authority"], "display": [{"locale": "es", "label": "Autoridad emisora"}], "mandatory": true, "sd": "never" },
+    { "path": ["issuing_country"], "display": [{"locale": "es", "label": "País emisor"}], "mandatory": true, "sd": "never" },
+    { "path": ["issuing_institution_name"], "display": [{"locale": "es", "label": "Institución"}], "mandatory": true, "sd": "never" },
+    { "path": ["date_of_issuance"], "display": [{"locale": "es", "label": "Fecha de emisión"}], "mandatory": true, "sd": "never" },
+    { "path": ["date_of_expiry"], "display": [{"locale": "es", "label": "Válido hasta"}], "mandatory": true, "sd": "never" },
+    { "path": ["academic_status"], "display": [{"locale": "es", "label": "Estado"}], "mandatory": true, "sd": "never" },
+    { "path": ["given_name"], "display": [{"locale": "es", "label": "Nombres"}], "mandatory": true, "sd": "always" },
+    { "path": ["family_name"], "display": [{"locale": "es", "label": "Apellidos"}], "mandatory": true, "sd": "always" },
+    { "path": ["student_id"], "display": [{"locale": "es", "label": "Código estudiantil"}], "mandatory": true, "sd": "always" },
+    { "path": ["program_name"], "display": [{"locale": "es", "label": "Programa"}], "sd": "always" },
+    { "path": ["academic_level"], "display": [{"locale": "es", "label": "Nivel"}], "sd": "always" },
+    { "path": ["awarded_title"], "display": [{"locale": "es", "label": "Título que otorga"}], "sd": "always" },
+    { "path": ["accumulated_average"], "display": [{"locale": "es", "label": "Promedio acumulado"}], "sd": "always" }
+  ]
+}

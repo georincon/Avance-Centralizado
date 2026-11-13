@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% include 'partials/cabeza.html' %}
+    <title>Revisa tu documento · Notaría Avance</title>
+</head>
+<body>
+    {% include 'partials/cabecera.html' %}
+    <main class="pagina estrecha" role="main">
+        <h1>Revisa y firma ante la notaría</h1>
+        <p class="sub">Comprueba los datos. Al firmar, la notaría emite el documento y te lo ofrece para tu billetera con un código QR y un PIN.</p>
+        <form id="authForm" method="post" action="{{ redirect_url }}">
+            {% for categoria, atributos in presentation_data.items() %}
+            <div class="titulo-seccion">{{ categoria }} · lo que declaras</div>
+            <div class="panel">
+                <table class="revision">
+                    {% for name, value in atributos | en_orden if name not in notaria_keys %}
+                    <tr><th>{{ etiqueta(name) }}</th><td>{% if value is mapping or (value is sequence and value is not string) %}{{ value | tojson }}{% else %}{{ value }}{% endif %}</td></tr>
+                    {% endfor %}
+                </table>
+            </div>
+            <div class="titulo-seccion">Lo que pone la notaría al firmar</div>
+            <div class="panel">
+                <table class="revision">
+                    {% for name, value in atributos | en_orden if name in notaria_keys %}
+                    <tr><th>{{ etiqueta(name) }}</th><td>{{ value }}</td></tr>
+                    {% endfor %}
+                </table>
+            </div>
+            {% endfor %}
+            <input type="hidden" value="{{ user_id }}" name="user_id">
+            <div class="acciones">
+                <button type="submit" name="proceed" value="1">Firmar y emitir</button>
+                <button type="button" class="sec" onclick="window.history.back();">Volver</button>
+            </div>
+        </form>
+    </main>
+    {% include 'partials/pie.html' %}
+</body>
+</html>

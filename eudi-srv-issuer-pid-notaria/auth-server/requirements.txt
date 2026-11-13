@@ -1,0 +1,3 @@
+flask==3.1.3
+git+https://github.com/eu-digital-identity-wallet/idpy-oidc.git@3f3a5bdf064ca79178534d5776aa3fca1387a5ca   # fijada: la última rama rompe el servidor (ValueError: Unknown PKCE option)
+pyjwt==2.12.1

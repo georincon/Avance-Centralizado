@@ -1,0 +1,62 @@
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Kotlin ###
+.kotlin
+
+### DSS cache ###
+dss-cache
+
+### LoTE cache ###
+lote-cache
+
+### Secretos de despliegue ###
+# El .env fija la LOTL que se descarga y el nivel de log. Puede contener
+# credenciales si alguien las anade: no se versiona.
+docker/.env
+docker/.env.*
+!docker/.env.example
+# El almacen de claves con el que se verifica la firma de las listas son
+# material de confianza, pero no es publico: no se versiona.
+docker/claves/
+# Trazabilidad
+*.jks
+*.p12
+*.pem
+*.key
+!src/main/resources/**/*.jks

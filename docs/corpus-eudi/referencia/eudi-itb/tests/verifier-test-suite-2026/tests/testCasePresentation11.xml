@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="verify_pid_qr_from_verifier_missmatched_verifier_access_reg_cert" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <gitb:name>Presentation of PID in sd-jwt format using OpenID4VP redirect-based flow with mismatched access and registration certificates</gitb:name>
+        <gitb:version>1.0</gitb:version>
+        <gitb:description>This test case verifies that the wallet warns the wallet user when the access and registration certificates of the remote verifier do not match</gitb:description>
+        <gitb:specification>
+            <gitb:reference>PRE-11</gitb:reference>
+        </gitb:specification>
+        <gitb:documentation><![CDATA[
+            <table class="MsoTableGrid" style="border-collapse: collapse; border: none; mso-border-alt: solid windowtext .5pt; mso-yfti-tbllook: 1184; mso-padding-alt: 0cm 5.4pt 0cm 5.4pt;" border="1" cellspacing="0" cellpadding="0">
+            <tbody>
+            <tr style="mso-yfti-irow: 0; mso-yfti-firstrow: yes;">
+            <td style="width: 129.65pt; border: solid windowtext 1.0pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="173">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><strong><span style="mso-ansi-language: EN-US;">Test case ID</span></strong></p>
+            </td>
+            <td style="width: 337.85pt; border: solid windowtext 1.0pt; border-left: none; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" colspan="2" valign="top" width="450">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><strong><span style="mso-ansi-language: EN-US;">PRE-11</span></strong></p>
+            </td>
+            </tr>
+            <tr style="mso-yfti-irow: 1;">
+            <td style="width: 129.65pt; border: solid windowtext 1.0pt; border-top: none; mso-border-top-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="173">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><strong><span style="mso-ansi-language: EN-US;">Title</span></strong></p>
+            </td>
+            <td style="width: 337.85pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; mso-border-top-alt: solid windowtext .5pt; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" colspan="2" valign="top" width="450">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">Presentation of <strong>PID</strong> in <strong>sd-jwt</strong> format using OpenID4VP redirect-based flow with mismatched Verifier access and registration certificates</span></p>
+            </td>
+            </tr>
+            <tr style="mso-yfti-irow: 2;">
+            <td style="width: 129.65pt; border: solid windowtext 1.0pt; border-top: none; mso-border-top-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="173">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><strong><span style="mso-ansi-language: EN-US;">Test session type</span></strong></p>
+            </td>
+            <td style="width: 337.85pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; mso-border-top-alt: solid windowtext .5pt; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" colspan="2" valign="top" width="450">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">Remote Presentation</span></p>
+            </td>
+            </tr>
+            <tr style="mso-yfti-irow: 3;">
+            <td style="width: 129.65pt; border: solid windowtext 1.0pt; border-top: none; mso-border-top-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="173">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><strong><span style="mso-ansi-language: EN-US;">P2P test case ID</span></strong></p>
+            </td>
+            <td style="width: 337.85pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; mso-border-top-alt: solid windowtext .5pt; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" colspan="2" valign="top" width="450">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">N/A</span></p>
+            </td>
+            </tr>
+            <tr style="mso-yfti-irow: 4;">
+            <td style="width: 129.65pt; border: solid windowtext 1.0pt; border-top: none; mso-border-top-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="173">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><strong><span style="mso-ansi-language: EN-US;">Purpose</span></strong></p>
+            </td>
+            <td style="width: 337.85pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; mso-border-top-alt: solid windowtext .5pt; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" colspan="2" valign="top" width="450">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">This test case verifies that the wallet warns the wallet user when the access and registration certificates of the remote verifier do not match</span></p>
+            </td>
+            </tr>
+            <tr style="mso-yfti-irow: 5;">
+            <td style="width: 129.65pt; border: solid windowtext 1.0pt; border-top: none; mso-border-top-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="173">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><strong><span style="mso-ansi-language: EN-US;">Preconditions</span></strong></p>
+            </td>
+            <td style="width: 337.85pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; mso-border-top-alt: solid windowtext .5pt; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" colspan="2" valign="top" width="450">
+            <p class="MsoListParagraphCxSpFirst" style="margin-bottom: 0cm; mso-add-space: auto; text-indent: -18.0pt; line-height: normal; mso-list: l0 level1 lfo8;">&nbsp;</p>
+            <ol style="list-style-type: lower-alpha;">
+            <li>The user has a valid PID in sd-jwt format in their wallet</li>
+            <li>The remote reader trusts the IACA certificate used to sign the PID</li>
+            <li>The wallet trusts the remote reader&rsquo;s access certificate</li>
+            </ol>
+            </td>
+            </tr>
+            <tr style="mso-yfti-irow: 6;">
+            <td style="width: 129.65pt; border: solid windowtext 1.0pt; border-top: none; mso-border-top-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="173">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><strong><span style="mso-ansi-language: EN-US;">Remarks</span></strong></p>
+            </td>
+            <td style="width: 337.85pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; mso-border-top-alt: solid windowtext .5pt; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" colspan="2" valign="top" width="450">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">N/A</span></p>
+            </td>
+            </tr>
+            <tr style="mso-yfti-irow: 7;">
+            <td style="width: 129.65pt; border: solid windowtext 1.0pt; border-top: none; mso-border-top-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="173">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><strong><span style="mso-ansi-language: EN-US;">Steps</span></strong></p>
+            </td>
+            <td style="width: 163.65pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; mso-border-top-alt: solid windowtext .5pt; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="218">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><strong><span style="mso-ansi-language: EN-US;">Action</span></strong></p>
+            </td>
+            <td style="width: 174.2pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; mso-border-top-alt: solid windowtext .5pt; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="232">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><strong><span style="mso-ansi-language: EN-US;">Expected result</span></strong></p>
+            </td>
+            </tr>
+            <tr style="mso-yfti-irow: 8;">
+            <td style="width: 129.65pt; border: solid windowtext 1.0pt; border-top: none; mso-border-top-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="173">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">1</span></p>
+            </td>
+            <td style="width: 163.65pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; mso-border-top-alt: solid windowtext .5pt; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="218">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">The wallet user starts the test case in ITB</span></p>
+            </td>
+            <td style="width: 174.2pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; mso-border-top-alt: solid windowtext .5pt; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="232">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">ITB displays a popup with a QR code containing the presentation request</span></p>
+            </td>
+            </tr>
+            <tr style="mso-yfti-irow: 9;">
+            <td style="width: 129.65pt; border: solid windowtext 1.0pt; border-top: none; mso-border-top-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="173">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">2</span></p>
+            </td>
+            <td style="width: 163.65pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; mso-border-top-alt: solid windowtext .5pt; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="218">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">The wallet user scans the QR code with their wallet</span></p>
+            </td>
+            <td style="width: 174.2pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; mso-border-top-alt: solid windowtext .5pt; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="232">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">The wallet warns the user about the mismatch and requests permission to present the credential</span></p>
+            </td>
+            </tr>
+            <tr style="mso-yfti-irow: 10;">
+            <td style="width: 129.65pt; border: solid windowtext 1.0pt; border-top: none; mso-border-top-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="173">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">3</span></p>
+            </td>
+            <td style="width: 163.65pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; mso-border-top-alt: solid windowtext .5pt; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="218">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">The wallet user accepts the warning and gives permission to share the credential</span></p>
+            </td>
+            <td style="width: 174.2pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; mso-border-top-alt: solid windowtext .5pt; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="232">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">The credential is shared with the remote reader</span></p>
+            </td>
+            </tr>
+            <tr style="mso-yfti-irow: 11; mso-yfti-lastrow: yes;">
+            <td style="width: 129.65pt; border: solid windowtext 1.0pt; border-top: none; mso-border-top-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="173">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">4</span></p>
+            </td>
+            <td style="width: 163.65pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; mso-border-top-alt: solid windowtext .5pt; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="218">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">ITB records the test execution result</span></p>
+            </td>
+            <td style="width: 174.2pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; mso-border-top-alt: solid windowtext .5pt; mso-border-left-alt: solid windowtext .5pt; mso-border-alt: solid windowtext .5pt; padding: 0cm 5.4pt 0cm 5.4pt;" valign="top" width="232">
+            <p class="MsoNormal" style="margin-bottom: 8.0pt; line-height: 13.0pt;"><span style="mso-ansi-language: EN-US;">The test execution result appears on the ITB screen</span></p>
+            </td>
+            </tr>
+            </tbody>
+            </table>
+        ]]></gitb:documentation>
+    </metadata>
+    <actors>
+        <gitb:actor id="verifier" name="Verifier" />
+        <gitb:actor id="simulatedInitTransaction" name="Simulated Transaction"/>
+        <gitb:actor id="wallet" name="Wallet" role="SUT"/>
+    </actors>
+    <steps>
+        <btxn from="simulatedInitTransaction" to="verifier" txnId="t1" handler="HttpMessagingV2"/>
+        <process output="nonce" handler="TokenGenerator" operation="uuid"/>
+
+        <assign to="authReqUri{uri}">$SYSTEM{authUri}</assign>
+        <assign to="httpHeaders{Content-Type}">"application/json"</assign>
+        <assign to="httpHeaders{Accept}">"image/png"</assign>
+
+        <assign to="initialize_transaction_url">$DOMAIN{verifierBackendAddress} || "/ui/presentations/v2"</assign>
+        <assign to="dcql_query">$DOMAIN{dcqlQuery}</assign>
+        <assign to="missmatched_verifier_registration_certificate">$DOMAIN{missmatchedVerifierRegistrationCertificate}</assign>
+
+
+        <send id="dataReceived" desc="Send valid presentation request" handler="HttpMessagingV2" from="simulatedInitTransaction" to="verifier">
+            <input name="uri">$initialize_transaction_url</input>
+            <input name="method">"POST"</input>
+            <input name="body">'{"type":"vp_token","dcql_query":'||$dcql_query||',"nonce":"'|| $nonce || '","request_uri_method":"get","authorization_request_uri": "'|| $authReqUri{uri} ||'", "registration_certificate": "'||$missmatched_verifier_registration_certificate||'"}'</input>
+            <input name="headers">$httpHeaders</input>
+        </send>
+
+        <verify handler="ExpressionValidator" desc="Validate correct http status" stopOnError="true">
+            <input name="expression">$dataReceived{response}{status} = "200"</input>
+            <input name="successMessage">'The provided status code is 200.'</input>
+            <input name="failureMessage">'The provided status code is not 200.'</input>
+        </verify>
+
+        <process output="authorizationRequestUri" handler="CollectionUtils" operation="find">
+            <input name="map">$dataReceived{response}{headers}</input>
+            <input name="value">"Authorization-Request-Uri"</input>
+            <input name="ignoreCase">true()</input>
+        </process>
+        <log>"Presentation Request status:" || $dataReceived{response}{status}</log>
+        <log>"Authorization Request URI: " || $authorizationRequestUri</log>
+
+        <etxn txnId="t1"/>
+
+        <interact inputTitle="Scan the QR Code" desc="Scan the QR Code with your wallet." with="wallet">
+            <instruct desc="Click on the magnifying glass to display the QR code"/>
+            <instruct desc="Scan this QR with your wallet" mimeType="image/png">$dataReceived{response}{body}</instruct>
+            <instruct desc="After you present the credential on your wallet, click on the Close button to continue"/>
+        </interact>
+
+        <process output="transactionId" handler="CollectionUtils" operation="find">
+            <input name="map">$dataReceived{response}{headers}</input>
+            <input name="value">"transaction-id"</input>
+            <input name="ignoreCase">true()</input>
+        </process>
+
+        <verify handler="RegExpValidator" desc="Check if transaction id exists" stopOnError="true">
+            <input name="input">$transactionId</input>
+            <input name="expression">".+"</input>
+            <input name="successMessage">"Transaction id: " || $transactionId </input>
+            <input name="failureMessage">'Transaction id value is null.'</input>
+        </verify>
+
+        <assign to="attempt" type="number">1</assign>
+        <assign to="maxAttempts" type="number">$DOMAIN{maxAttempts}</assign>
+        <assign to="responseStatus">'404'</assign>
+
+        <assign to="transaction_url">$DOMAIN{verifierBackendAddress} || "/ui/presentations/" || $transactionId</assign>
+        <assign to="transaction_logs_url">$transaction_url || "/events"</assign>
+
+        <log>$transaction_url</log>
+        <log>$transaction_logs_url</log>
+
+        <while title="Transaction logs polling" desc="Polling transaction logs from Verifier until success or timeout">
+            <cond><![CDATA[$attempt <= $maxAttempts and $responseStatus != '200']]></cond>
+            <do>
+                <log>"Polling transaction logs (attempt " || $attempt || ")..."</log>
+                <send id="httpRequestPoll" handler="HttpMessagingV2" from="simulatedInitTransaction" to="verifier">
+                    <input name="uri">$transaction_url</input>
+                    <input name="method">"GET"</input>
+                </send>
+                <log>"Request status: "|| $httpRequestPoll{response}{status}</log>
+                <assign to="responseStatus" source="$httpRequestPoll{response}{status}"/>
+                <assign to="attempt" type="number">$attempt + 1</assign>
+                <process handler="DelayProcessor" operation="delay" input="$DOMAIN{delayBetweenCalls}"/>
+            </do>
+        </while>
+
+        <log>"Final response status:" || $responseStatus</log>
+        <verify handler="ExpressionValidator" desc="Validate if log exists for transaction id on verifier">
+            <input name="expression">$responseStatus = "200"</input>
+            <input name="successMessage">'Flow is complete'</input>
+            <input name="failureMessage">'Flow failed!'</input>
+        </verify>
+
+        <send id="transactionEventLogs" desc="Retrieve transaction event logs" handler="HttpMessagingV2" from="simulatedInitTransaction" to="verifier">
+            <input name="uri">$transaction_logs_url</input>
+            <input name="method">"GET"</input>
+        </send>
+        <log>$transactionEventLogs{response}{body}</log>
+
+        <verify handler="$DOMAIN{validationService}" desc="Validate logs" >
+            <input name="text">$transactionEventLogs{response}{body}</input>
+        </verify>
+
+        <interact id="review" desc="Confirm response">
+            <instruct desc="Did wallet showed a warning regarding mismatched access and registration certificates?"></instruct>
+            <request
+                    desc="Did wallet showed a warning regarding mismatched access and registration certificates?"
+                    name="outcome"
+                    inputType="SELECT_SINGLE"
+                    options="Yes,No"
+                    required="true"
+                    default="No"
+            />
+        </interact>
+        <if desc="Did wallet showed a warning?">
+            <cond>$review{outcome} = 'No'</cond>
+            <then>
+                <exit desc="Wallet has failed to pass the test"/>
+            </then>
+        </if>
+
+    </steps>
+    <output>
+        <success>
+            <default>
+                "Test session succeeded."
+            </default>
+        </success>
+        <failure>
+            <default>
+                "Test session failed. Refer to the failed step's report for more details."
+            </default>
+        </failure>
+    </output>
+</testcase>

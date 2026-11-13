@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/main.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/uis-admin.css}">
+    <title>UIS :: Estudiante</title>
+</head>
+<body class="uis-admin">
+<div class="uis-topbar"><div class="inner">
+    <img th:src="@{/public/img/uis-credential-blanco.png}" alt="Universidad Industrial de Santander">
+    <h1>Universidad Industrial de Santander<small th:text="${isEdit} ? 'Registro académico · Editar estudiante' : 'Registro académico · Nuevo estudiante'"></small></h1>
+    <div class="acciones"><a class="btn btn-claro btn-sm" th:href="@{/uis/admin/estudiantes}">← Volver a la lista</a></div>
+</div><div class="accent"></div></div>
+<th:block th:replace="~{uis-admin-nav :: nav('estudiantes')}"/>
+<main>
+    <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+    <div class="alert alert-success" th:if="${codigo}">
+        <div class="small text-uppercase fw-semibold">Código de activación</div>
+        <div class="codigo" th:text="${codigo}"></div>
+        <div>Entrégalo <strong>solo después de verificar la identidad</strong> del estudiante. Se muestra una sola vez y sirve una vez.</div>
+    </div>
+
+    <div class="tarjeta" th:unless="${isEdit}">
+        <h2>¿Cómo quieres cargar los datos del estudiante?</h2>
+        <div class="btn-group mb-2" role="group">
+            <input type="radio" class="btn-check" name="origen" id="origen-manual" autocomplete="off" checked>
+            <label class="btn btn-outline-primary" for="origen-manual">Manualmente</label>
+            <input type="radio" class="btn-check" name="origen" id="origen-qr" autocomplete="off">
+            <label class="btn btn-outline-primary" for="origen-qr">Leer el PID de la wallet (QR)</label>
+        </div>
+        <div id="panel-qr" style="display:none">
+            <p class="text-body-secondary small mb-2">Se llenan solos el tipo (CC), el número de identificación, los nombres, los apellidos, el correo y el teléfono
+                (los dos últimos si el PID los trae). Escanea el QR con la wallet del estudiante y acepta compartir su PID.
+                Solo para estudiantes con cédula; con CE, PAS, PPT o PEP se escribe a mano.</p>
+            <button type="button" class="btn btn-primary btn-sm" id="pedir-qr">Generar QR</button>
+            <div id="qr-zona" class="mt-3 d-flex align-items-center gap-3"></div>
+            <div id="qr-estado" class="small mt-2"></div>
+        </div>
+    </div>
+
+    <div class="tarjeta">
+        <h2>Datos del estudiante</h2>
+        <form method="post" th:action="@{/uis/admin/estudiantes}" class="row g-3">
+            <input type="hidden" name="edit" th:value="${isEdit} ? '1' : '0'">
+            <div class="col-md-3"><label class="form-label">Tipo de documento</label>
+                <select class="form-select" id="tipoIdentificacion" name="tipoIdentificacion">
+                    <option th:each="t : ${tipos}" th:value="${t}" th:text="${t}" th:selected="${e != null && e.tipoIdentificacion == t}"></option>
+                </select></div>
+            <div class="col-md-5"><label class="form-label">Número de identificación</label>
+                <input class="form-control" id="numeroIdentificacion" name="numeroIdentificacion" required th:value="${e?.numeroIdentificacion}" th:readonly="${isEdit}"></div>
+            <div class="col-md-4"><label class="form-label">Teléfono</label>
+                <input class="form-control" id="numeroContacto" name="numeroContacto" th:value="${e?.numeroContacto}"></div>
+            <div class="col-md-6"><label class="form-label">Nombres</label>
+                <input class="form-control" id="nombres" name="nombres" required th:value="${e?.nombres}"></div>
+            <div class="col-md-6"><label class="form-label">Apellidos</label>
+                <input class="form-control" id="apellidos" name="apellidos" required th:value="${e?.apellidos}"></div>
+            <div class="col-md-8"><label class="form-label">Correo electrónico</label>
+                <input class="form-control" type="email" id="correoElectronico" name="correoElectronico" th:value="${e?.correoElectronico}"></div>
+            <div class="col-12 d-flex flex-wrap gap-3 align-items-center">
+                <button class="btn btn-primary" type="submit">Guardar estudiante</button>
+                <span class="text-body-secondary small">Al guardar se crea o actualiza su usuario en Keycloak (usuario = número de identificación, sin contraseña).</span>
+            </div>
+        </form>
+    </div>
+
+    <div th:if="${isEdit}">
+        <div class="tarjeta">
+            <h2>Historial académico</h2>
+            <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead><tr><th>Programa</th><th>Ingreso</th><th>Grado</th><th>Promedio</th><th>Créditos</th><th>Semestres</th><th>Estado</th><th></th></tr></thead>
+                <tbody>
+                <tr th:each="r : ${historial}">
+                    <td class="fw-semibold" th:text="${r.programaNombre}"></td><td th:text="${r.fechaIngreso}"></td><td th:text="${r.fechaDeGrado}"></td>
+                    <td th:text="${r.promedioAcumulado}"></td><td th:text="${r.creditosAprobados}"></td><td th:text="${r.semestresCursados}"></td>
+                    <td><span class="etiqueta" th:classappend="'estado-' + ${r.estadoAcademico}" th:text="${r.estadoAcademico}"></span></td>
+                    <td class="text-end">
+                        <form method="post" class="d-inline" th:action="@{/uis/admin/estudiantes/{n}/historial/{id}/borrar(n=${e.numeroIdentificacion},id=${r.id})}">
+                            <button class="btn btn-outline-danger btn-sm" type="submit">Quitar</button></form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(historial)}"><td colspan="8" class="text-body-secondary text-center py-3">Sin programas todavía.</td></tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+
+        <div class="tarjeta">
+            <h2>Agregar o corregir un programa</h2>
+            <p class="text-body-secondary small">Para corregir una fila existente elige su número en «Historial a corregir»; si lo dejas en «(nuevo)» se agrega una nueva.
+                Estado GRADUADO exige créditos y semestres iguales a los del programa; ACTIVO no puede excederlos.</p>
+            <form method="post" th:action="@{/uis/admin/estudiantes/{n}/historial(n=${e.numeroIdentificacion})}" class="row g-3">
+                <div class="col-md-3"><label class="form-label">Historial a corregir</label>
+                    <select class="form-select" name="id"><option value="">(nuevo)</option>
+                        <option th:each="r : ${historial}" th:value="${r.id}" th:text="'#' + ${r.id} + ' ' + ${r.programaNombre}"></option></select></div>
+                <div class="col-md-5"><label class="form-label">Programa</label>
+                    <select class="form-select" name="programaId" required>
+                        <option th:each="p : ${programas}" th:value="${p.id}" th:text="${p.nombre} + ' (' + ${p.duracionSemestres} + ' sem., ' + ${p.creditos} + ' cr.)'" th:selected="${h != null && h.programaId == p.id}"></option>
+                    </select></div>
+                <div class="col-md-2"><label class="form-label">Estado</label>
+                    <select class="form-select" name="estadoAcademico">
+                        <option th:each="s : ${estados}" th:value="${s}" th:text="${s}" th:selected="${h != null && h.estadoAcademico == s}"></option></select></div>
+                <div class="col-md-2"><label class="form-label">Promedio</label>
+                    <input class="form-control" name="promedioAcumulado" th:value="${h?.promedioAcumulado}"></div>
+                <div class="col-md-3"><label class="form-label">Fecha de ingreso</label>
+                    <input class="form-control" type="date" name="fechaIngreso" th:value="${h?.fechaIngreso}"></div>
+                <div class="col-md-3"><label class="form-label">Fecha de grado</label>
+                    <input class="form-control" type="date" name="fechaDeGrado" th:value="${h?.fechaDeGrado}"></div>
+                <div class="col-md-3"><label class="form-label">Créditos aprobados</label>
+                    <input class="form-control" type="number" min="0" name="creditosAprobados" th:value="${h?.creditosAprobados}"></div>
+                <div class="col-md-3"><label class="form-label">Semestres cursados</label>
+                    <input class="form-control" type="number" min="0" name="semestresCursados" th:value="${h?.semestresCursados}"></div>
+                <div class="col-12"><button class="btn btn-primary" type="submit">Guardar programa</button></div>
+            </form>
+        </div>
+
+        <div class="tarjeta">
+            <h2>Acceso del estudiante a sus credenciales</h2>
+            <p class="text-body-secondary" th:if="${!sinPid}">Entra presentando su <strong>cédula digital (PID)</strong> desde la wallet; no necesita código.</p>
+            <p class="text-body-secondary" th:if="${sinPid}">No tiene PID colombiano: entra con un <strong>código de activación</strong> que le entregas tras verificar su identidad.</p>
+            <div class="d-flex flex-wrap gap-2">
+                <form method="post" th:action="@{/uis/admin/estudiantes/{n}/codigo-activacion(n=${e.numeroIdentificacion})}">
+                    <button class="btn btn-outline-primary" type="submit">Generar código de activación</button></form>
+                <form method="post" th:action="@{/uis/admin/estudiantes/{n}/borrar(n=${e.numeroIdentificacion})}"
+                      onsubmit="return confirm('¿Borrar al estudiante y todo su historial?')">
+                    <button class="btn btn-outline-danger" type="submit">Borrar estudiante</button></form>
+            </div>
+        </div>
+    </div>
+</main>
+<p class="pie">Panel del registro académico · Datos de prueba, no uses información real.</p>
+<script th:unless="${isEdit}" th:src="@{/public/js/uis-admin-pid.js}"></script>
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{GYM}}</title>
+<link rel="icon" href="{{BASE}}/publico/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="{{BASE}}/publico/tema.css">
+</head>
+<body data-base="{{BASE}}" data-gym="{{GYM}}" data-seccion="inicio" data-slot="persona">
+<section id="portada" hidden></section>
+<main id="vista"></main>
+
+<div class="velo" id="velo" role="dialog" aria-modal="true">
+  <div class="ventana">
+    <button class="cerrar" id="cerrar" aria-label="Cerrar">✕</button>
+    <h3 id="v-titulo"></h3>
+    <p id="v-sub"></p>
+    <div class="qr escritorio" id="v-qr"></div>
+    <a class="boton primario movil" id="v-abrir" href="#" style="width:100%;margin-bottom:12px">Abrir mi wallet</a>
+    <div class="estado" id="v-estado"></div>
+  </div>
+</div>
+
+<script src="{{BASE}}/publico/marco.js"></script>
+<script>
+const BASE = '{{BASE}}'
+const SEDES = {{SEDES}}
+const PLANES = {{PLANES}}
+const MOVIL = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+const $ = (id) => document.getElementById(id)
+if (MOVIL) { document.querySelectorAll('.movil').forEach((e) => (e.style.display = 'flex')); document.querySelectorAll('.escritorio').forEach((e) => (e.style.display = 'none')) }
+
+// Nodos sin HTML: los datos (de la wallet o del socio) van siempre como texto.
+function el(t, props = {}, ...hijos) {
+  const n = document.createElement(t)
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') n.className = v
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v)
+    else if (k === 'style') n.style.cssText = v
+    else if (v !== undefined && v !== null && v !== false) n.setAttribute(k, v === true ? '' : v)
+  }
+  for (const h of hijos.flat(Infinity)) if (h !== null && h !== undefined && h !== false && h !== '') n.append(h instanceof Node ? h : String(h))
+  return n
+}
+const api = async (ruta, o = {}) => {
+  const r = await fetch(BASE + ruta, { ...o, headers: { 'content-type': 'application/json' }, body: o.body && JSON.stringify(o.body) })
+  const c = await r.json().catch(() => ({}))
+  if (!r.ok) throw new Error(c.error || c.motivo || `Error ${r.status}`)
+  return c
+}
+const fecha = (f) => (f ? new Date(`${f.slice(0, 10)}T12:00:00`).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }) : '—')
+const hora = (iso) => new Date(iso).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false })
+const cop = (n) => n.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })
+const icono = (n, clase = '') => { const s = el('span', { class: clase }); s.innerHTML = ICONO(n); return s }
+
+let yo = null
+async function cargar() {
+  try { yo = await api('/api/yo') } catch { yo = null }
+  const c = $('persona')
+  c.replaceChildren()
+  c.hidden = !yo
+  if (yo) c.append(el('span', { class: 'nombre' }, `${yo.persona.nombres} ${yo.persona.apellidos}`),
+    el('button', { class: 'claro', onclick: async () => { await api('/api/salir', { method: 'POST' }); yo = null; await cargar(); location.hash = 'inicio' } }, 'Salir'))
+}
+
+// --- Pedirle algo a la wallet -----------------------------------------------------------------
+let sondeo
+function cerrar() { clearTimeout(sondeo); $('velo').classList.remove('abierto') }
+$('cerrar').onclick = cerrar
+const estadoV = (t, tipo) => { $('v-estado').className = 'estado' + (tipo === 'error' ? ' error' : ''); $('v-estado').replaceChildren(...(tipo === 'esperando' ? [el('div', { class: 'girando' })] : []), t) }
+function pedir({ proposito, titulo, sub }) {
+  return new Promise(async (resolver) => {
+    $('v-titulo').textContent = titulo
+    $('v-sub').textContent = MOVIL ? `${sub} Abre tu wallet, revisa y acepta: volverás aquí.` : `${sub} Escanea el código con la wallet.`
+    $('v-qr').replaceChildren(el('div', { class: 'girando' }))
+    estadoV('Preparando la solicitud…', 'esperando')
+    $('velo').classList.add('abierto')
+    try {
+      const s = await api('/api/solicitud', { method: 'POST', body: { proposito, dispositivo: MOVIL ? 'mismo' : 'otro' } })
+      $('v-qr').replaceChildren(el('img', { src: s.qr, alt: 'Código QR para la wallet' }))
+      $('v-abrir').href = s.enlace
+      estadoV('Esperando la wallet…', 'esperando')
+      if (MOVIL) return
+      const preguntar = async () => {
+        try {
+          const r = await api(`/api/solicitud/${s.id}`)
+          if (r.estado === 'listo') { cerrar(); return resolver({ ...r, id: s.id }) }
+          if (r.estado === 'rechazada') return estadoV(r.motivo, 'error')
+        } catch { /* reintentar */ }
+        sondeo = setTimeout(preguntar, 2000)
+      }
+      preguntar()
+    } catch (e) { estadoV(e.message, 'error') }
+  })
+}
+async function identificarse() {
+  const r = await pedir({ proposito: 'identificacion', titulo: 'Identifícate con tu wallet', sub: 'El gimnasio te pedirá tu documento de identidad (PID).' })
+  if (r) { await cargar(); location.hash = 'mi-gym' }
+}
+
+// --- Vistas ---------------------------------------------------------------------------------------
+const vista = $('vista')
+const volver = () => el('button', { class: 'volver', onclick: () => (location.hash = 'inicio') }, '← Volver al inicio')
+const entrar = () => (yo ? (location.hash = 'mi-gym') : identificarse())
+const planElegido = () => sessionStorage.getItem('gym:plan') || 'mensual'
+
+function portada() {
+  const acceso = (n, t, href) => el('a', { href }, icono(n, 'redondo'), t)
+  $('portada').replaceChildren(
+    el('div', { class: 'portada' }, el('div', { class: 'ancho' },
+      el('div', {},
+        el('span', { class: 'etiqueta-portada' }, 'Membresía digital'),
+        el('h1', {}, 'Entrena. ', el('em', {}, 'Entra con tu wallet.')),
+        el('p', {}, 'Hazte socio con tu documento digital y lleva la tarjeta del gimnasio en el teléfono. Entras y sales de cualquier sede mostrando solo tu nombre, tu foto, tu plan y tu vigencia. Sin plástico, sin filas y sin contraseñas.'),
+        el('div', { class: 'acciones' },
+          el('button', { class: 'coral', onclick: entrar }, 'Hazte socio'),
+          el('a', { class: 'boton fantasma', href: '#planes' }, 'Ver planes'))),
+      el('img', { class: 'collage', src: `${BASE}/publico/img/collage.svg`, alt: 'Ilustración de personas entrenando' }))),
+    el('div', { class: 'franja' }, el('div', { class: 'ancho' },
+      acceso('tarjeta', 'Tu tarjeta de socio', '#mi-gym'), acceso('pesa', 'Planes', '#planes'),
+      acceso('puerta', 'Entrada y salida', `${BASE}/acceso`), acceso('gente', 'Sedes', '#sedes'))))
+}
+
+function vistaInicio(error) {
+  portada(); $('portada').hidden = false
+  const plan = (p) => el('button', { class: 'plan', onclick: () => { sessionStorage.setItem('gym:plan', p.id); entrar() } },
+    p.destacado ? el('span', { class: 'cinta-plan' }, 'El más elegido') : '',
+    el('b', {}, p.nombre), el('span', { class: 'precio' }, cop(p.precio)), el('span', { class: 'd' }, p.detalle), el('span', { class: 'd', style: 'color:var(--azul-osc);font-weight:700' }, 'Elegir este plan →'))
+  vista.replaceChildren(
+    error ? el('div', { class: 'aviso error', style: 'margin-bottom:16px' }, error) : '',
+    el('div', { class: 'titulo-seccion', id: 'planes' }, icono('pesa'), el('h2', {}, 'Elige tu plan')),
+    el('div', { class: 'planes' }, PLANES.map(plan)),
+    el('p', { class: 'lead', style: 'margin-top:14px' }, 'Todos los planes incluyen las tres sedes. El pago de este ejemplo es simulado: no se cobra nada.'),
+    el('div', { class: 'titulo-seccion', id: 'sedes', style: 'margin-top:34px' }, icono('gente'), el('h2', {}, 'Nuestras sedes')),
+    el('div', { class: 'rejilla' }, SEDES.map((s, i) => el('div', { class: 'caja servicio' }, icono(['pesa', 'reloj', 'gente'][i % 3], 'icono'), el('h2', {}, s), el('p', {}, ['Pesas libres, máquinas y zona funcional.', 'Clases grupales, spinning y piscina.', 'Zona cardio, boxeo y entrenamiento guiado.'][i % 3])))),
+    el('div', { class: 'banner' },
+      el('div', {}, el('h2', {}, 'Tu tarjeta siempre contigo'), el('p', {}, 'Recíbela en tu wallet con un código QR y un PIN de un solo uso. Si pierdes el teléfono, la revocas desde aquí y la entrada deja de aceptarla.'),
+        el('button', { class: 'coral', onclick: entrar }, 'Quiero mi tarjeta')),
+      el('img', { src: `${BASE}/publico/img/telefono.svg`, alt: '' })),
+    el('div', { class: 'titulo-seccion', style: 'margin-top:34px' }, icono('candado'), el('h2', {}, '¿Cómo funciona?')),
+    el('div', { class: 'pasos' },
+      el('div', { class: 'paso' }, el('b', {}, 'Te identificas'), el('span', {}, 'Con tu documento de identidad digital, sin formularios ni contraseñas.')),
+      el('div', { class: 'paso' }, el('b', {}, 'Recibes tu tarjeta'), el('span', {}, 'Eliges plan y sede, y la tarjeta de socio pasa a tu wallet.')),
+      el('div', { class: 'paso' }, el('b', {}, 'Entras y sales'), el('span', {}, 'Escaneas el código de la puerta y la pantalla te dice si puedes pasar.'))))
+}
+
+function selectorPlan(valor, alCambiar) {
+  const botones = PLANES.map((p) => el('button', { class: 'plan', type: 'button', 'aria-pressed': String(p.id === valor), onclick: () => { botones.forEach((b, i) => b.setAttribute('aria-pressed', String(PLANES[i].id === p.id))); alCambiar(p.id) } },
+    p.destacado ? el('span', { class: 'cinta-plan' }, 'El más elegido') : '', el('b', {}, p.nombre), el('span', { class: 'precio' }, cop(p.precio)), el('span', { class: 'd' }, p.detalle)))
+  return el('div', { class: 'planes' }, botones)
+}
+
+async function vistaMiGym() {
+  if (!yo) return identificarse()
+  await cargar()
+  const s = yo.socio
+  const error = el('div', { class: 'aviso error', hidden: true })
+  const fallo = (e) => { error.textContent = e.message; error.hidden = false }
+  let plan = planElegido(), sede = s?.membresia.sede || SEDES[0]
+  const pickSede = el('select', { onchange: (e) => (sede = e.target.value) }, SEDES.map((x) => el('option', { value: x, selected: x === sede }, x)))
+
+  if (!s) {
+    return vista.replaceChildren(volver(), el('h1', {}, 'Hazte socio'),
+      el('p', { class: 'lead' }, `${yo.persona.nombres}, tus datos salen de tu documento de identidad digital: solo elige tu plan y tu sede principal.`),
+      selectorPlan(plan, (id) => { plan = id; sessionStorage.setItem('gym:plan', id) }),
+      el('div', { class: 'caja', style: 'max-width:520px;margin-top:16px' },
+        el('label', {}, 'Sede principal', pickSede), el('div', { class: 'aviso info' }, 'El pago de este ejemplo es simulado: al pulsar el botón no se cobra nada.'), error,
+        el('button', { class: 'primario', onclick: async () => { try { await api('/api/membresia', { method: 'POST', body: { plan, sede } }); sessionStorage.removeItem('gym:plan'); vistaMiGym() } catch (e) { fallo(e) } } }, 'Pagar y hacerme socio')))
+  }
+
+  const m = s.membresia
+  const activa = m.estado === 'Activa'
+  const etiqueta = { Activa: 'vigente', Vencida: 'reemplazada', Suspendida: 'revocada' }[m.estado]
+  const lista = (xs) => xs.length ? xs : null
+  vista.replaceChildren(volver(), el('h1', {}, 'Mi membresía'),
+    s.dentro ? el('div', { class: 'aviso ok', style: 'margin-bottom:14px' }, 'Ahora mismo estás dentro de la sede. Marca tu salida en la pantalla de la puerta.') : '',
+    el('div', { class: 'rejilla' },
+      el('div', { class: 'carne' },
+        s.foto ? el('img', { class: 'foto-socio', src: s.foto, alt: `Foto de ${s.nombres}` }) : '',
+        el('div', { class: 'fila' }, el('strong', { style: 'font-size:1.1rem' }, 'Tarjeta de socio'), el('span', { class: `etiqueta ${etiqueta}`, style: 'background:rgba(255,255,255,.18);color:#fff' }, m.estado)),
+        el('div', {}, el('small', {}, 'Socio'), `${s.nombres} ${s.apellidos}`),
+        el('div', { class: 'fila' }, el('div', {}, el('small', {}, 'Número'), m.numero), el('div', {}, el('small', {}, 'Plan'), m.plan)),
+        el('div', { class: 'fila' }, el('div', {}, el('small', {}, 'Sede principal'), m.sede), el('div', {}, el('small', {}, 'Vigente hasta'), fecha(m.hasta))),
+        el('div', {}, el('small', {}, 'Días restantes'), m.estado === 'Vencida' ? 'Vencida' : m.dias_restantes === 0 ? 'Hoy es el último día' : `${m.dias_restantes} día${m.dias_restantes === 1 ? '' : 's'}`),
+        el('button', { class: 'coral', disabled: !activa, onclick: () => entregar() }, 'Recibir la tarjeta en mi wallet')),
+      el('div', { class: 'caja' }, el('h2', {}, m.estado === 'Activa' ? 'Renovar o cambiar de plan' : m.estado === 'Vencida' ? 'Tu membresía venció: renuévala' : 'Tu membresía está suspendida'),
+        m.estado === 'Suspendida'
+          ? el('p', {}, 'Habla con recepción para reactivarla. Mientras tanto no puedes entrar a las sedes.')
+          : [el('p', {}, 'La renovación continúa donde termina tu plan actual. La tarjeta que ya tienes en la wallet deja de valer y recibes una nueva.'),
+            selectorPlan(plan, (id) => (plan = id)), el('label', {}, 'Sede principal', pickSede), error,
+            el('button', { class: 'primario', onclick: async () => { try { await api('/api/membresia', { method: 'POST', body: { plan, sede } }); vistaMiGym() } catch (e) { fallo(e) } } }, 'Renovar (pago simulado)')])),
+    el('h2', { style: 'margin-top:24px' }, 'Mis últimas visitas'),
+    s.visitas.length
+      ? el('div', { class: 'caja' }, s.visitas.map((v) => el('div', { class: 'visita' },
+        el('span', {}, v.sede, el('br'), el('small', {}, fecha(v.ingreso))),
+        el('span', { style: 'text-align:right' }, `Entrada ${hora(v.ingreso)}`, el('br'), el('small', {}, v.egreso ? `Salida ${hora(v.egreso)}` : 'Sin salida registrada')))))
+      : el('p', { class: 'lead' }, 'Todavía no registras visitas.'),
+    el('h2', { style: 'margin-top:24px' }, 'Tarjetas que has recibido en tu wallet'),
+    s.credenciales.length ? el('div', { class: 'tabla' }, el('table', {}, el('thead', {}, el('tr', {}, el('th', {}, 'Documento'), el('th', {}, 'Recibida'), el('th', {}, 'Estado'), el('th', {}))),
+      el('tbody', {}, ...s.credenciales.map((e) => el('tr', {},
+        el('td', {}, 'Tarjeta de socio'), el('td', {}, fecha(e.fecha)),
+        el('td', {}, el('span', { class: `etiqueta ${e.estado}` }, e.estado === 'vigente' ? 'Vigente' : e.estado === 'reemplazada' ? 'Reemplazada' : 'Revocada')),
+        el('td', {}, e.estado === 'vigente' ? [el('button', { class: 'primario', style: 'margin-right:6px', title: 'Pide una tarjeta nueva; al recibirla, la anterior deja de valer', onclick: () => entregar(true) }, 'Reexpedir'), el('button', { class: 'peligro', onclick: async () => { await api(`/api/credenciales/${e.indice}/revocar`, { method: 'POST' }); vistaMiGym() } }, 'Revocar')] : '')))))) :
+      el('p', { class: 'lead' }, 'Todavía nada.'),
+    el('p', { style: 'color:var(--suave);font-size:.9rem;margin-top:12px' }, 'Si renuevas o te suspenden, la tarjeta anterior queda reemplazada: la puerta solo acepta la última. Si pierdes el teléfono o cambias de celular, pulsa Reexpedir: recibes una tarjeta nueva y la anterior deja de valer.'))
+}
+
+async function entregar(reexpedir = false) {
+  try {
+    const o = await api('/api/oferta', { method: 'POST', body: { reexpedir } })
+    vista.replaceChildren(el('button', { class: 'volver', onclick: () => (location.hash = 'mi-gym') }, '← Volver a mi membresía'),
+      el('h1', {}, 'Recibe tu tarjeta de socio'),
+      el('div', { class: 'caja entrega' },
+        MOVIL ? el('a', { class: 'boton primario', href: o.enlace }, 'Recibir en mi wallet') : el('img', { src: o.qr, alt: 'Código QR con la oferta' }),
+        el('div', {}, el('p', {}, MOVIL ? 'Toca el botón y, cuando tu wallet lo pida, escribe este PIN:' : 'Escanéalo con tu wallet y, cuando lo pida, escribe este PIN:'),
+          el('div', { class: 'pin' }, o.pin), el('p', {}, 'La oferta vale 15 minutos y sirve una vez.'), reexpedir ? el('p', { style: 'color:var(--suave)' }, 'Al recibirla, la tarjeta anterior deja de valer.') : '')))
+  } catch (e) { vista.prepend(el('div', { class: 'aviso error', style: 'margin-bottom:12px' }, e.message)) }
+}
+
+async function ruta() {
+  cerrar()
+  $('portada').hidden = true
+  const h = decodeURIComponent(location.hash.slice(1))
+  if (h.startsWith('error=')) return vistaInicio(h.slice(6))
+  if (h === 'identificado') { await cargar(); return location.replace('#mi-gym') }
+  if (h === 'mi-gym') return vistaMiGym()
+  vistaInicio()
+  if (h === 'planes' || h === 'sedes') setTimeout(() => document.getElementById(h)?.scrollIntoView({ behavior: 'smooth' }), 50)
+}
+window.addEventListener('hashchange', ruta)
+cargar().then(ruta)
+</script>
+</body>
+</html>

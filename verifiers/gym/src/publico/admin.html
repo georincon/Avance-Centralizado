@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administración · {{GYM}}</title>
+<link rel="icon" href="{{BASE}}/publico/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="{{BASE}}/publico/tema.css">
+</head>
+<body data-base="{{BASE}}" data-gym="{{GYM}}" data-seccion="admin" data-slot="der" data-titulo="Administración" data-icono="admin">
+<main id="vista"></main>
+<script src="{{BASE}}/publico/marco.js"></script>
+<script>
+const BASE = '{{BASE}}'
+const PLANES = {{PLANES}}
+const $ = (id) => document.getElementById(id)
+function el(t, props = {}, ...hijos) {
+  const n = document.createElement(t)
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') n.className = v
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v)
+    else if (k === 'style') n.style.cssText = v
+    else if (v !== undefined && v !== null && v !== false) n.setAttribute(k, v === true ? '' : v)
+  }
+  for (const h of hijos.flat(Infinity)) if (h !== null && h !== undefined && h !== false && h !== '') n.append(h instanceof Node ? h : String(h))
+  return n
+}
+const api = async (ruta, o = {}) => {
+  const r = await fetch(BASE + ruta, { ...o, headers: { 'content-type': 'application/json' }, body: o.body && JSON.stringify(o.body) })
+  const c = await r.json().catch(() => ({}))
+  if (!r.ok) throw Object.assign(new Error(c.error || `Error ${r.status}`), { estado: r.status })
+  return c
+}
+const vista = $('vista')
+const hora = (iso) => new Date(iso).toLocaleString('es-CO', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
+const duracion = (min) => (min >= 60 ? `${Math.floor(min / 60)} h ${min % 60} min` : `${min} min`)
+let timer
+
+// --- Entrar ---------------------------------------------------------------------------------------
+function entrar() {
+  clearInterval(timer)
+  $('der').replaceChildren()
+  const clave = el('input', { type: 'password', autocomplete: 'off', placeholder: 'Contraseña de administración' })
+  const error = el('div', { class: 'aviso error', hidden: true })
+  const ir = async () => { try { await api('/api/admin/entrar', { method: 'POST', body: { clave: clave.value } }); panel() } catch (e) { error.textContent = e.message; error.hidden = false } }
+  clave.addEventListener('keydown', (e) => e.key === 'Enter' && ir())
+  vista.replaceChildren(el('h1', {}, 'Entrar'),
+    el('div', { class: 'caja', style: 'max-width:460px' }, el('p', {}, 'Aquí ves el aforo en vivo, administras a los socios y revisas el registro de accesos. La contraseña es la misma que activa las pantallas de la puerta.'),
+      el('label', {}, 'Contraseña', clave), error, el('button', { class: 'primario', onclick: ir }, 'Entrar')))
+  clave.focus()
+}
+
+// --- Panel -------------------------------------------------------------------------------------------
+const etiquetaTipo = { ingreso: ['si', 'Ingreso'], egreso: ['pend', 'Egreso'], salida_forzada: ['pend', 'Salida forzada'], denegado: ['no', 'Denegado'] }
+const motivoTexto = (m) => ({ sin_ingreso: 'salió sin ingreso registrado', cierre: 'cierre de sede' }[m] ?? m ?? '')
+
+async function accion(promesa) { try { await promesa } catch (e) { alert(e.message) } await actualizar() }
+
+function aforo(s) {
+  const f = s.dentro / s.max
+  return el('div', { class: 'sede-aforo' },
+    el('b', {}, s.sede),
+    el('div', { class: 'cifra' }, String(s.dentro), el('small', {}, ` / ${s.max} dentro`)),
+    el('div', { class: 'medidor' + (f >= 1 ? ' lleno' : f >= 0.8 ? ' casi' : '') }, el('span', { style: `width:${Math.min(100, Math.round(f * 100))}%` })),
+    s.personas.length ? el('div', {}, s.personas.map((p) => el('div', { class: 'persona-dentro' }, el('span', {}, p.nombre ?? p.numero), el('span', {}, `desde ${hora(p.desde).slice(-5)} · ${duracion(p.minutos)}`)))) : el('small', { style: 'color:var(--suave)' }, 'Nadie dentro.'),
+    s.dentro ? el('button', { class: 'chico', onclick: () => confirmar(`cerrar-${s.sede}`, () => accion(api('/api/admin/cerrar', { method: 'POST', body: { sede: s.sede } }))) }, 'Cerrar sede (marcar salidas)') : '')
+}
+// Doble pulsación para confirmar: sin diálogos del navegador.
+const pulsado = new Set()
+function confirmar(clave, fn) {
+  if (pulsado.has(clave)) { pulsado.delete(clave); return fn() }
+  pulsado.add(clave); setTimeout(() => { pulsado.delete(clave); actualizar() }, 4000)
+  const b = document.activeElement; if (b?.tagName === 'BUTTON') b.textContent = '¿Seguro? Pulsa otra vez'
+}
+
+function filaSocio(s) {
+  const plan = el('select', { 'aria-label': 'Plan' }, PLANES.map((p) => el('option', { value: p.id }, p.nombre)))
+  const clase = { Activa: 'si', Vencida: 'pend', Suspendida: 'no' }[s.estado]
+  return el('tr', {},
+    el('td', {}, el('strong', {}, s.nombre), el('br'), el('small', { style: 'color:var(--suave)' }, s.numero)),
+    el('td', {}, s.plan, el('br'), el('small', { style: 'color:var(--suave)' }, s.sede)),
+    el('td', {}, el('span', { class: `etiqueta ${clase}` }, s.estado), s.dentro ? el('span', { class: 'etiqueta si', style: 'margin-left:6px' }, 'Dentro') : ''),
+    el('td', {}, s.hasta, el('br'), el('small', { style: 'color:var(--suave)' }, s.dias_restantes < 0 ? `venció hace ${-s.dias_restantes} d` : `${s.dias_restantes} d`)),
+    el('td', { style: 'display:flex;gap:6px;flex-wrap:wrap;align-items:center' },
+      s.estado === 'Suspendida'
+        ? el('button', { class: 'chico', onclick: () => accion(api(`/api/admin/socios/${s.documento}`, { method: 'PUT', body: { estado: 'Activa' } })) }, 'Reactivar')
+        : el('button', { class: 'peligro', onclick: () => confirmar(`susp-${s.documento}`, () => accion(api(`/api/admin/socios/${s.documento}`, { method: 'PUT', body: { estado: 'Suspendida' } }))) }, 'Suspender'),
+      plan, el('button', { class: 'chico', onclick: () => accion(api(`/api/admin/socios/${s.documento}`, { method: 'PUT', body: { plan: plan.value } })) }, 'Renovar')))
+}
+
+async function actualizar() {
+  let d
+  try { d = await api('/api/admin/resumen') } catch (e) { if (e.estado === 401) return entrar(); return }
+  $('der').replaceChildren(el('button', { class: 'claro', onclick: async () => { await api('/api/admin/salir', { method: 'POST' }); entrar() } }, 'Salir'))
+  const dentroTotal = d.sedes.reduce((n, s) => n + s.dentro, 0)
+  vista.replaceChildren(
+    el('div', { class: 'titulo-seccion' }, el('h2', {}, `Aforo en vivo · ${dentroTotal} dentro`)),
+    el('div', { class: 'sedes-aforo' }, d.sedes.map(aforo)),
+    el('div', { class: 'titulo-seccion', style: 'margin-top:30px' }, el('h2', {}, `Socios (${d.socios.length})`)),
+    d.socios.length
+      ? el('div', { class: 'tabla' }, el('table', {}, el('thead', {}, el('tr', {}, ['Socio', 'Plan y sede', 'Estado', 'Vigencia', 'Acciones'].map((t) => el('th', {}, t)))), el('tbody', {}, d.socios.map(filaSocio))))
+      : el('p', { class: 'lead' }, 'Todavía no hay socios: se afilian solos en el portal, con su documento digital.'),
+    el('div', { class: 'titulo-seccion', style: 'margin-top:30px' }, el('h2', {}, 'Últimos accesos')),
+    d.historial.length
+      ? el('div', { class: 'tabla' }, el('table', {}, el('thead', {}, el('tr', {}, ['Hora', 'Tipo', 'Socio', 'Sede', 'Detalle'].map((t) => el('th', {}, t)))),
+        el('tbody', {}, d.historial.map((a) => { const [c, t] = etiquetaTipo[a.tipo] ?? ['pend', a.tipo]; return el('tr', {}, el('td', {}, hora(a.ts)), el('td', {}, el('span', { class: `etiqueta ${c}` }, t)), el('td', {}, a.nombre ?? a.numero ?? '—'), el('td', {}, a.sede), el('td', {}, motivoTexto(a.motivo))) }))))
+      : el('p', { class: 'lead' }, 'Aún no hay accesos registrados.'),
+    el('p', { style: 'color:var(--suave);font-size:.9rem;margin-top:12px' }, 'La pantalla se actualiza sola cada pocos segundos. El registro guarda el número de socio, la sede, el tipo y la hora; el nombre se une aquí al mostrarlo.'))
+}
+async function panel() { await actualizar(); clearInterval(timer); timer = setInterval(() => { if (!pulsado.size) actualizar() }, 5000) }
+panel()
+</script>
+</body>
+</html>

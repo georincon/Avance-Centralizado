@@ -1,0 +1,20 @@
+{
+  "name": "gym-ejemplo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Gimnasio de ejemplo: identifica con el PID, emite la tarjeta de socio a la wallet (OpenID4VCI) y controla el ingreso y egreso verificándola",
+  "type": "module",
+  "main": "src/servidor.js",
+  "scripts": {
+    "start": "node src/servidor.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "jose": "^6.0.11",
+    "pg": "^8.13.1",
+    "qrcode": "^1.5.4"
+  }
+}

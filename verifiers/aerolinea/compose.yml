@@ -1,0 +1,62 @@
+# La aerolínea de ejemplo. Cuelga directamente de la red compartida "avance-eudi" con el
+# alias app-PREFIJO: el nginx central le pasa con la ruta completa tanto
+# https://DOMINIO/PREFIJO/… como https://DOMINIO/.well-known/<x>/PREFIJO (la
+# metadata del emisor). Habla con su verifier (../_comun, instancia
+# VERIFIER_INSTANCIA) por la misma red.
+#
+# Se usa con ./levantar.sh o, ya creada: docker compose -p aerolinea --env-file .env logs -f
+name: aerolinea
+
+services:
+  aerolinea:
+    build: .
+    restart: unless-stopped
+    # El dueño de ./datos y ./secretos (quien ejecutó levantar.sh).
+    user: ${UID_GID:-1000:1000}
+    environment:
+      # Base de datos PROPIA del historial (emisiones y verificaciones de este portal): ver el servicio postgres-verif.
+      HISTORIAL_DB_URL: postgres://verif_aerolinea:verif_aerolinea@postgres-verif:5432/verif_aerolinea
+      URL_PUBLICA: https://${DOMINIO}/${PREFIJO}
+      VERIFIER_API: http://verifier-${VERIFIER_INSTANCIA}/verifier-${VERIFIER_INSTANCIA}
+      TRUST_VALIDATOR_URL: ${TRUST_VALIDATOR_URL}
+      AEROLINEA_NOMBRE: ${AEROLINEA_NOMBRE}
+      AEROLINEA_CODIGO: ${AEROLINEA_CODIGO}
+      SECRETOS_DIR: /secretos
+      TRAMITES_ARCHIVO: /datos/tramites.json
+      PUERTO: "80"
+    volumes:
+      - ./datos:/datos
+      - ./secretos:/secretos:ro
+    networks:
+      default: {}   # red del proyecto: por aquí llega a su base de datos
+      avance-eudi:
+        aliases: ["app-${PREFIJO}"]
+
+  # Base de datos PROPIA de este portal (historial de emisiones y verificaciones). Solo la ve su portal (red del proyecto); para DBeaver
+  # se publica únicamente en 127.0.0.1:5462. Va en este mismo compose: si el portal se instala en otro servidor, se lleva su base.
+  postgres-verif:
+    image: postgres:17-alpine
+    container_name: postgres-verif-aerolinea
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: verif_aerolinea
+      POSTGRES_USER: verif_aerolinea
+      POSTGRES_PASSWORD: verif_aerolinea
+      TZ: America/Bogota
+    ports: ["127.0.0.1:5462:5432"]
+    volumes:
+      - postgres_verif:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U verif_aerolinea -d verif_aerolinea"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  postgres_verif:
+    name: aerolinea_postgres_verif
+
+networks:
+  avance-eudi:
+    name: avance-eudi
+    external: true

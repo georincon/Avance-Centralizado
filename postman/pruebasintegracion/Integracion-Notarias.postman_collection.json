@@ -1,0 +1,1188 @@
+{
+  "info": {
+    "name": "Integración con notarías · API de órdenes de emisión",
+    "description": "API REST que consume la plataforma de notarías (SIGNO): (a) crear la orden de emisión, (b) obtener el QR/enlace de oferta y (c) consultar el estado. Importa también el entorno, escribe tu `api_key` y ejecuta las carpetas en orden. Documento de consumo: `API-ORDENES-EMISION.md`.",
+    "_postman_id": "c4e1a9d2-3b7f-4e08-8a55-integracion-notarias",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 · Conexión y catálogo",
+      "description": "Antes de crear órdenes: comprobar que la clave (`X-API-Key`) funciona y qué documentos se pueden emitir, con los campos que la plataforma debe enviar de cada uno.",
+      "item": [
+        {
+          "name": "Sin clave: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"error.codigo = no_autenticado\", () => pm.expect(dig(json, \"error.codigo\")).to.eql(\"no_autenticado\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/documentos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "documentos"
+              ],
+              "query": []
+            },
+            "description": "Toda la API exige la cabecera `X-API-Key`. Sin ella responde **401** y no revela nada.\n\n**Resultado esperado:** HTTP 401."
+          },
+          "response": []
+        },
+        {
+          "name": "Catálogo de documentos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trae documentos.0.documento\", () => pm.expect(dig(json, \"documentos.0.documento\")).to.not.be.undefined);",
+                  "pm.test(\"trae documentos.0.campos_requeridos\", () => pm.expect(dig(json, \"documentos.0.campos_requeridos\")).to.not.be.undefined);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/documentos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "documentos"
+              ],
+              "query": []
+            },
+            "description": "Los nueve documentos notariales que emite la notaría. De cada uno: `documento` (el identificador que se usa al crear la orden), `vct`, `nombre`, `campos_requeridos` y `campos_opcionales` (solo los que escribe la plataforma; los demás —número de protocolo, fecha, notario, etc.— los pone la notaría).\n\n**Resultado esperado:** HTTP 200."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 · (a) Crear la orden de emisión",
+      "description": "La plataforma de notarías envía el documento que quiere emitir y sus datos. La orden queda guardada (vive 24 h) y todavía no hay QR: ese paso es el siguiente. `referencia` es el identificador del trámite **en la plataforma**: sirve para no duplicar (repetir la misma petición devuelve la misma orden).",
+      "item": [
+        {
+          "name": "Crear una orden (fe de vida)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200 o 201\", () => pm.expect([200, 201]).to.include(pm.response.code));",
+                  "pm.test(\"trae id\", () => pm.expect(dig(json, \"id\")).to.not.be.undefined);",
+                  "pm.test(\"trae estado\", () => pm.expect(dig(json, \"estado\")).to.not.be.undefined);",
+                  "pm.test(\"trae expira_en\", () => pm.expect(dig(json, \"expira_en\")).to.not.be.undefined);",
+                  "pm.test(\"documento = co.notaria.fe_de_vida\", () => pm.expect(dig(json, \"documento\")).to.eql(\"co.notaria.fe_de_vida\"));",
+                  "if (json && dig(json, \"id\") !== undefined) pm.collectionVariables.set(\"orden_id\", typeof dig(json, \"id\") === \"string\" ? dig(json, \"id\") : JSON.stringify(dig(json, \"id\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes"
+              ],
+              "query": []
+            },
+            "description": "Crea la orden. **201** la primera vez; **200** si ya existía una orden con esa `referencia` y los mismos datos. Guarda el `id` en la variable `orden_id`. Cambia `referencia` en el entorno si quieres crear una orden nueva.\n\n**Guarda para las siguientes pruebas:** `orden_id`\n\n**Resultado esperado:** HTTP 200 o 201.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"co.notaria.fe_de_vida\",\n  \"referencia\": \"{{referencia}}\",\n  \"datos\": {\n    \"titular_nombre\": \"Ana María Pérez Gómez\",\n    \"titular_documento\": \"1020304050\",\n    \"medio_identificacion\": \"Cédula de ciudadanía\",\n    \"entidad_destino\": \"Colpensiones\",\n    \"vigente_hasta\": \"2027-12-31\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Repetir la misma petición (idempotencia)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trae id\", () => pm.expect(dig(json, \"id\")).to.not.be.undefined);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes"
+              ],
+              "query": []
+            },
+            "description": "Misma `referencia` y mismos datos: **200** y la misma orden, sin duplicarla. Así la plataforma puede reintentar sin riesgo si perdió la respuesta.\n\n**Resultado esperado:** HTTP 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"co.notaria.fe_de_vida\",\n  \"referencia\": \"{{referencia}}\",\n  \"datos\": {\n    \"titular_nombre\": \"Ana María Pérez Gómez\",\n    \"titular_documento\": \"1020304050\",\n    \"medio_identificacion\": \"Cédula de ciudadanía\",\n    \"entidad_destino\": \"Colpensiones\",\n    \"vigente_hasta\": \"2027-12-31\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Misma referencia con otros datos: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"error.codigo = referencia_en_uso\", () => pm.expect(dig(json, \"error.codigo\")).to.eql(\"referencia_en_uso\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes"
+              ],
+              "query": []
+            },
+            "description": "Una `referencia` ya usada con datos distintos es un conflicto (**409**): evita pisar un trámite por error.\n\n**Resultado esperado:** HTTP 409.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"co.notaria.fe_de_vida\",\n  \"referencia\": \"{{referencia}}\",\n  \"datos\": {\n    \"titular_nombre\": \"Ana María Pérez Gómez\",\n    \"titular_documento\": \"1020304050\",\n    \"medio_identificacion\": \"Cédula de ciudadanía\",\n    \"entidad_destino\": \"Otra entidad\",\n    \"vigente_hasta\": \"2027-12-31\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Crear una orden (poder especial)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200 o 201\", () => pm.expect([200, 201]).to.include(pm.response.code));",
+                  "pm.test(\"trae id\", () => pm.expect(dig(json, \"id\")).to.not.be.undefined);",
+                  "if (json && dig(json, \"id\") !== undefined) pm.collectionVariables.set(\"orden_poder_id\", typeof dig(json, \"id\") === \"string\" ? dig(json, \"id\") : JSON.stringify(dig(json, \"id\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes"
+              ],
+              "query": []
+            },
+            "description": "Otro documento, con sus propios campos (ver el catálogo). Guarda el `id` en `orden_poder_id`; se usa más abajo para probar la cancelación.\n\n**Guarda para las siguientes pruebas:** `orden_poder_id`\n\n**Resultado esperado:** HTTP 200 o 201.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"co.notaria.poder_especial\",\n  \"referencia\": \"{{referencia}}-poder\",\n  \"datos\": {\n    \"poderdante_nombre\": \"Carlos Andrés Rojas\",\n    \"poderdante_documento\": \"79123456\",\n    \"apoderado_nombre\": \"Laura Torres Díaz\",\n    \"apoderado_documento\": \"52987654\",\n    \"facultades\": \"Representarlo en la venta del vehículo de placas ABC123.\",\n    \"vigente_hasta\": \"2027-12-31\",\n    \"asunto\": \"Venta de vehículo\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Faltan campos obligatorios: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"trae error.campos\", () => pm.expect(dig(json, \"error.campos\")).to.not.be.undefined);",
+                  "pm.test(\"error.codigo = campos_faltantes\", () => pm.expect(dig(json, \"error.codigo\")).to.eql(\"campos_faltantes\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes"
+              ],
+              "query": []
+            },
+            "description": "**400** con la lista de campos que faltan en `error.campos`.\n\n**Resultado esperado:** HTTP 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"co.notaria.fe_de_vida\",\n  \"referencia\": \"{{referencia}}-x1\",\n  \"datos\": {\n    \"titular_nombre\": \"Ana\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Campo que pone la notaría: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.codigo = campos_desconocidos\", () => pm.expect(dig(json, \"error.codigo\")).to.eql(\"campos_desconocidos\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes"
+              ],
+              "query": []
+            },
+            "description": "El número de protocolo, la fecha, el notario… los pone la notaría al emitir. Enviarlos es un error (**400**), no se ignoran en silencio.\n\n**Resultado esperado:** HTTP 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"co.notaria.fe_de_vida\",\n  \"referencia\": \"{{referencia}}-x2\",\n  \"datos\": {\n    \"titular_nombre\": \"Ana María Pérez Gómez\",\n    \"titular_documento\": \"1020304050\",\n    \"medio_identificacion\": \"Cédula de ciudadanía\",\n    \"entidad_destino\": \"Colpensiones\",\n    \"vigente_hasta\": \"2027-12-31\",\n    \"numero\": \"2026-99999\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Documento inexistente: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error.codigo = documento_desconocido\", () => pm.expect(dig(json, \"error.codigo\")).to.eql(\"documento_desconocido\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes"
+              ],
+              "query": []
+            },
+            "description": "**400** y la lista de documentos válidos en `error.validos`.\n\n**Resultado esperado:** HTTP 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"co.notaria.no_existe\",\n  \"referencia\": \"{{referencia}}-x3\",\n  \"datos\": {\n    \"titular_nombre\": \"Ana María Pérez Gómez\",\n    \"titular_documento\": \"1020304050\",\n    \"medio_identificacion\": \"Cédula de ciudadanía\",\n    \"entidad_destino\": \"Colpensiones\",\n    \"vigente_hasta\": \"2027-12-31\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fecha ya vencida: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"error.codigo = datos_no_validos\", () => pm.expect(dig(json, \"error.codigo\")).to.eql(\"datos_no_validos\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes"
+              ],
+              "query": []
+            },
+            "description": "La vigencia de una fe de vida no puede estar en el pasado: **422**. Las fechas van como `AAAA-MM-DD`.\n\n**Resultado esperado:** HTTP 422.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"co.notaria.fe_de_vida\",\n  \"referencia\": \"{{referencia}}-x4\",\n  \"datos\": {\n    \"titular_nombre\": \"Ana María Pérez Gómez\",\n    \"titular_documento\": \"1020304050\",\n    \"medio_identificacion\": \"Cédula de ciudadanía\",\n    \"entidad_destino\": \"Colpensiones\",\n    \"vigente_hasta\": \"2020-01-01\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sin clave: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes"
+              ],
+              "query": []
+            },
+            "description": "Sin `X-API-Key` no se crea nada (**401**).\n\n**Resultado esperado:** HTTP 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documento\": \"co.notaria.fe_de_vida\",\n  \"referencia\": \"{{referencia}}-x5\",\n  \"datos\": {\n    \"titular_nombre\": \"Ana María Pérez Gómez\",\n    \"titular_documento\": \"1020304050\",\n    \"medio_identificacion\": \"Cédula de ciudadanía\",\n    \"entidad_destino\": \"Colpensiones\",\n    \"vigente_hasta\": \"2027-12-31\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 · (b) Obtener el QR / enlace de oferta",
+      "description": "Con la orden creada, la plataforma pide la oferta de emisión. Devuelve el `enlace` (para abrirlo con la wallet en el mismo teléfono), el `qr_png_base64` (para mostrarlo y que otro dispositivo lo escanee) y el `tx_code`: un PIN de 5 dígitos que **se entrega a la persona por otro medio** (la wallet lo pide al recibir el documento). La oferta vive 60 minutos; si vence, esta misma llamada genera una nueva mientras la orden siga vigente.",
+      "item": [
+        {
+          "name": "Obtener la oferta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trae enlace\", () => pm.expect(dig(json, \"enlace\")).to.not.be.undefined);",
+                  "pm.test(\"trae qr_png_base64\", () => pm.expect(dig(json, \"qr_png_base64\")).to.not.be.undefined);",
+                  "pm.test(\"trae tx_code\", () => pm.expect(dig(json, \"tx_code\")).to.not.be.undefined);",
+                  "pm.test(\"trae expira_en\", () => pm.expect(dig(json, \"expira_en\")).to.not.be.undefined);",
+                  "pm.test(\"estado = OFERTA_GENERADA\", () => pm.expect(dig(json, \"estado\")).to.eql(\"OFERTA_GENERADA\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes/{{orden_id}}/oferta",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes",
+                "{{orden_id}}",
+                "oferta"
+              ],
+              "query": []
+            },
+            "description": "Pasa la orden a `OFERTA_GENERADA`. **Con la wallet:** abre el `enlace` o escanea el QR (guárdalo como PNG: el texto después de `base64,`), y escribe el `tx_code` cuando lo pida.\n\n**Resultado esperado:** HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "Pedirla otra vez (misma oferta)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"regenerada = False\", () => pm.expect(dig(json, \"regenerada\")).to.eql(false));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes/{{orden_id}}/oferta",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes",
+                "{{orden_id}}",
+                "oferta"
+              ],
+              "query": []
+            },
+            "description": "Mientras la oferta no venza, devuelve la misma (`regenerada: false`): se puede consultar las veces que haga falta.\n\n**Resultado esperado:** HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "Orden inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error.codigo = orden_no_encontrada\", () => pm.expect(dig(json, \"error.codigo\")).to.eql(\"orden_no_encontrada\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes/00000000-0000-4000-8000-000000000000/oferta",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes",
+                "00000000-0000-4000-8000-000000000000",
+                "oferta"
+              ],
+              "query": []
+            },
+            "description": "**404**: el id no existe (o es de otro cliente).\n\n**Resultado esperado:** HTTP 404."
+          },
+          "response": []
+        },
+        {
+          "name": "Id mal formado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes/no-es-un-uuid/oferta",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes",
+                "no-es-un-uuid",
+                "oferta"
+              ],
+              "query": []
+            },
+            "description": "También **404**, sin error interno.\n\n**Resultado esperado:** HTTP 404."
+          },
+          "response": []
+        },
+        {
+          "name": "Sin clave: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes/{{orden_id}}/oferta",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes",
+                "{{orden_id}}",
+                "oferta"
+              ],
+              "query": []
+            },
+            "description": "**401**.\n\n**Resultado esperado:** HTTP 401."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 · (c) Consultar el estado del proceso",
+      "description": "La plataforma pregunta cuándo quiera en qué va la orden. `estado` es uno de: `CREADA` (sin oferta aún) · `OFERTA_GENERADA` (esperando a la wallet) · `OFERTA_EXPIRADA` (el QR venció; pedir la oferta otra vez) · `EMITIDA` (la wallet ya recibió el documento) · `CANCELADA` · `EXPIRADA` (la orden venció a las 24 h). `eventos` es la bitácora de la orden.",
+      "item": [
+        {
+          "name": "Estado de la orden",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"trae id\", () => pm.expect(dig(json, \"id\")).to.not.be.undefined);",
+                  "pm.test(\"trae estado\", () => pm.expect(dig(json, \"estado\")).to.not.be.undefined);",
+                  "pm.test(\"trae eventos.0.evento\", () => pm.expect(dig(json, \"eventos.0.evento\")).to.not.be.undefined);",
+                  "pm.test(\"trae oferta.expira_en\", () => pm.expect(dig(json, \"oferta.expira_en\")).to.not.be.undefined);",
+                  "pm.test(\"estado = OFERTA_GENERADA\", () => pm.expect(dig(json, \"estado\")).to.eql(\"OFERTA_GENERADA\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes/{{orden_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes",
+                "{{orden_id}}"
+              ],
+              "query": []
+            },
+            "description": "Estado actual, fechas y la bitácora (`eventos`). Tras pedir la oferta debe verse `OFERTA_GENERADA`. **Con la wallet:** después de recibir el documento pasa a `EMITIDA` y aparece `emitida_en`.\n\n**Resultado esperado:** HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "Estado de una orden sin oferta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"estado = CREADA\", () => pm.expect(dig(json, \"estado\")).to.eql(\"CREADA\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes/{{orden_poder_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes",
+                "{{orden_poder_id}}"
+              ],
+              "query": []
+            },
+            "description": "Una orden recién creada está en `CREADA` y `oferta` es `null`.\n\n**Resultado esperado:** HTTP 200."
+          },
+          "response": []
+        },
+        {
+          "name": "Orden inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes/00000000-0000-4000-8000-000000000000",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes",
+                "00000000-0000-4000-8000-000000000000"
+              ],
+              "query": []
+            },
+            "description": "**404**.\n\n**Resultado esperado:** HTTP 404."
+          },
+          "response": []
+        },
+        {
+          "name": "Sin clave: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes/{{orden_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes",
+                "{{orden_id}}"
+              ],
+              "query": []
+            },
+            "description": "**401**.\n\n**Resultado esperado:** HTTP 401."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 · Cancelar una orden",
+      "description": "Si el trámite se anula en la plataforma antes de que la persona reciba el documento, la orden se cancela: la oferta deja de servir.",
+      "item": [
+        {
+          "name": "Cancelar la orden",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"estado = CANCELADA\", () => pm.expect(dig(json, \"estado\")).to.eql(\"CANCELADA\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes/{{orden_poder_id}}/cancelar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes",
+                "{{orden_poder_id}}",
+                "cancelar"
+              ],
+              "query": []
+            },
+            "description": "Pasa a `CANCELADA`. El `motivo` es opcional.\n\n**Resultado esperado:** HTTP 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"Trámite anulado en SIGNO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Pedir la oferta de una orden cancelada: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"error.codigo = orden_cancelada\", () => pm.expect(dig(json, \"error.codigo\")).to.eql(\"orden_cancelada\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes/{{orden_poder_id}}/oferta",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes",
+                "{{orden_poder_id}}",
+                "oferta"
+              ],
+              "query": []
+            },
+            "description": "**409**: no se entrega oferta de una orden cancelada.\n\n**Resultado esperado:** HTTP 409."
+          },
+          "response": []
+        },
+        {
+          "name": "Cancelar otra vez: debe rechazar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"error.codigo = estado_final\", () => pm.expect(dig(json, \"error.codigo\")).to.eql(\"estado_final\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes/{{orden_poder_id}}/cancelar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes",
+                "{{orden_poder_id}}",
+                "cancelar"
+              ],
+              "query": []
+            },
+            "description": "**409**: ya está en un estado final.\n\n**Resultado esperado:** HTTP 409."
+          },
+          "response": []
+        },
+        {
+          "name": "Estado final",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const dig = (o, p) => p.split(\".\").reduce((a, k) => (a == null ? a : a[k]), o);",
+                  "let json = null; try { json = pm.response.json(); } catch (e) {}",
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"estado = CANCELADA\", () => pm.expect(dig(json, \"estado\")).to.eql(\"CANCELADA\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notaria-issuer/api/v1/ordenes/{{orden_poder_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "notaria-issuer",
+                "api",
+                "v1",
+                "ordenes",
+                "{{orden_poder_id}}"
+              ],
+              "query": []
+            },
+            "description": "La bitácora termina en `CANCELADA`.\n\n**Resultado esperado:** HTTP 200."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://civica-desarrollo.avance.org.co"
+    },
+    {
+      "key": "api_key",
+      "value": ""
+    },
+    {
+      "key": "referencia",
+      "value": "SIGNO-QA-001"
+    },
+    {
+      "key": "orden_id",
+      "value": ""
+    },
+    {
+      "key": "orden_poder_id",
+      "value": ""
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+/*
+ * Copyright (c) 2025-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.walletprovider.config
+
+import arrow.core.NonEmptyList
+import arrow.core.nonEmptyListOf
+import arrow.core.serialization.NonEmptyListSerializer
+import at.asitplus.signum.indispensable.josef.JsonWebKeySet
+import at.asitplus.signum.indispensable.josef.JwsAlgorithm
+import at.asitplus.signum.indispensable.josef.toJsonWebKey
+import at.asitplus.signum.indispensable.pki.CertificateChain
+import com.eygraber.uri.Url
+import eu.europa.ec.eudi.walletprovider.domain.Issuer
+import eu.europa.ec.eudi.walletprovider.domain.JwsSigner
+import eu.europa.ec.eudi.walletprovider.domain.Name
+import eu.europa.ec.eudi.walletprovider.domain.specification.AttestationBasedClientAuthentication
+import eu.europa.ec.eudi.walletprovider.domain.specification.OpenId4VCI
+import eu.europa.ec.eudi.walletprovider.domain.specification.RFC9728
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import kotlinx.serialization.Required
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger("MetadataRoutes")
+
+fun Application.configureMetadataRoutes(
+    issuer: Issuer,
+    name: Name,
+    signer: JwsSigner,
+    certificateChain: CertificateChain?,
+) {
+    routing {
+        route(RFC9728.WELL_KNOWN_URI_SUFFIX) {
+            get {
+                logger.info("Getting Protected Resource Metadata")
+                val metadata =
+                    run {
+                        val jwksUri =
+                            Url.parse(
+                                issuer.value
+                                    .buildUpon()
+                                    .appendPath("jwks")
+                                    .build()
+                                    .toString(),
+                            )
+                        val signingAlgorithm = signer.signingAlgorithm
+                        ProtectedResourceMetadataResponse(
+                            issuer,
+                            jwksUri,
+                            name,
+                            resourceSigningAlgorithmsSupported = nonEmptyListOf(signingAlgorithm),
+                            clientAttestationSigningAlgorithmsSupported = nonEmptyListOf(signingAlgorithm),
+                            proofSigningAlgorithmsSupported = nonEmptyListOf(signingAlgorithm),
+                        )
+                    }
+                call.respond(HttpStatusCode.OK, metadata)
+            }
+        }
+
+        route("/jwks") {
+            get {
+                logger.info("Getting JWKS")
+                val jwk = signer.publicKey.toJsonWebKey().copy(certificateChain = certificateChain)
+                val jwkSet = JsonWebKeySet(nonEmptyListOf(jwk))
+                call.respond(HttpStatusCode.OK, jwkSet)
+            }
+        }
+    }
+}
+
+@Serializable
+private data class ProtectedResourceMetadataResponse(
+    @Required @SerialName(RFC9728.RESOURCE) val resource: Issuer,
+    @Required @SerialName(RFC9728.JWKS_URI) val jwksUri: Url,
+    @Required @SerialName(RFC9728.RESOURCE_NAME) val name: Name,
+    @Required @SerialName(RFC9728.RESOURCE_SIGNING_ALGORITHMS_SUPPORTED) @Serializable(with = NonEmptyListSerializer::class)
+    val resourceSigningAlgorithmsSupported: NonEmptyList<JwsAlgorithm>,
+    @Required @SerialName(
+        AttestationBasedClientAuthentication.CLIENT_ATTESTATION_SIGNING_ALGORITHMS_SUPPORTED,
+    ) @Serializable(with = NonEmptyListSerializer::class)
+    val clientAttestationSigningAlgorithmsSupported: NonEmptyList<JwsAlgorithm>,
+    @Required @SerialName(OpenId4VCI.PROOF_SIGNING_ALGORITHMS_SUPPORTED) @Serializable(with = NonEmptyListSerializer::class)
+    val proofSigningAlgorithmsSupported: NonEmptyList<JwsAlgorithm>,
+)

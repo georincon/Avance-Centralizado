@@ -1,0 +1,113 @@
+                                                                                      Identificación OID:   1.3.6.1.4.1.31144.3.2.002.1.1
+                                                                                                  Fecha:    02-01-2020
+                                       ESPECIFICACION DE REQUISITOS                             Versión:    1.1
+                                                SOFTWARE                                   Clasificación:   Interno
+                                                  (ERSo)                                        Elaboró:    Arquitecto software
+                                                                                                 Revisó:    Líder de proyecto
+                                                                                                Aprobó:     Representante Legal
+
+
+PROYECTO                               Identidad Digital Soberana SSI                                ERSo                 2026-003
+TITULO                                 Creación del DID y DID Document del titular
+DESARROLLADOR                          Luis González
+FECHA ERSO                             Viernes, 18 de septiembre de 2026
+FECHA DESARROLLO                       Viernes, 25 de septiembre de 2026 7:30 a.m
+FECHA DE PRUEBA                        Miércoles, 30 de septiembre de 2026 7:30 a.m
+
+
+CAPACIDADES DEL                        Se requiere habilitar, en la cartera del ciudadano, la generación local del identificador
+PROCESO                                descentralizado (DID) del titular y la construcción de su DID Document asociado, con el método
+                                       adoptado, sin exponer la clave privada y sin depender de un registro centralizado obligatorio.
+                                       Entre las capacidades del proceso se encuentran:
+                                            •   Generar el par de claves del titular dentro del entorno protegido del dispositivo.
+                                            •   Derivar y registrar el identificador del titular conforme al método DID adoptado.
+                                            •   Construir el DID Document con la clave pública del titular en representación Multikey.
+                                            •   Vincular las relaciones de verificación (authentication, assertionMethod) a la clave
+                                                pública del titular.
+                                            •   Almacenar el documento y su material de claves de forma no exportable en el
+                                                dispositivo.
+                                            •   Validar la conformidad del documento contra el modelo de datos de W3C DIDs v1.1.
+
+
+CONDICIONES DEL                             •   La creación es local al titular; el backend no accede a la clave privada.
+PROCESO
+                                            •   El documento se construye conforme a W3C DIDs v1.1 y no introduce extensiones
+                                                propietarias.
+                                            •   El método DID es el definido en el laboratorio; no se integran anclajes equivalentes a
+                                                ION.
+                                            •   El DID Document no incluye claves privadas, credenciales personales ni datos civiles.
+                                            •   La validación de conformidad es requisito previo a cualquier publicación.
+
+
+
+
+DESCRIPCION DEL PROCESO
+Contexto y propósito funcional. Un DID es un identificador que un sujeto controla sin depender de un registro central, y su DID
+Document describe el material público de verificación y para qué se usa cada clave. Esta ERSo busca que el titular tenga su
+propio DID y DID Document generados localmente en su cartera, como base para vincular credenciales. Es importante que el
+desarrollador entienda el alcance: poseer la clave demuestra la capacidad de usar esa clave, no acredita por sí solo nombre,
+nacionalidad ni edad, y el DID del titular no prueba que el dispositivo pertenezca a una persona civil concreta.
+
+
+Literatura y temas a consultar. Consultar en la web: W3C Decentralized Identifiers (DIDs) v1.1, la especificación del método
+did:web, y el concepto de Multikey / multibase para la codificación de claves públicas. Útil también revisar ejemplos de DID
+Document con relaciones authentication y assertionMethod.
+
+FSOF-FO-002 OID 1.3.6.1.4.1.31144.3.2.002.1.1          FORMATO ESPECIFICACION REQUISITOS SOFTWARE                        Página 1 de 2
+                                                                                    Identificación OID:    1.3.6.1.4.1.31144.3.2.002.1.1
+                                                                                                 Fecha:    02-01-2020
+                                       ESPECIFICACION DE REQUISITOS                             Versión:   1.1
+                                                SOFTWARE                                 Clasificación:    Interno
+                                                  (ERSo)                                        Elaboró:   Arquitecto software
+                                                                                                Revisó:    Líder de proyecto
+                                                                                                Aprobó:    Representante Legal
+
+
+
+
+Qué debe hacer.
+      1.   Generar el par de claves del titular dentro del entorno protegido del dispositivo.
+      2.   Derivar y registrar el identificador del titular conforme al método DID adoptado por el laboratorio (did:web u otro
+           admitido).
+      3.   Construir el DID Document con la clave pública del titular en representación Multikey.
+      4.   Vincular las relaciones de verificación (authentication, assertionMethod) a la clave pública del titular.
+      5.   Almacenar el documento localmente y asociarlo a la instancia de cartera, sin exportar el material de claves.
+      6.   Ejecutar la validación de conformidad estructural contra el modelo de datos de W3C DIDs v1.1 y registrar el resultado.
+
+
+Criterios de aceptación
+
+
+                                  #              Criterio
+                                                 El DID y su DID Document se generan en el dispositivo sin
+                                  1              exponer la clave privada; evidencia: registro de
+                                                 generación.
+                                                 El DID Document es conforme al modelo de datos de W3C
+                                  2
+                                                 DIDs v1.1; evidencia: informe de conformidad.
+                                                 Las relaciones de verificación (authentication,
+                                  3              assertionMethod) apuntan a la clave pública Multikey del
+                                                 titular; evidencia: documento generado.
+                                                 El documento queda almacenado de forma no exportable y
+                                  4              asociado a la instancia de cartera; evidencia: prueba de
+                                                 almacenamiento.
+                                                 El DID y su DID Document se generan en el dispositivo sin
+                                  1              exponer la clave privada; evidencia: registro de
+                                                 generación.
+
+
+
+
+Actividad                                       Responsable                             Fecha y hora                     Firma
+Análisis y diseño ERSo                          Karen Flórez Madiedo
+Asignar desarrollador ERSo                      Rocío Villamizar
+Implementar ERSo                                Luis González
+Aceptar archivos al repositorio central         Rocío Villamizar
+Elaborar plantilla de pruebas                   Geovani Rincón
+Realizar pruebas funcionales                    Geovani Rincón
+Archivo de ERSo                                 Rocío Villamizar
+
+
+
+FSOF-FO-002 OID 1.3.6.1.4.1.31144.3.2.002.1.1          FORMATO ESPECIFICACION REQUISITOS SOFTWARE                       Página 2 de 2
+

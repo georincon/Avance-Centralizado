@@ -1,0 +1,605 @@
+/*
+ * Copyright (c) 2023-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.openid4vp
+
+import com.nimbusds.jose.EncryptionMethod
+import com.nimbusds.jose.JWEAlgorithm
+import com.nimbusds.jose.JWSAlgorithm
+import com.nimbusds.jose.JWSVerifier
+import com.nimbusds.jose.crypto.ECDHDecrypter
+import com.nimbusds.jose.jwk.Curve
+import com.nimbusds.jose.jwk.JWKSet
+import com.nimbusds.oauth2.sdk.id.Issuer
+import eu.europa.ec.eudi.openid4vp.OpenId4VPConfig.Companion.SelfIssued
+import eu.europa.ec.eudi.openid4vp.ResponseEncryptionConfiguration.NotSupported
+import eu.europa.ec.eudi.openid4vp.dcql.DCQL
+import java.net.URI
+import java.security.PublicKey
+import java.security.cert.X509Certificate
+import java.time.Clock
+import java.time.Duration
+
+/**
+ * The out-of-band knowledge of a Verifier, used in [SupportedClientIdPrefix.Preregistered]
+
+ * @param clientId the client id of a trusted verifier
+ * @param legalName the name of the trusted verifier
+ * @param jarConfig in case, verifier communicates his request using JAR, the signing algorithm
+ * that is used to sign his request and his available public keys in form of a JWKSet
+ *
+ */
+data class PreregisteredClient(
+    val clientId: OriginalClientId,
+    val legalName: String,
+    val jarConfig: Pair<JWSAlgorithm, JWKSet>? = null,
+) {
+    init {
+        if (jarConfig != null) {
+            require(!jarConfig.second.isEmpty) { "JWKSet cannot be empty" }
+            val allKeysArePublic = jarConfig.second.keys.all { !it.isPrivate }
+            require(allKeysArePublic) { "JWKSet must contain only public keys" }
+        }
+    }
+}
+
+fun interface X509CertificateTrust {
+    suspend fun isTrusted(chain: List<X509Certificate>): Boolean
+}
+
+fun interface LookupPublicKeyByDIDUrl {
+    suspend fun resolveKey(didUrl: URI): PublicKey?
+}
+
+/**
+ * The Client identifier prefix supported (or trusted) by the wallet.
+ */
+sealed interface SupportedClientIdPrefix {
+
+    /**
+     * The Client Identifier is known to the Wallet in advance of the Authorization Request.
+     */
+    data class Preregistered(val clients: Map<OriginalClientId, PreregisteredClient>) : SupportedClientIdPrefix {
+        constructor(vararg clients: PreregisteredClient) : this(clients.toList().associateBy { it.clientId })
+    }
+
+    /**
+     * Wallet trusts verifiers that present an authorization request having a redirect URI
+     * equal to the value of the Client Identifier.
+     *
+     * In this prefix, Verifier must NOT sign his request
+     */
+    data object RedirectUri : SupportedClientIdPrefix
+
+    /**
+     * Wallet trusts verifiers that are able to present a client identifier which is a DID
+     *
+     * In this prefix, Verifier must always sign his request (JAR), signed by a key
+     * that can be referenced via the DID
+     *
+     * @param lookup a function for getting the public key of the verifier by
+     * resolving a given DID URL
+     */
+    data class DecentralizedIdentifier(val lookup: LookupPublicKeyByDIDUrl) : SupportedClientIdPrefix
+
+    /**
+     * Wallet trust verifiers that are able to present a signed Verifier Attestation, which
+     * is issued by a party trusted by the Wallet
+     *
+     * In this prefix, Verifier must always sign his request (JAR), having in its JOSE
+     * header a Verifier Attestation JWT under `jwt` claim
+     *
+     * @param trust a function for verifying the digital signature of the Verifier Attestation JWT.
+     * @param clockSkew max acceptable skew between wallet and attestation issuer, up to 60 sec. Defaults to 15 sec.
+     */
+    data class VerifierAttestation(
+        val trust: JWSVerifier,
+        val clockSkew: Duration = Duration.ofSeconds(15L),
+    ) : SupportedClientIdPrefix {
+        init {
+            require(clockSkew <= MAX_CLOCK_SKEW) {
+                "clockSkew must not exceed ${MAX_CLOCK_SKEW.toSeconds()} seconds"
+            }
+        }
+
+        companion object {
+            private val MAX_CLOCK_SKEW: Duration = Duration.ofSeconds(60L)
+        }
+    }
+
+    /**
+     * Wallet trusts verifiers that are able to present a Client Identifier which is a DNS name and
+     * matches a dNSName Subject Alternative Name (SAN) RFC5280 entry in the
+     * leaf certificate passed with the request.
+     *
+     * In this prefix, Verifier must always sign his request (JAR)
+     *
+     * @param trust a function that accepts a chain of certificates (contents of `x5c` claim) and
+     * indicates whether is trusted or not
+     */
+    data class X509SanDns(val trust: X509CertificateTrust) : SupportedClientIdPrefix {
+        companion object {
+            internal val NoValidation: X509SanDns = X509SanDns { _ -> true }
+        }
+    }
+
+    /**
+     * Wallet trusts verifiers that are able to present a Client Identifier which is the SHA256 hash of the DER encoded
+     * leaf certificate passed with the request.
+     *
+     * In this prefix, Verifier must always sign his request (JAR)
+     *
+     * @param trust a function that accepts a chain of certificates (contents of `x5c` claim) and
+     * indicates whether is trusted or not
+     */
+    data class X509Hash(val trust: X509CertificateTrust) : SupportedClientIdPrefix
+
+    fun prefix(): ClientIdPrefix = when (this) {
+        is Preregistered -> ClientIdPrefix.PreRegistered
+        RedirectUri -> ClientIdPrefix.RedirectUri
+        is DecentralizedIdentifier -> ClientIdPrefix.DecentralizedIdentifier
+        is VerifierAttestation -> ClientIdPrefix.VerifierAttestation
+        is X509SanDns -> ClientIdPrefix.X509SanDns
+        is X509Hash -> ClientIdPrefix.X509Hash
+    }
+
+    fun metadataValue(): String = when (this) {
+        is Preregistered -> OpenId4VPSpec.CLIENT_ID_PREFIX_PRE_REGISTERED
+        RedirectUri -> OpenId4VPSpec.CLIENT_ID_PREFIX_REDIRECT_URI
+        is DecentralizedIdentifier -> OpenId4VPSpec.CLIENT_ID_PREFIX_DECENTRALIZED_IDENTIFIER
+        is VerifierAttestation -> OpenId4VPSpec.CLIENT_ID_PREFIX_VERIFIER_ATTESTATION
+        is X509SanDns -> OpenId4VPSpec.CLIENT_ID_PREFIX_X509_SAN_DNS
+        is X509Hash -> OpenId4VPSpec.CLIENT_ID_PREFIX_X509_HASH
+    }
+}
+
+/**
+ * A type of Transaction Data supported by the Wallet.
+ */
+sealed interface SupportedTransactionDataType {
+    val type: TransactionDataType
+
+    data class SdJwtVc(
+        override val type: TransactionDataType,
+        val hashAlgorithms: Set<HashAlgorithm>,
+    ) : SupportedTransactionDataType {
+        init {
+            require(hashAlgorithms.isNotEmpty()) { "hashAlgorithms cannot be empty" }
+            require(HashAlgorithm.SHA_256 in hashAlgorithms) { "'${HashAlgorithm.SHA_256.name}' must be a supported hash algorithm" }
+        }
+    }
+
+    data class MsoMdoc(
+        override val type: TransactionDataType,
+    ) : SupportedTransactionDataType
+}
+
+/**
+ * Configuration options for OpenId4VP
+ *
+ * @param knownDCQLQueriesPerScope a set of DCQL queries that a verifier may request via a pre-agreed scope
+ * @param vpFormatsSupported The formats the wallet supports
+ * @param supportedTransactionDataTypes the types of Transaction Data that are supported by the wallet
+ */
+@Deprecated("Merged to top level OpenId4VPConfig")
+data class VPConfiguration(
+    val knownDCQLQueriesPerScope: Map<String, DCQL> = emptyMap(),
+    val vpFormatsSupported: VpFormatsSupported,
+    val supportedTransactionDataTypes: List<SupportedTransactionDataType> = emptyList(),
+) {
+    init {
+        if (null == vpFormatsSupported.sdJwtVc) {
+            require(supportedTransactionDataTypes.none { it is SupportedTransactionDataType.SdJwtVc }) {
+                "SD-JWT VC Transaction Data cannot be used when SD-JWT VC is not supported"
+            }
+        }
+    }
+}
+
+/**
+ * Configurations options for encrypting an authorization response if requested by the verifier.
+ *
+ * OpenId4VP recommends supporting [encrypting][Supported] the authorization response
+ */
+sealed interface ResponseEncryptionConfiguration {
+
+    /**
+     * The wallet supports encrypting authorization responses
+     *
+     * @param supportedAlgorithms the JWE algorithms that the wallet can use
+     * when encrypting the authorization response in order of preference
+     * @param supportedMethods the JWE encryption methods that the wallet can use
+     * when encrypting the authorization response in order of preference
+     * [EncryptionMethod.XC20P] requires the usage of [com.google.crypto.tink:tink](https://central.sonatype.com/artifact/com.google.crypto.tink/tink)
+     */
+    data class Supported(
+        val supportedAlgorithms: List<JWEAlgorithm>,
+        val supportedMethods: List<EncryptionMethod>,
+    ) : ResponseEncryptionConfiguration {
+        init {
+            require(supportedAlgorithms.isNotEmpty()) { "At least an encryption algorithm must be provided" }
+            require(supportedMethods.isNotEmpty()) { "At least an encryption method must be provided" }
+            supportedAlgorithms.forEach { alg ->
+                require(alg !in REJECTED_ALGORITHMS) {
+                    "JWEAlgorithm ${alg.name} is not supported: deprecated algorithms ${REJECTED_ALGORITHMS.map { it.name }}"
+                }
+            }
+        }
+
+        companion object {
+            @Suppress("DEPRECATION")
+            private val REJECTED_ALGORITHMS: Set<JWEAlgorithm> = setOf(
+                JWEAlgorithm.RSA1_5,
+                JWEAlgorithm.RSA_OAEP,
+            )
+        }
+    }
+
+    /**
+     * Wallet doesn't support replying using unencrypted authorization responses
+     */
+    data object NotSupported : ResponseEncryptionConfiguration
+}
+
+sealed interface NonceOption {
+    data object DoNotUse : NonceOption
+
+    @JvmInline
+    value class Use(val byteLength: Int = MINIMUM_NONCE_LENGTH) : NonceOption {
+        init {
+            require(byteLength >= MINIMUM_NONCE_LENGTH) { "Byte length should be at least $MINIMUM_NONCE_LENGTH" }
+        }
+
+        companion object {
+            const val MINIMUM_NONCE_LENGTH: Int = 32
+        }
+    }
+}
+
+/**
+ * Wallet articulated encryption requirements.
+ */
+sealed interface EncryptionRequirement : java.io.Serializable {
+
+    /**
+     * Encryption is not required.
+     */
+    data object NotRequired : EncryptionRequirement {
+        private fun readResolve(): Any = NotRequired
+    }
+
+    /**
+     * Encryption is required.
+     *
+     * @property supportedEncryptionAlgorithms encryption algorithms supported by the Wallet, only asymmetric JWEAlgorithms are supported
+     * @property supportedEncryptionMethods encryption methods supported by the Wallet, [EncryptionMethod.XC20P] requires the usage
+     * of [com.google.crypto.tink:tink](https://central.sonatype.com/artifact/com.google.crypto.tink/tink)
+     * @property ephemeralEncryptionKeyCurve the [Curve] to use for generating the ephemeral encryption key
+     */
+    data class Required(
+        val supportedEncryptionAlgorithms: List<JWEAlgorithm>,
+        val supportedEncryptionMethods: List<EncryptionMethod>,
+        val ephemeralEncryptionKeyCurve: Curve,
+    ) : EncryptionRequirement {
+        init {
+            require(supportedEncryptionAlgorithms.isNotEmpty()) { "supportedEncryptionAlgorithms cannot be empty" }
+            require(SUPPORTED_ENCRYPTION_ALGORITHMS.containsAll(supportedEncryptionAlgorithms)) {
+                "only the following JWEAlgorithms are supported: $SUPPORTED_ENCRYPTION_ALGORITHMS"
+            }
+            require(supportedEncryptionMethods.isNotEmpty()) { "supportedEncryptionMethods cannot be empty" }
+            require(SUPPORTED_ENCRYPTION_METHODS.containsAll(supportedEncryptionMethods)) {
+                "only the following EncryptionMethods are supported: $SUPPORTED_ENCRYPTION_METHODS"
+            }
+            require(ephemeralEncryptionKeyCurve in SUPPORTED_EPHEMERAL_ENCRYPTION_KEY_CURVES) {
+                "only the following Curves are supported: $SUPPORTED_EPHEMERAL_ENCRYPTION_KEY_CURVES"
+            }
+        }
+
+        companion object {
+            val SUPPORTED_ENCRYPTION_ALGORITHMS: List<JWEAlgorithm> get() = JWEAlgorithm.Family.ECDH_ES.toList()
+            val SUPPORTED_ENCRYPTION_METHODS: List<EncryptionMethod> get() = ECDHDecrypter.SUPPORTED_ENCRYPTION_METHODS.toList()
+            val SUPPORTED_EPHEMERAL_ENCRYPTION_KEY_CURVES: List<Curve> get() = ECDHDecrypter.SUPPORTED_ELLIPTIC_CURVES.toList()
+        }
+    }
+}
+
+/**
+ * Which of the `request_uri_method` are supported by the wallet
+ */
+sealed interface SupportedRequestUriMethods {
+
+    /**
+     * Indicates support to `request_uri_method` `get`
+     */
+    data object Get : SupportedRequestUriMethods
+
+    /**
+     * Options related to `request_uri_method` equal to `post`
+     *
+     * @param includeWalletMetadata whether to include wallet metadata or not
+     * @param jarEncryption whether to request JAR be encrypted or not
+     * @param useWalletNonce whether to use wallet_nonce
+     * @param issuer the unique identifier of the wallet, defaults to [SelfIssued]
+     */
+    data class Post(
+        val includeWalletMetadata: Boolean = true,
+        val jarEncryption: EncryptionRequirement = EncryptionRequirement.NotRequired,
+        val useWalletNonce: NonceOption = NonceOption.Use(),
+        val issuer: Issuer? = SelfIssued,
+    ) : SupportedRequestUriMethods {
+        init {
+            require(EncryptionRequirement.NotRequired == jarEncryption || includeWalletMetadata) {
+                "Wallet Metadata must be included when JAR encryption is required"
+            }
+
+            if (includeWalletMetadata) {
+                requireNotNull(issuer) {
+                    "Issuer must be provided when Wallet Metadata is sent"
+                }
+            }
+        }
+    }
+
+    /**
+     * Both methods are supported
+     */
+    data class Both(val post: Post) : SupportedRequestUriMethods
+
+    fun isGetSupported(): Boolean = when (this) {
+        is Both, Get -> true
+        is Post -> false
+    }
+
+    fun isPostSupported(): Post? = when (this) {
+        is Both -> post
+        Get -> null
+        is Post -> this
+    }
+
+    companion object {
+        /**
+         * The default option is to support both `get` and `post` and in the later case,
+         * include `wallet_metadata` and `wallet_nonce`, and NOT require JAR be encrypted
+         */
+        val Default: SupportedRequestUriMethods = Both(post = Post())
+    }
+}
+
+/**
+ * Defines a policy for handling multi-signed authorization requests within the system.
+ * This sealed interface is used to indicate how the client should handle such requests
+ * based on different scenarios or restrictions.
+ */
+sealed interface MultiSignedRequestsPolicy {
+
+    data class Expect(val clientPrefix: ClientIdPrefix) : MultiSignedRequestsPolicy
+
+    data object NotSupported : MultiSignedRequestsPolicy
+}
+
+/**
+ * Options related to JWT-Secured authorization requests
+ *
+ * @param supportedAlgorithms the algorithms supported for the signature of the JAR
+ * @param supportedRequestUriMethods which of the `request_uri_method` methods are supported
+ * @param multiSignedRequestsPolicy whether the wallet supports multi-signed requests and if so, what is the expected client prefix
+ * @param clockSkew max acceptable skew between wallet and verifier when performing request signature validation, up to 60 sec. Defaults to 15 sec
+ * @param requestObjectAudienceCheckEnabled whether the audience of the request object is checked or not, defaults to `true`
+ */
+data class SignedRequestConfiguration(
+    val supportedAlgorithms: List<JWSAlgorithm>,
+    val supportedRequestUriMethods: SupportedRequestUriMethods = SupportedRequestUriMethods.Default,
+    val multiSignedRequestsPolicy: MultiSignedRequestsPolicy = MultiSignedRequestsPolicy.NotSupported,
+    val clockSkew: Duration = Duration.ofSeconds(15L),
+    val requestObjectAudienceCheckEnabled: Boolean = true,
+) {
+    init {
+        require(supportedAlgorithms.isNotEmpty()) { "JAR signing algorithms cannot be empty" }
+        require(clockSkew <= MAX_CLOCK_SKEW) {
+            "clockSkew must not exceed ${MAX_CLOCK_SKEW.toSeconds()} seconds"
+        }
+    }
+
+    companion object {
+        private val MAX_CLOCK_SKEW: Duration = Duration.ofSeconds(60L)
+
+        /**
+         * The default JAR configuration list as trusted algorithms ES256, ES384, and ES512.
+         * Also, both `request_uri_method` are supported.
+         *
+         * @see SupportedRequestUriMethods.Default
+         */
+        val Default = SignedRequestConfiguration(
+            supportedAlgorithms = listOf(JWSAlgorithm.ES256, JWSAlgorithm.ES384, JWSAlgorithm.ES512),
+            supportedRequestUriMethods = SupportedRequestUriMethods.Default,
+            multiSignedRequestsPolicy = MultiSignedRequestsPolicy.NotSupported,
+        )
+    }
+}
+
+/**
+ * Wallets policy regarding error dispatching.
+ */
+enum class ErrorDispatchPolicy : java.io.Serializable {
+
+    /**
+     * Allow dispatching of errors to all clients, regardless of authentication status.
+     */
+    AllClients,
+
+    /**
+     * Allow dispatching of errors only to authenticated clients.
+     */
+    OnlyAuthenticatedClients,
+}
+
+/**
+ * Represents a policy for validating a registration certificate against an access certificate and a set of
+ * constraints specified through a DCQL (Dynamic Credential Query Language) instance.
+ *
+ * The primary purpose of this functional interface is to determine whether the registration certificate is
+ * authorized based on the policy rules and return an appropriate `Authorization` result.
+ */
+fun interface RegistrationCertificatePolicy {
+
+    suspend operator fun invoke(
+        accessCertificate: X509Certificate,
+        registrationCertificate: String,
+        dcql: DCQL,
+    ): Authorization
+
+    /**
+     * Represents the outcome of an authorization evaluation based on a registration certificate policy.
+     * IT is used to express whether an authorization request can be authorized based on specific policy requirements.
+     *
+     * It provides two possible outcomes:
+     * - `Granted`: Indicates that the authorization was successful. May include
+     *   a list of warnings as `PolicyViolation` instances to highlight potential
+     *   issues that do not block authorization.
+     * - `NotGranted`: Indicates that the authorization was denied. Includes a
+     *   single `PolicyViolation` as the reason for denial.
+     */
+    sealed interface Authorization {
+        data class Granted(val warnings: List<PolicyViolation> = emptyList()) : Authorization
+        data class NotGranted(val error: PolicyViolation) : Authorization
+    }
+
+    /**
+     * Represents a specific violation of a policy rule.
+     *
+     * This value class is used as part of the authorization evaluation process
+     * within a registration certificate policy. It encapsulates a description
+     * of the policy rule that has been violated, providing a clear and concise
+     * representation of the issue.
+     *
+     * @property violation The description of the policy rule violation. This
+     * value must not be empty.
+     *
+     * @throws IllegalArgumentException if the violation description is empty.
+     */
+    @JvmInline
+    value class PolicyViolation(val violation: String) {
+        init {
+            require(violation.isNotEmpty()) { "violation must not be empty" }
+        }
+    }
+}
+
+/**
+ * Wallet configuration options for OpenId4VP protocol.
+ *
+ * At minimum, a wallet configuration should define at least a [supportedClientIdPrefixes]
+ *
+ * @param issuer an optional id for the wallet. If not provided defaults to [SelfIssued].
+ * @param signedRequestConfiguration options related to JWT Secure authorization requests.
+ * If not provided, it will default to [SignedRequestConfiguration.Default]
+ * @param responseEncryptionConfiguration whether wallet supports authorization response encryption. If not specified, it takes the default value
+ * [ResponseEncryptionConfiguration.NotSupported].
+ * @param knownDCQLQueriesPerScope a set of DCQL queries that a verifier may request via a pre-agreed scope
+ * @param vpFormatsSupported The formats the wallet supports
+ * @param supportedTransactionDataTypes the types of Transaction Data that are supported by the wallet
+ * @param clock the system Clock. If not provided system's default clock will be used.
+ * @param supportedClientIdPrefixes the client id prefixes that are supported/trusted by the wallet
+ * @param errorDispatchPolicy wallet's policy regarding error dispatching. Defaults to [ErrorDispatchPolicy.OnlyAuthenticatedClients].
+ * @param registrationCertificatePolicy wallet's policy regarding Wallet Relying Party Registration Certificates processing
+ */
+data class OpenId4VPConfig(
+    @Deprecated("Unused property. Use SupportedRequestUriMethods.Post.issuer instead.") val issuer: Issuer? = SelfIssued,
+    val signedRequestConfiguration: SignedRequestConfiguration = SignedRequestConfiguration.Default,
+    val responseEncryptionConfiguration: ResponseEncryptionConfiguration = NotSupported,
+    val knownDCQLQueriesPerScope: Map<String, DCQL> = emptyMap(),
+    val vpFormatsSupported: VpFormatsSupported,
+    val supportedTransactionDataTypes: List<SupportedTransactionDataType> = emptyList(),
+    val clock: Clock = Clock.systemDefaultZone(),
+    val supportedClientIdPrefixes: List<SupportedClientIdPrefix>,
+    val errorDispatchPolicy: ErrorDispatchPolicy = ErrorDispatchPolicy.OnlyAuthenticatedClients,
+    val registrationCertificatePolicy: RegistrationCertificatePolicy? = null,
+) {
+
+    init {
+        require(supportedClientIdPrefixes.isNotEmpty()) { "At least a supported client id prefix must be provided" }
+
+        if (signedRequestConfiguration.multiSignedRequestsPolicy is MultiSignedRequestsPolicy.Expect) {
+            val multiSignedExpectedPrefix = signedRequestConfiguration.multiSignedRequestsPolicy.clientPrefix
+            val supportedPrefixes = supportedClientIdPrefixes.map { it.prefix() }
+            require(multiSignedExpectedPrefix in supportedPrefixes) {
+                "Wrong configuration. Multi-singed requests policy must declare a supported client id prefix."
+            }
+        }
+
+        if (null == vpFormatsSupported.sdJwtVc) {
+            require(supportedTransactionDataTypes.none { it is SupportedTransactionDataType.SdJwtVc }) {
+                "SD-JWT VC Transaction Data cannot be used when SD-JWT VC is not supported"
+            }
+        }
+    }
+
+    constructor(
+        issuer: Issuer? = SelfIssued,
+        signedRequestConfiguration: SignedRequestConfiguration = SignedRequestConfiguration.Default,
+        responseEncryptionConfiguration: ResponseEncryptionConfiguration = NotSupported,
+        knownDCQLQueriesPerScope: Map<String, DCQL> = emptyMap(),
+        vpFormatsSupported: VpFormatsSupported,
+        supportedTransactionDataTypes: List<SupportedTransactionDataType> = emptyList(),
+        clock: Clock = Clock.systemDefaultZone(),
+        errorDispatchPolicy: ErrorDispatchPolicy = ErrorDispatchPolicy.OnlyAuthenticatedClients,
+        registrationCertificatePolicy: RegistrationCertificatePolicy? = null,
+        vararg supportedClientIdPrefixes: SupportedClientIdPrefix,
+    ) : this(
+        issuer = issuer,
+        signedRequestConfiguration = signedRequestConfiguration,
+        responseEncryptionConfiguration = responseEncryptionConfiguration,
+        knownDCQLQueriesPerScope = knownDCQLQueriesPerScope,
+        vpFormatsSupported = vpFormatsSupported,
+        supportedTransactionDataTypes = supportedTransactionDataTypes,
+        clock = clock,
+        supportedClientIdPrefixes = supportedClientIdPrefixes.toList(),
+        errorDispatchPolicy = errorDispatchPolicy,
+        registrationCertificatePolicy = registrationCertificatePolicy,
+    )
+
+    @Deprecated(message = "VPConfiguration merged in OpenId4VPConfig", replaceWith = ReplaceWith("OpenId4VPConfig"))
+    constructor(
+        issuer: Issuer? = SelfIssued,
+        signedRequestConfiguration: SignedRequestConfiguration = SignedRequestConfiguration.Default,
+        responseEncryptionConfiguration: ResponseEncryptionConfiguration = NotSupported,
+        vpConfiguration: VPConfiguration,
+        clock: Clock = Clock.systemDefaultZone(),
+        errorDispatchPolicy: ErrorDispatchPolicy = ErrorDispatchPolicy.OnlyAuthenticatedClients,
+        registrationCertificatePolicy: RegistrationCertificatePolicy? = null,
+        vararg supportedClientIdPrefixes: SupportedClientIdPrefix,
+    ) : this(
+        issuer = issuer,
+        signedRequestConfiguration = signedRequestConfiguration,
+        responseEncryptionConfiguration = responseEncryptionConfiguration,
+        knownDCQLQueriesPerScope = vpConfiguration.knownDCQLQueriesPerScope,
+        vpFormatsSupported = vpConfiguration.vpFormatsSupported,
+        supportedTransactionDataTypes = vpConfiguration.supportedTransactionDataTypes,
+        clock = clock,
+        supportedClientIdPrefixes = supportedClientIdPrefixes.toList(),
+        errorDispatchPolicy = errorDispatchPolicy,
+        registrationCertificatePolicy = registrationCertificatePolicy,
+    )
+
+    companion object {
+        /**
+         * Identifies the wallet as `https://self-issued.me/v2`
+         */
+        val SelfIssued = Issuer(URI.create("https://self-issued.me/v2"))
+    }
+}
+
+internal fun OpenId4VPConfig.supportedClientIdPrefix(prefix: ClientIdPrefix): SupportedClientIdPrefix? =
+    supportedClientIdPrefixes.firstOrNull { it.prefix() == prefix }

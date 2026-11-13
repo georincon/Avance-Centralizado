@@ -1,0 +1,8 @@
+.env
+node_modules/
+# La CA y la clave de firma de la notaría (scripts/generar-claves.sh)
+secretos/
+# El protocolo: tramites.json
+datos/
+# Lo que deja pruebas/probar-notaria.sh
+pruebas/.salida/

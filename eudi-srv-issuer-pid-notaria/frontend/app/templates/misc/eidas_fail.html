@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    {% include 'partials/cabeza.html' %}
+    <title>Notaría Avance</title>
+</head>
+
+<body id="responsive-main-nav">
+    <!--
+    <div id="skip"><a href="#content" accesskey="M">Skip to Main Content</a></div>
+    -->
+
+    <div class="main container-fluid">
+
+
+        {% include 'partials/cabecera.html' %}
+
+        <div role="main" class="container">
+            <div class="row">
+                <div class="col-md-12">
+
+                    <!--
+                    <p class="relying-party"><strong>etranslation</strong> requires you to authenticate</p>
+                    -->
+                    <h1>No se pudo identificar</h1>
+                    <div id="content" class="content-wrap content-center col-md-6 col-sm-7">
+
+                        <div class="genericErrors" id="genericErrorsDesc">
+
+                        </div>
+                        <h3>{{Info}}</h3>
+                        <!-- <status>EID_COUNTRY_SELECTION</status> -->
+                        <a href={{link}} class="btn btn-primary">Reintentar</a>
+                        <!--bean-ext:form action="" styleClass="mt"-->
+                        
+                        </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'partials/pie.html' %}
+    <!-- Version 9.7.1.20 - 23/03/2023 - 09:26 -->
+</body>
+
+</html>

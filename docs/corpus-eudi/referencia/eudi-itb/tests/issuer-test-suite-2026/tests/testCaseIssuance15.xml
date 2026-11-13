@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="issue_mdl_mdoc_credentialoffer_revocation" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <gitb:name>Issuance of MDL in mdoc format using the Issuer-initiated Authorization Code Flow with revocation of the issued credential</gitb:name>
+        <gitb:version>1.0</gitb:version>
+        <gitb:description>This test case verifies that the wallet notifies the user when an issued credential has been revoked</gitb:description>
+        <gitb:specification>
+            <gitb:reference>ISS-15</gitb:reference>
+        </gitb:specification>
+        <gitb:documentation><![CDATA[
+            <table class="MsoTableGrid" border=1 cellspacing=0 cellpadding=0 style='border-collapse:collapse;border:none;mso-border-alt:solid windowtext .5pt; mso-yfti-tbllook:1184;mso-padding-alt:0in 5.4pt 0in 5.4pt'>
+            <tr style='mso-yfti-irow:0;mso-yfti-firstrow:yes'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Test case ID</span></b></p>
+            </td>
+            <td width=450 colspan=2 valign=top style='width:337.85pt;border:solid windowtext 1.0pt; border-left:none;mso-border-left-alt:solid windowtext .5pt;mso-border-alt: solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>ISS-12</span></b></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:1'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Title</span></b></p>
+            </td>
+            <td width=450 colspan=2 valign=top style='width:337.85pt;border-top:none; border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>Issuance of mDL in mdoc format using the Issuer-initiated Authorization Code Flow with <b>revocation</b> of the issued credential</span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:2'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Test session type</span></b></p>
+            </td>
+            <td width=450 colspan=2 valign=top style='width:337.85pt;border-top:none; border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>Issuance</span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:3'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>P2P test case ID</span></b></p>
+            </td>
+            <td width=450 colspan=2 valign=top style='width:337.85pt;border-top:none; border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>Issuance_15</span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:4'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Purpose</span></b></p>
+            </td>
+            <td width=450 colspan=2 valign=top style='width:337.85pt;border-top:none; border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>This test case verifies that the wallet notifies the user when an issued credential has been revoked</span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:5'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Preconditions</span></b></p>
+            </td>
+            <td width=450 colspan=2 valign=top style='width:337.85pt;border-top:none; border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <ol style="list-style-type: lower-alpha;">
+            <li>The wallet trusts the credential issuer’s signing certificate</li>
+            <li>The wallet trusts the issuer of the credential issuer’s access certificate</li>
+            <li>The wallet trusts the issuer of the credential issuer’s registration certificate</li>
+            </ol>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:6'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Remarks</span></b></p>
+            </td>
+            <td width=450 colspan=2 valign=top style='width:337.85pt;border-top:none; border-left:none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>N/A</span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:7'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Steps</span></b></p>
+            </td>
+            <td width=218 valign=top style='width:163.65pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Action</span></b></p>
+            </td>
+            <td width=232 valign=top style='width:174.2pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><b><span style='mso-ansi-language:EN-US'>Expected result</span></b></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:8'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>1</span></p>
+            </td>
+            <td width=218 valign=top style='width:163.65pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>The user starts the test case in ITB</span></p>
+            </td>
+            <td width=232 valign=top style='width:174.2pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>ITB displays a popup with a QR code containing the credential offer</span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:9'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>2</span></p>
+            </td>
+            <td width=218 valign=top style='width:163.65pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>The user scans the QR code with their wallet</span></p>
+            </td>
+            <td width=232 valign=top style='width:174.2pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>The website of the issuer opens</span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:10'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>3</span></p>
+            </td>
+            <td width=218 valign=top style='width:163.65pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>The user completes the issuance process</span></p>
+            </td>
+            <td width=232 valign=top style='width:174.2pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>The credential appears in the user's wallet</span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:11'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>4</span></p>
+            </td>
+            <td width=218 valign=top style='width:163.65pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>The issuer revokes the issued credential</span></p>
+            </td>
+            <td width=232 valign=top style='width:174.2pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>The wallet notifies the user about the revoked credential</span></p>
+            </td>
+            </tr>
+            <tr style='mso-yfti-irow:12;mso-yfti-lastrow:yes'>
+            <td width=173 valign=top style='width:129.65pt;border:solid windowtext 1.0pt; border-top:none;mso-border-top-alt:solid windowtext .5pt;mso-border-alt:solid windowtext .5pt; padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>5</span></p>
+            </td>
+            <td width=218 valign=top style='width:163.65pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>ITB records the test execution result</span></p>
+            </td>
+            <td width=232 valign=top style='width:174.2pt;border-top:none;border-left: none;border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt; mso-border-top-alt:solid windowtext .5pt;mso-border-left-alt:solid windowtext .5pt; mso-border-alt:solid windowtext .5pt;padding:0in 5.4pt 0in 5.4pt'>
+            <p class=MsoNormal style='margin-bottom:8.0pt;line-height:13.0pt'><span style='mso-ansi-language:EN-US'>The test execution result appears on the ITB screen</span></p>
+            </td>
+            </tr>
+            </table>
+        ]]></gitb:documentation>
+    </metadata>
+    <actors>
+        <gitb:actor id="simulatedCredentialOffer" name="Simulated Credential Offer"/>
+        <gitb:actor id="issuer" name="Issuer" />
+        <gitb:actor id="wallet" name="Wallet" role="SUT"/>
+    </actors>
+    <steps>
+        <assign to="credentialOfferSetupURL">$DOMAIN{issuerBackendAddress} || "/credential_offer2"</assign>
+        <assign to="credentialIssuanceLogsURL">$DOMAIN{issuerBackendAddress} || "/logs"</assign>
+        <assign to="credentialConfigurationId">"eu.europa.ec.eudi.mdl_mdoc_revoke"</assign>
+        <assign to="revokeURL">$DOMAIN{issuerBackendAddress} || "/revoke"</assign>
+        
+        <log>$credentialOfferSetupURL || "?credential_configuration_id=" || $credentialConfigurationId</log>
+        
+        <!--Making an HTTP Request to the Issuer's Credential Offer Endpoint -->
+        <assign to="httpHeaders{Content-Type}">"application/json"</assign>
+        <send id="credentialOfferRequest" desc="Send request to generate a Credential Offer for mDL issuance (mdoc)" handler="HttpMessagingV2" from="simulatedCredentialOffer" to="issuer" stopOnError="true">
+            <input name="uri">$credentialOfferSetupURL || "?credential_configuration_id=" || $credentialConfigurationId</input>
+            <input name="method">"GET"</input>
+            <input name="headers">$httpHeaders</input>
+        </send>
+
+        <verify handler="ExpressionValidator" desc="Verify http status code of Credential Offer setup request" stopOnError="true">
+            <input name="expression">$credentialOfferRequest{response}{status} = "200"</input>
+            <input name="successMessage">"The received http status code was 200."</input>
+            <input name="failureMessage">"The received http status code was not 200."</input>
+        </verify>
+
+        <!--Process the Credential Offer setup response-->
+        <assign to="credentialOfferResponse" source="$credentialOfferRequest{response}{body}" type="string"/> 
+        <process handler="JsonPathProcessor" operation="process" output="sessionID" stopOnError="true">
+           <input name="content">$credentialOfferResponse</input>
+           <input name="expression">"$.session_id"</input>
+           <input name="outputType">"default"</input>
+        </process>
+        <log> "session_id from credential offer setup:" || $sessionID</log>
+        <process handler="JsonPathProcessor" operation="process" output="qrCodeBase64" stopOnError="true">
+           <input name="content">$credentialOfferResponse</input>
+           <input name="expression">"$.base64_img"</input>
+           <input name="outputType">"default"</input>
+        </process>
+        <log>"base64_img from credential offer setup:" || $qrCodeBase64</log>
+        <process handler="Base64Processor" operation="decode" output="qrCodeImg" stopOnError="true">
+            <input name="input">$qrCodeBase64</input>
+        </process>
+
+        <!--Display Credential Offer QrCode-->
+        <interact inputTitle="Scan the QR code" desc="Scan the QR code with your wallet." with="wallet" stopOnError="true" >
+            <instruct desc="Click on the magnifying glass to display the QR code"/>
+            <instruct desc="Scan this QR with your wallet" mimeType="image/png">$qrCodeImg</instruct> <!--contentType="BASE64" -->
+            <instruct desc="After issuing the mDL in your wallet or if issuance fails, click on the Close button to continue"/>
+        </interact>
+
+        <!--Making an HTTP Request to the Issuer to retrieve sessionID logs to check Credential Offer success-->
+        <assign to="attempt" type="number">1</assign>
+        <assign to="maxAttempts" type="number">$DOMAIN{maxAttempts}</assign>
+        <assign to="successful" type="string">"false"</assign>
+
+        <log>"Retrieving logs at: " || $credentialIssuanceLogsURL || "?session_id=" || $sessionID</log>
+        <while title="HTTP Polling Loop to the Issuer" desc="Make HTTP calls until Credential Offer succeeds or timeout occurs" stopOnError="true">
+            <cond><![CDATA[$attempt <= $maxAttempts and $successful != "true"]]></cond>
+            <do>
+                <log>"Making HTTP request (attempt " || $attempt || ")..."</log>
+                <send id="successfulLogsRequest" desc="Retrieve logs to check whether the Credential Offer succeeded" handler="HttpMessagingV2" from="simulatedCredentialOffer" to="issuer">
+                    <input name="uri">$credentialIssuanceLogsURL || "?session_id=" || $sessionID</input>
+                    <input name="method">"GET"</input>
+                    <input name="headers">$httpHeaders</input>
+                </send>
+                <process handler="JsonPathProcessor" operation="process" output="successfulResponse">
+                   <input name="content">$successfulLogsRequest{response}{body}</input>
+                   <input name="expression">"$.successful"</input>
+                   <input name="outputType">"default"</input>
+                </process>
+                <assign to="successful" type="string">$successfulResponse</assign>
+                <log>"Was Credential Offer successful? " || $successful</log>
+                <assign to="attempt" type="number">$attempt + 1</assign>
+                <process handler="DelayProcessor" operation="delay" input="$DOMAIN{delayBetweenCalls}"/>
+            </do>
+        </while>
+        <verify handler="ExpressionValidator" desc="Verify http status code of the credential issuance logs request" stopOnError="true">
+            <input name="expression">$successfulLogsRequest{response}{status} = "200"</input>
+            <input name="successMessage">"The received http status code was 200."</input>
+            <input name="failureMessage">"The received http status code was not 200."</input>
+        </verify>
+        <verify handler="ExpressionValidator" desc="Verify the success of the credential issuance based on the logs response" stopOnError="true">
+            <input name="expression">$successful = "true"</input>
+            <input name="successMessage">"Credential Issuance was successful."</input>
+            <input name="failureMessage">"Credential Issuance failed."</input>
+        </verify>
+
+        <send id="revocationRequest" desc="Send request to revoke issued mDL (mdoc)" handler="HttpMessagingV2" from="simulatedCredentialOffer" to="issuer" stopOnError="true">
+            <input name="uri">$revokeURL</input>
+            <input name="method">"POST"</input>
+            <input name="body">'{"session_id":"' || $sessionID || '"}'</input>
+            <input name="headers">$httpHeaders</input>
+        </send>
+        <verify handler="ExpressionValidator" desc="Verify http status code of revocation request" stopOnError="true">
+            <input name="expression">$revocationRequest{response}{status} = "200"</input>
+            <input name="successMessage">"The received http status code was 200."</input>
+            <input name="failureMessage">"The received http status code was not 200."</input>
+        </verify>
+
+        <send id="logsRequest" desc="Retrieve the logs of credential issuance and revocation" handler="HttpMessagingV2" from="simulatedCredentialOffer" to="issuer">
+            <input name="uri">$credentialIssuanceLogsURL || "?session_id=" || $sessionID</input>
+            <input name="method">"GET"</input>
+            <input name="headers">$httpHeaders</input>
+        </send>
+        <assign to="logsResponse" type="string">$logsRequest{response}{body}</assign>
+        <verify handler="ExpressionValidator" desc="Verify http status code of the credential issuance logs request" stopOnError="true">
+            <input name="expression">$logsRequest{response}{status} = "200"</input>
+            <input name="successMessage">"The received http status code was 200."</input>
+            <input name="failureMessage">"The received http status code was not 200."</input>
+        </verify>
+        <process handler="JsonPathProcessor" operation="process" output="count" stopOnError="true">
+           <input name="content">$logsResponse</input>
+           <input name="expression">"$.count"</input>
+           <input name="outputType">"default"</input>
+        </process>
+        <log>"count from credential issuance logs: " || $count</log>
+        <process handler="JsonPointerProcessor" operation="process" output="logs" stopOnError="true">
+            <input name="content">$logsResponse</input>
+            <input name="pointer">"/logs"</input>
+        </process>
+        <log>"Logs: " || $logs</log>
+        
+        <verify handler="$DOMAIN{issuerValidationService}" desc="Validate the logs in the issuer's logs response" >
+            <input name="text">$logsResponse</input>
+            <input name="expectedLog">"Credential revoked and verified as revoked"</input>
+        </verify>
+        <interact id="review" desc="Confirm that the credential was revoked">
+            <request desc="Did the wallet show a notification that the credential was revoked?"
+                    name="outcome" inputType="SELECT_SINGLE" options="Yes,No" required="true" default="No"/>
+        </interact>
+        <if desc="Check whether the wallet showed a notification that the credential was revoked">
+            <cond>$review{outcome} = 'No'</cond>
+            <then>
+                <exit desc="The wallet failed to pass the test"/>
+            </then>
+        </if>
+    </steps>
+    <output>
+        <success>
+            <default>"Test session succeeded."</default>
+        </success>
+        <failure>
+            <default>"Test session failed. Refer to the failed step's report for more details."</default>
+        </failure>
+    </output>
+</testcase>

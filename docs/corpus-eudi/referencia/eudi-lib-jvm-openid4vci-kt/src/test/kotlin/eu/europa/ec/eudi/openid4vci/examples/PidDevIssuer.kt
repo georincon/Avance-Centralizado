@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2023-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.openid4vci.examples
+
+import com.nimbusds.jose.JWSAlgorithm
+import com.nimbusds.jose.jwk.Curve
+import eu.europa.ec.eudi.openid4vci.*
+import io.ktor.http.*
+import java.security.cert.X509Certificate
+
+private val IssuerId = CredentialIssuerId("https://dev.issuer-backend.eudiw.dev").getOrThrow()
+private val WalletInstanceAttestationServiceUrl = Url("https://dev.wallet-provider.eudiw.dev/wallet-instance-attestation/jwk")
+private val KeyAttestationServiceUrl = Url("https://dev.wallet-provider.eudiw.dev/key-attestation/jwk-set")
+
+internal object PidDevIssuer :
+    HasIssuerId,
+    HasTestUser<KeycloakUser>,
+    CanAuthorizeIssuance<KeycloakUser> by Keycloak,
+    CanBeUsedWithVciLib,
+    CanRequestForCredentialOffer<KeycloakUser> by CanRequestForCredentialOffer.onlyStatelessAuthorizationCode(IssuerId),
+    CanRequestKeyAttestation by CanRequestKeyAttestation.usingWalletProviderService(KeyAttestationServiceUrl, enableLogging = false) {
+
+    private const val WALLET_CLIENT_ID = "eudiw-abca"
+    private val TrustAnyX509: (List<X509Certificate>) -> Boolean = { _ ->
+        println("Warning!! Trusting any certificate. Do not use in production")
+        true
+    }
+
+    override val issuerId = IssuerId
+    override val testUser = KeycloakUser("tneal", "password")
+    override val cfg = OpenId4VCIConfig(
+        clientAuthentication = ClientAuthentication.AttestationBased(
+            WALLET_CLIENT_ID,
+            WalletProviderProvisionClientAttestation(createHttpClient(enableLogging = false), WalletInstanceAttestationServiceUrl),
+        ),
+        dPoPUsage = DPoPUsage.Required(DPoPConfig(ProvisionDPoPSigner(CryptoGenerator.ecSigner(Curve.P_256, JWSAlgorithm.ES256)))),
+        authFlowRedirectionURI = Keycloak.DebugRedirectUri,
+        encryptionSupportConfig = EncryptionSupportConfig(Curve.P_256, 2048, CredentialResponseEncryptionPolicy.SUPPORTED),
+        authorizeIssuanceConfig = AuthorizeIssuanceConfig.FAVOR_SCOPES,
+        parUsage = ParUsage.Required(),
+        supportedCredentialReusePolicies = CredentialReusePolicies.Supported(setOf(EudiReusePolicyType.OnceOnly)),
+        proofs = ProofsConfig.Default,
+        issuerMetadataPolicy = IssuerMetadataPolicy.RequireSigned(TrustAnyX509),
+    )
+
+    val PID_SdJwtVC_config_id = CredentialConfigurationIdentifier("eu.europa.ec.eudi.pid_vc_sd_jwt")
+    val PID_MsoMdoc_config_id = CredentialConfigurationIdentifier("eu.europa.ec.eudi.pid_mso_mdoc")
+    val MDL_config_id = CredentialConfigurationIdentifier("org.iso.18013.5.1.mDL")
+    val LearningCredential_SdJwtVcCompact_Config_Id =
+        CredentialConfigurationIdentifier("urn:eu.europa.ec.eudi:learning:credential:1:dc+sd-jwt-compact")
+
+    val AllCredentialConfigurationIds = listOf(
+        PID_SdJwtVC_config_id,
+        PID_MsoMdoc_config_id,
+        MDL_config_id,
+        LearningCredential_SdJwtVcCompact_Config_Id,
+    )
+}

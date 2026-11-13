@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal médico · {{EPS}}</title>
+<link rel="icon" href="{{BASE}}/publico/logo.png">
+<link rel="stylesheet" href="{{BASE}}/publico/tema.css">
+</head>
+<body data-base="{{BASE}}" data-eps="{{EPS}}" data-seccion="medico" data-slot="yo" data-titulo="Portal médico" data-icono="medico">
+<main id="vista"></main>
+<script src="{{BASE}}/publico/marco.js"></script>
+<script>
+const BASE = '{{BASE}}'
+const $ = (id) => document.getElementById(id)
+function el(t, props = {}, ...hijos) {
+  const n = document.createElement(t)
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') n.className = v
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v)
+    else if (k === 'value') n.value = v
+    else if (v !== undefined && v !== null && v !== false) n.setAttribute(k, v === true ? '' : v)
+  }
+  for (const h of hijos.flat()) if (h !== null && h !== undefined && h !== false && h !== '') n.append(h instanceof Node ? h : String(h))
+  return n
+}
+const api = async (ruta, o = {}) => {
+  const r = await fetch(BASE + ruta, { ...o, headers: { 'content-type': 'application/json' }, body: o.body && JSON.stringify(o.body) })
+  const c = await r.json().catch(() => ({}))
+  if (!r.ok) throw new Error(c.error || `Error ${r.status}`)
+  return c
+}
+const vista = $('vista')
+let IPS = []
+
+// Entrar: el médico presenta su PID con la wallet (sin contraseña). La EPS lo deja
+// pasar si el administrador lo registró y está activo.
+const MOVIL = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+let sondeo
+function entrar(error) {
+  clearTimeout(sondeo)
+  const estado = el('div', { class: 'estado' }, el('div', { class: 'girando' }), 'Preparando la solicitud…')
+  const decir = (t, tipo) => { estado.className = `estado${tipo === 'error' ? ' error' : ''}`; estado.replaceChildren(...(tipo === 'esperando' ? [el('div', { class: 'girando' })] : []), t) }
+  const qr = el('div')
+  vista.replaceChildren(el('h1', {}, 'Entrar al portal médico'), el('div', { class: 'caja entrar' },
+    error ? el('div', { class: 'aviso error' }, error) : '',
+    el('p', { style: 'margin:0;color:var(--suave)' }, MOVIL ? 'Abre tu wallet y presenta tu documento de identidad.' : 'Escanea el código con tu wallet y presenta tu documento de identidad. Si aún no estás registrado como médico, podrás solicitar acceso.'),
+    qr, estado, el('button', { class: 'primario', onclick: () => entrar() }, 'Nuevo código')))
+  api('/api/solicitud', { method: 'POST', body: { proposito: 'medico', dispositivo: MOVIL ? 'mismo' : 'otro' } }).then((s) => {
+    qr.replaceChildren(MOVIL ? el('a', { class: 'boton primario', href: s.enlace }, 'Abrir mi wallet') : el('img', { src: s.qr, alt: 'Código QR para entrar con la wallet' }))
+    decir('Esperando tu wallet…', 'esperando')
+    if (MOVIL) return
+    const preguntar = async () => {
+      try {
+        const r = await api(`/api/solicitud/${s.id}`)
+        if (r.estado === 'listo') return iniciar()
+        if (r.estado === 'rechazada') return decir(r.motivo, 'error')
+      } catch { /* reintentar */ }
+      sondeo = setTimeout(preguntar, 2000)
+    }
+    preguntar()
+  }).catch((e) => decir(e.message, 'error'))
+}
+
+function solicitar(c) {
+  const registro = el('input', { required: true, placeholder: 'RM 123456' })
+  const especialidad = el('input', { placeholder: 'Medicina general' })
+  const aviso = el('div', { class: 'aviso error', hidden: true })
+  vista.replaceChildren(el('h1', {}, 'Solicitar acceso como médico'), el('form', { class: 'caja', style: 'max-width:520px', onsubmit: async (e) => {
+    e.preventDefault()
+    try {
+      await api('/api/medico/solicitud', { method: 'POST', body: { registro: registro.value, especialidad: especialidad.value } })
+      vista.replaceChildren(el('h1', {}, 'Solicitud enviada'), el('div', { class: 'caja', style: 'max-width:520px' },
+        el('div', { class: 'aviso ok' }, 'El administrador de la EPS tiene que aprobarla. Cuando lo haga, entra aquí con tu wallet como siempre.'),
+        el('button', { class: 'primario', onclick: () => entrar() }, 'Volver')))
+    } catch (x) { aviso.textContent = x.message; aviso.hidden = false }
+  } },
+  el('p', { style: 'margin:0;color:var(--suave)' }, 'No estás registrado como médico de la EPS. Tus datos salen de tu documento de identidad digital, ya verificado; solo falta tu registro profesional.'),
+  el('div', { class: 'rejilla' }, el('label', {}, 'Nombre', el('input', { value: c.nombre, disabled: true })), el('label', {}, 'Cédula', el('input', { value: c.documento, disabled: true }))),
+  el('div', { class: 'rejilla' }, el('label', {}, 'Registro médico (RETHUS)', registro), el('label', {}, 'Especialidad', especialidad)),
+  aviso, el('button', { class: 'primario' }, 'Solicitar acceso'),
+  el('button', { type: 'button', style: 'background:none;color:var(--suave)', onclick: async () => { await api('/api/medico/salir', { method: 'POST' }); entrar() } }, 'Cancelar')))
+}
+
+async function iniciar() {
+  let yo
+  try { yo = await api('/api/medico/yo') } catch (e) {
+    $('yo').replaceChildren()
+    // ¿Se identificó con su PID pero aún no está registrado? Puede solicitar acceso.
+    const candidato = await api('/api/medico/candidato').catch(() => null)
+    if (candidato) return solicitar(candidato)
+    return entrar(/desactivado/.test(e.message) ? e.message : undefined)
+  }
+  IPS = yo.ips
+  $('yo').replaceChildren(el('span', {}, `${yo.medico.nombre} · RM ${yo.medico.registro} · ${yo.medico.especialidad}`), el('button', { class: 'claro', onclick: async () => { await api('/api/medico/salir', { method: 'POST' }); iniciar() } }, 'Salir'))
+  const buscar = el('input', { type: 'search', placeholder: 'Nombre o documento' })
+  const lista = el('div', { style: 'display:flex;flex-direction:column;gap:8px' })
+  const ficha = el('div', { class: 'ficha' }, el('div', { class: 'caja' }, el('p', { style: 'margin:0;color:var(--suave)' }, 'Elige un afiliado.')))
+  const cargarLista = async () => {
+    const xs = await api(`/api/medico/afiliados?q=${encodeURIComponent(buscar.value)}`)
+    lista.replaceChildren(...xs.map((a) => el('button', { class: 'afiliado', onclick: (e) => { lista.querySelectorAll('.afiliado').forEach((b) => b.classList.remove('activo')); e.currentTarget.classList.add('activo'); abrir(a.documento, ficha) } },
+      el('span', {}, el('strong', {}, a.nombre), el('br'), a.documento), el('span', {}, a.estado))))
+    if (!xs.length) lista.append(el('p', { style: 'color:var(--suave)' }, 'Nadie coincide.'))
+  }
+  buscar.oninput = cargarLista
+  vista.replaceChildren(el('h1', {}, 'Afiliados'), el('div', { class: 'dos' }, el('div', { class: 'lista caja' }, buscar, lista), ficha))
+  cargarLista()
+}
+
+async function abrir(documento, ficha) {
+  const a = await api(`/api/medico/afiliados/${documento}`)
+  const h = a.historia, c = h.ultima_consulta ?? {}
+  const lineas = (xs) => (xs ?? []).join('\n')
+  const grupo = el('select', {}, ...['', 'O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].map((g) => el('option', { value: g }, g || 'Sin registrar')))
+  grupo.value = h.grupo_sanguineo ?? ''
+  const campo = (titulo, valor) => { const t = el('textarea', { value: valor }); return [t, el('label', {}, titulo, el('small', {}, 'Uno por línea.'), t)] }
+  const [alergias, lAlergias] = campo('Alergias', lineas(h.alergias))
+  const [condiciones, lCond] = campo('Enfermedades crónicas', lineas(h.condiciones))
+  const [medicamentos, lMed] = campo('Medicamentos actuales', lineas(h.medicamentos))
+  const [vacunas, lVac] = campo('Vacunas', lineas(h.vacunas))
+  const cFecha = el('input', { type: 'date', value: c.fecha ?? '' }), cServ = el('input', { value: c.servicio ?? '', placeholder: 'Medicina general' })
+  const cMotivo = el('input', { value: c.motivo ?? '' }), cDx = el('input', { value: c.diagnostico ?? '', placeholder: 'CIE-10, p. ej. J45.2' })
+  const obs = el('textarea', { value: h.observaciones ?? '' })
+  const estadoAf = el('select', {}, ...['Activo', 'Suspendido', 'Retirado'].map((e) => el('option', { value: e }, e))); estadoAf.value = a.afiliacion.estado
+  const ips = el('select', {}, ...IPS.map((i) => el('option', { value: i }, i))); ips.value = a.afiliacion.ips
+  const aviso = el('div', { class: 'aviso', hidden: true })
+  const decir = (tipo, t) => { aviso.className = `aviso ${tipo}`; aviso.textContent = t; aviso.hidden = false }
+  const vigentes = a.credenciales.filter((e) => e.tipo === 'historia' && e.estado === 'vigente').length
+
+  ficha.replaceChildren(el('div', { class: 'caja' },
+    el('h2', {}, `${a.nombres} ${a.apellidos}`),
+    el('p', { style: 'margin:0;color:var(--suave)' }, `Documento ${a.documento} · nacimiento ${a.fecha_nacimiento ?? '—'} · historia versión ${h.version ?? 1}${h.actualizada ? `, actualizada el ${h.actualizada.slice(0, 10)}` : ''}`),
+    vigentes ? el('div', { class: 'aviso info' }, `El paciente tiene ${vigentes} copia(s) vigente(s) de esta historia en su wallet. Si guardas cambios, quedarán reemplazadas y tendrá que pedir la nueva.`) : '',
+    el('div', { class: 'rejilla' }, el('label', {}, 'Grupo sanguíneo y RH', grupo)),
+    el('div', { class: 'rejilla' }, lAlergias, lCond, lMed, lVac),
+    el('h2', { style: 'margin-top:6px' }, 'Última consulta'),
+    el('div', { class: 'rejilla' }, el('label', {}, 'Fecha', cFecha), el('label', {}, 'Servicio', cServ), el('label', {}, 'Motivo', cMotivo), el('label', {}, 'Diagnóstico', cDx)),
+    el('label', {}, 'Observaciones', obs),
+    aviso,
+    el('button', { class: 'primario', onclick: async () => {
+      try {
+        const n = await api(`/api/medico/afiliados/${a.documento}/historia`, { method: 'PUT', body: {
+          grupo_sanguineo: grupo.value, alergias: alergias.value, condiciones: condiciones.value, medicamentos: medicamentos.value, vacunas: vacunas.value,
+          ultima_consulta: { fecha: cFecha.value, servicio: cServ.value, motivo: cMotivo.value, diagnostico: cDx.value }, observaciones: obs.value } })
+        decir('ok', `Historia guardada (versión ${n.historia.version}). Lo que el paciente tenía en su wallet quedó reemplazado.`)
+      } catch (e) { decir('error', e.message) }
+    } }, 'Guardar historia'),
+    el('h2', { style: 'margin-top:10px' }, 'Afiliación'),
+    el('div', { class: 'rejilla' }, el('label', {}, 'Estado', estadoAf), el('label', {}, 'IPS asignada', ips)),
+    el('button', { class: 'primario', onclick: async () => {
+      try { await api(`/api/medico/afiliados/${a.documento}/afiliacion`, { method: 'PUT', body: { estado: estadoAf.value, ips: ips.value } }); decir('ok', 'Afiliación guardada. Los carnés que tenía en la wallet dejan de valer.') } catch (e) { decir('error', e.message) }
+    } }, 'Guardar afiliación')))
+}
+
+// Vuelta de la wallet en el mismo teléfono: /eps/medico#entrado.
+const errorVuelta = location.hash.startsWith('#error=') ? decodeURIComponent(location.hash.slice(7)) : null
+if (location.hash) history.replaceState(null, '', location.pathname)
+if (errorVuelta) entrar(errorVuelta)
+else iniciar()
+</script>
+</body>
+</html>

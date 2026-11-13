@@ -1,0 +1,243 @@
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.KotlinMultiplatform
+import org.jetbrains.dokka.gradle.engine.parameters.VisibilityModifier
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import java.net.URI
+
+plugins {
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kover)
+    alias(libs.plugins.spotless)
+    alias(libs.plugins.dokka)
+    alias(libs.plugins.maven.publish)
+}
+
+repositories {
+    mavenCentral()
+    google()
+}
+
+kotlin {
+    explicitApiWarning()
+    jvmToolchain(libs.versions.java.get().toInt())
+
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    compilerOptions {
+        apiVersion = KotlinVersion.KOTLIN_2_2
+        optIn =
+            listOf(
+                "kotlin.io.encoding.ExperimentalEncodingApi",
+                "kotlin.ExperimentalStdlibApi",
+                "kotlin.time.ExperimentalTime",
+                "kotlin.contracts.ExperimentalContracts",
+            )
+    }
+
+    // JVM target
+    jvm()
+
+    // Android target
+    androidTarget {
+        // Set JVM target to 17 to match Java compatibility
+        // Using direct property access instead of deprecated kotlinOptions
+        JvmTarget.fromTarget(libs.versions.java.get())
+            .let { javaTarget ->
+                compilations.all {
+                    compileTaskProvider.configure {
+                        compilerOptions.jvmTarget.set(javaTarget)
+                    }
+                }
+            }
+    }
+
+    // Set up targets
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    applyDefaultHierarchyTemplate {
+
+        // create a new group that depends on `common`
+        common {
+            // Define group name without `Main` as suffix
+            group("jvmAndAndroid") {
+                // Provide which targets would be part of this group
+                withJvm()
+                withAndroidTarget()
+            }
+        }
+    }
+
+    // Configure source sets
+    sourceSets {
+        commonMain {
+            dependencies {
+                // Common dependencies
+                api(projects.etsi1196x2Consultation)
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation(libs.kotlinx.coroutines.test)
+            }
+        }
+
+        @Suppress("UNUSED")
+        val jvmAndAndroidMain by getting {
+            dependencies {
+                api(project.dependencies.platform(libs.dss.bom))
+                implementation(libs.dss.validation)
+                implementation(libs.dss.service)
+                api(libs.dss.tsl.validation)
+                implementation(libs.dss.utils)
+            }
+        }
+
+        androidMain {
+            dependencies {
+                implementation(libs.dss.utils.guava)
+                implementation(libs.jaxb.runtime)
+                implementation(libs.jaxb.core)
+                implementation("xerces:xercesImpl:2.12.2") {
+                    exclude(group = "org.apache.xmlbeans")
+                    exclude(group = "net.sf.saxon")
+                }
+            }
+        }
+
+        @Suppress("UNUSED")
+        val jvmAndAndroidTest by getting {
+            dependencies {
+                implementation(libs.slf4j.simple)
+                implementation(libs.dss.utils.guava)
+            }
+        }
+
+        @Suppress("UNUSED")
+        val androidInstrumentedTest by getting {
+            dependencies {
+                implementation("androidx.test:runner:1.6.2")
+                implementation("androidx.test.ext:junit:1.2.1")
+                implementation(libs.dss.utils.guava)
+                implementation(libs.slf4j.simple)
+            }
+        }
+    }
+}
+
+// Android configuration
+android {
+    namespace = "eu.europa.ec.eudi.etsi1196x2.consultation.dss"
+    group = properties["group"].toString()
+    compileSdk = properties["android.targetSdk"].toString().toInt()
+
+    defaultConfig {
+        minSdk = properties["android.minSdk"].toString().toInt()
+        testInstrumentationRunner = "eu.europa.ec.eudi.etsi1196x2.consultation.dss.DssAndroidJUnitRunner"
+    }
+
+    compileOptions {
+        JavaVersion.toVersion(libs.versions.java.get().toInt())
+            .let { javaVersion ->
+                sourceCompatibility = javaVersion
+                targetCompatibility = javaVersion
+            }
+    }
+
+    packaging {
+        resources {
+            excludes +=
+                listOf(
+                    "META-INF/DEPENDENCIES",
+                    "META-INF/LICENSE",
+                    "META-INF/LICENSE.txt",
+                    "META-INF/LICENSE.md",
+                    "META-INF/NOTICE",
+                    "META-INF/NOTICE.txt",
+                    "META-INF/NOTICE.md",
+                    "META-INF/sun-jaxb.episode",
+                    "META-INF/versions/**",
+                )
+            pickFirsts +=
+                listOf(
+                    "policy/tsl-constraint.xml",
+                    "xsd/bindings.xml",
+                    "xsd/**",
+                )
+        }
+    }
+}
+
+spotless {
+    kotlin {
+        target("**/*.kt")
+        targetExclude("**/build/**/*.kt")
+        ktlint(libs.versions.ktlint.get())
+            .editorConfigOverride(
+                mapOf(
+                    "ktlint_standard_filename" to "disabled",
+                    "ktlint_standard_no-wildcard-imports" to "disabled",
+                ),
+            )
+        trimTrailingWhitespace()
+        licenseHeaderFile("../FileHeader.txt")
+        endWithNewline()
+    }
+    kotlinGradle {
+        target("**/*.gradle.kts")
+        ktlint(libs.versions.ktlint.get())
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+//
+// Configuration of Dokka engine
+//
+dokka {
+    // used as project name in the header
+    moduleName = properties["POM_NAME"].toString()
+    moduleVersion = project.version.toString()
+
+    dokkaSourceSets.configureEach {
+        documentedVisibilities = setOf(VisibilityModifier.Public, VisibilityModifier.Protected)
+
+        val remoteSourceUrl =
+            System.getenv()["GIT_REF_NAME"]?.let {
+                URI.create("${properties["POM_SCM_URL"]}/tree/$it/${project.layout.projectDirectory.asFile.name}/src")
+            }
+        remoteSourceUrl
+            ?.let {
+                sourceLink {
+                    localDirectory = projectDir.resolve("src")
+                    remoteUrl = it
+                    remoteLineSuffix = "#L"
+                }
+            }
+    }
+}
+
+mavenPublishing {
+    configure(
+        KotlinMultiplatform(
+            javadocJar = JavadocJar.Dokka(tasks.dokkaGeneratePublicationHtml),
+            sourcesJar = true,
+        ),
+    )
+
+    coordinates(
+        groupId = group.toString(),
+        artifactId = "etsi-1196x2-consultation-dss",
+        version = version.toString(),
+    )
+
+    pom {
+        ciManagement {
+            system = "github"
+            url = "${project.properties["POM_SCM_URL"]}/actions"
+        }
+    }
+}

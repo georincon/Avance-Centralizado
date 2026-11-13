@@ -1,0 +1,65 @@
+# Discoteca: control de edad en la puerta. Se une a la red compartida "avance-eudi" con el
+# alias app-discoteca (srv-nw-nginx le pasa /discoteca/… con la ruta completa) y habla con su
+# verifier (../_comun, instancia VERIFIER_INSTANCIA) por la misma red, usando el alias de su
+# haproxy. Sin volúmenes: no guarda nada.
+#
+#   ./levantar.sh, o ya creada: docker compose -p discoteca --env-file .env logs -f
+name: discoteca
+
+services:
+  discoteca:
+    build: .
+    restart: unless-stopped
+    read_only: true
+    # El dueño de ./datos (quien ejecutó levantar.sh): ahí se escribe el historial local (historial.jsonl).
+    user: ${UID_GID:-1000:1000}
+    environment:
+      # Base de datos PROPIA del historial (emisiones y verificaciones de este portal): ver el servicio postgres-verif.
+      HISTORIAL_DB_URL: postgres://verif_discoteca:verif_discoteca@postgres-verif:5432/verif_discoteca
+      URL_PUBLICA: https://${DOMINIO}/${PREFIJO}
+      VERIFIER_API: http://verifier-${VERIFIER_INSTANCIA}/verifier-${VERIFIER_INSTANCIA}
+      NOMBRE: ${NOMBRE}
+      EDAD_MINIMA: ${EDAD_MINIMA}
+      PUERTO: "80"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    volumes:
+      - ./datos:/datos
+    networks:
+      default: {}   # red del proyecto: por aquí llega a su base de datos
+      avance-eudi:
+        aliases: ["app-${PREFIJO}"]
+
+  # Base de datos PROPIA de este portal (historial de emisiones y verificaciones). Solo la ve su portal (red del proyecto); para DBeaver
+  # se publica únicamente en 127.0.0.1:5467. Va en este mismo compose: si el portal se instala en otro servidor, se lleva su base.
+  postgres-verif:
+    image: postgres:17-alpine
+    container_name: postgres-verif-discoteca
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: verif_discoteca
+      POSTGRES_USER: verif_discoteca
+      POSTGRES_PASSWORD: verif_discoteca
+      TZ: America/Bogota
+    ports: ["127.0.0.1:5467:5432"]
+    volumes:
+      - postgres_verif:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U verif_discoteca -d verif_discoteca"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  postgres_verif:
+    name: discoteca_postgres_verif
+
+networks:
+  # Red privada del proyecto (portal + su base). Subred pequeña y fija: Docker ya agotó sus rangos automáticos con tantos proyectos.
+  default:
+    ipam:
+      config:
+        - subnet: 172.16.104.0/28
+  avance-eudi:
+    name: avance-eudi
+    external: true

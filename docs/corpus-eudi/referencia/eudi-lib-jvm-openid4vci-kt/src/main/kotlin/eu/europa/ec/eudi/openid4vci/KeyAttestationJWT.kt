@@ -1,0 +1,125 @@
+/*
+ * Copyright (c) 2023-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.openid4vci
+
+import com.nimbusds.jose.JOSEObjectType
+import com.nimbusds.jose.JWSHeader
+import com.nimbusds.jose.jwk.JWK
+import com.nimbusds.jwt.JWTClaimsSet
+import com.nimbusds.jwt.SignedJWT
+import eu.europa.ec.eudi.openid4vci.internal.*
+import kotlinx.serialization.Required
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import java.net.URL
+
+@ConsistentCopyVisibility
+data class KeyAttestationJWT private constructor(
+    val jwt: String,
+    val header: JWSHeader,
+    val claimsSet: JWTClaimsSet,
+    val attestedKeys: AttestedKeys,
+) {
+
+    companion object {
+        operator fun invoke(jwt: String): KeyAttestationJWT = invoke(SignedJWT.parse(jwt))
+
+        operator fun invoke(jwt: SignedJWT): KeyAttestationJWT {
+            jwt.ensureType(JOSEObjectType(OpenId4VCISpec.KEY_ATTESTATION_JWT_TYPE))
+            jwt.ensureSignedOrVerified()
+            val attestedKeys = jwt.ensureContainsAttestedKeys()
+            return KeyAttestationJWT(jwt.serialize(), jwt.header, jwt.jwtClaimsSet, attestedKeys)
+        }
+
+        private fun SignedJWT.ensureContainsAttestedKeys(): AttestedKeys =
+            runCatchingCancellable {
+                val attestedKeys = jwtClaimsSet.get<AttestedKeys>(OpenId4VCISpec.ATTESTED_KEYS)
+                requireNotNull(attestedKeys) {
+                    "Missing ${OpenId4VCISpec.ATTESTED_KEYS} claim"
+                }
+            }.getOrElse { throw IllegalArgumentException("Invalid Claims Set.", it) }
+    }
+}
+
+@JvmInline
+@Serializable
+value class AttestedKeys(
+    val value: List<
+        @Serializable(with = JWKJsonObjectSerializer::class)
+        JWK,
+        >,
+) : Iterable<JWK> by value {
+    init {
+        require(value.isNotEmpty()) { "attestedKeys must not be empty" }
+        require(value.none { it.isPrivate }) { "attestedKeys must all be public" }
+    }
+
+    val size: Int
+        get() = value.size
+
+    val indices: IntRange
+        get() = value.indices
+
+    override fun toString(): String = value.toString()
+}
+
+operator fun AttestedKeys.get(index: Int): JWK = value[index]
+
+/**
+ * Payload of a Key Attestation JWT that is aligned with
+ * [TS3](https://github.com/eu-digital-identity-wallet/eudi-doc-standards-and-technical-specifications/blob/main/docs/technical-specifications/ts3-wallet-unit-attestation.md#232-content-of-key-attestation-ka).
+ */
+@Serializable
+data class KeyAttestationJWTClaims(
+    @Required @SerialName(RFC7519.ISSUED_AT) val issuedAt: InstantAsEpochSecond,
+    @SerialName(RFC7519.EXPIRATION_TIME) val expiresAt: InstantAsEpochSecond? = null,
+    @Required @SerialName(OpenId4VCISpec.ATTESTED_KEYS) val attestedKeys: AttestedKeys,
+    @Required @SerialName(OpenId4VCISpec.KEY_STORAGE) val keyStorage: List<AttackPotentialResistance>,
+    @Required @SerialName(OpenId4VCISpec.USER_AUTHENTICATION) val userAuthentication: List<AttackPotentialResistance>,
+    @Required @SerialName(OpenId4VCISpec.CERTIFICATION) @Serializable(with = URLSerializer::class) val certification: URL,
+    @SerialName(OpenId4VCISpec.NONCE) val nonce: Nonce? = null,
+    @SerialName(TokenStatusListSpec.STATUS) val status: StatusClaim? = null,
+    @Required @SerialName(TS3.KEY_STORAGE_STATUS) val keyStorageStatus: KeyStorageStatus,
+)
+
+@Serializable
+data class KeyStorageStatus(
+    @Required @SerialName(TokenStatusListSpec.STATUS) val status: StatusClaim,
+    @Required @SerialName(RFC7519.EXPIRATION_TIME) val exp: InstantAsEpochSecond,
+)
+
+@JvmInline
+@Serializable
+value class AttackPotentialResistance(
+    val value: String,
+) {
+    init {
+        require(value.isNotBlank()) { "value must not be blank" }
+    }
+
+    override fun toString(): String = value
+
+    companion object {
+        val Iso18045High: AttackPotentialResistance =
+            AttackPotentialResistance(OpenId4VCISpec.ATTACK_POTENTIAL_RESISTANCE_ISO_18045_HIGH)
+        val Iso18045Moderate: AttackPotentialResistance =
+            AttackPotentialResistance(OpenId4VCISpec.ATTACK_POTENTIAL_RESISTANCE_ISO_18045_MODERATE)
+        val Iso18045EnhancedBasic: AttackPotentialResistance =
+            AttackPotentialResistance(OpenId4VCISpec.ATTACK_POTENTIAL_RESISTANCE_ISO_18045_ENHANCED_BASIC)
+        val Iso18045Basic: AttackPotentialResistance =
+            AttackPotentialResistance(OpenId4VCISpec.ATTACK_POTENTIAL_RESISTANCE_ISO_18045_BASIC)
+    }
+}

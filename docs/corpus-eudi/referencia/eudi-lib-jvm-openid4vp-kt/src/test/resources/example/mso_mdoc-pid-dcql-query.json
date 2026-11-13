@@ -1,0 +1,16 @@
+{
+  "credentials": [
+    {
+      "id": "eu_europa_ec_eudi_pid_1",
+      "format": "mso_mdoc",
+      "meta": {
+        "doctype_value": "eu.europa.ec.eudi.pid.1"
+      },
+      "claims": [
+        {
+          "path": [ "eu.europa.ec.eudi.pid.1", "family_name" ]
+        }
+      ]
+    }
+  ]
+}

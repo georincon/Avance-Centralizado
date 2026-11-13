@@ -1,0 +1,108 @@
+name: notaria-issuer
+
+# Emisor de documentos notariales con la pila Python de referencia del EUDI:
+#   notaria-issuer-frontend  eudi-srv-web-issuing-frontend-eudiw-py   (la cara pública y credential_issuer)
+#   notaria-issuer-backend   eudi-srv-web-issuing-eudiw-py            (formateo y emisión)
+#   notaria-issuer-oidc      eudi-srv-issuer-oidc-py                  (token, PAR, DPoP, WIA)
+#   status-list-notaria      eudi-srv-statuslist-py                   (Token Status List)
+# `avance-eudi` es la red compartida del ecosistema (no es de este proyecto). Los nombres
+# llevan el sufijo -notaria(-issuer) porque en esa red conviven otros emisores.
+networks:
+  interna:
+  avance-eudi:
+    name: avance-eudi
+    external: true
+
+x-claves: &claves
+  - ../secretos/ds.key:/etc/eudiw/notaria/privKey/ds.key:ro
+  - ../secretos/ds.crt:/etc/eudiw/notaria/cert/ds.crt:ro
+  - ../secretos/ds.der:/etc/eudiw/notaria/cert/ds.der:ro
+  - ../secretos/nonce_rsa2048.pem:/etc/eudiw/notaria/privKey/nonce_rsa2048.pem:ro
+  - ../secretos/credential_request.pem:/etc/eudiw/notaria/privKey/credential_request.pem:ro
+
+services:
+  postgres-notaria-issuer:
+    image: postgres:18.4-alpine3.24
+    container_name: postgres-notaria-issuer
+    restart: unless-stopped
+    ports: ["127.0.0.1:${NOTARIA_ISSUER_DB_PORT:-5442}:5432"]
+    environment: [POSTGRES_DB=notaria_issuer, POSTGRES_USER=notaria_issuer, POSTGRES_PASSWORD=notaria_issuer]
+    volumes: [postgres-notaria-issuer:/var/lib/postgresql]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notaria_issuer -d notaria_issuer"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [interna]
+
+  status-list-notaria:
+    build: {context: .., dockerfile: docker-compose/status-list/Dockerfile}
+    image: notaria-issuer-status-list:local
+    container_name: status-list-notaria
+    restart: unless-stopped
+    environment:
+      API_key: ${STATUS_LIST_API_KEY}
+    volumes:
+      - ./status-list/config/config_service.py:/status-list/app/config_service.py:ro
+      - ../secretos/ds.key:/status-list/certs/ds.key:ro
+      - ../secretos/ds.der:/status-list/certs/ds.der:ro
+      - status-lists:/var/opt/status_lists
+      - status-lists-backups:/var/opt/status_list_backup
+    networks: [interna, avance-eudi]
+
+  notaria-issuer-oidc:
+    build: {context: ../auth-server}
+    image: notaria-issuer-oidc:local
+    container_name: notaria-issuer-oidc
+    restart: unless-stopped
+    extra_hosts: ["civica.avance.org.co:127.0.0.1"]
+    environment:
+      USER_VERIFY_URL: https://${DOMINIO}/${PREFIJO}/oidc/verify/user
+    volumes:
+      - ./config/authorization_config.json:/etc/issuer_config/authorization_config.json:ro
+      - ./config/openid-configuration.json:/app/openid-configuration.json:ro
+      - ../secretos/oidc_trusted_attesters:/etc/eudiw/notaria/oidc_trusted_attesters:ro
+      - oidc-private:/app/private
+    networks: [interna, avance-eudi]
+
+  notaria-issuer-backend:
+    build: {context: ../backend}
+    image: notaria-issuer-backend:local
+    container_name: notaria-issuer-backend
+    restart: unless-stopped
+    depends_on:
+      postgres-notaria-issuer: {condition: service_healthy}
+    environment:
+      ISSUER_CONFIG_PATH: /etc/issuer_config/config_issuer_backend.yaml
+    volumes:
+      - ./config/config_issuer_backend.yaml:/etc/issuer_config/config_issuer_backend.yaml:ro
+      - ../secretos/ds.der:/etc/eudiw/notaria/cert/ds.der:ro
+      - ../secretos/ds.key:/etc/eudiw/notaria/privKey/ds.key:ro
+      - ../secretos/ds.crt:/etc/eudiw/notaria/cert/ds.crt:ro
+      - ../secretos/nonce_rsa2048.pem:/etc/eudiw/notaria/privKey/nonce_rsa2048.pem:ro
+      - ../secretos/credential_request.pem:/etc/eudiw/notaria/privKey/credential_request.pem:ro
+      - ../secretos/api-ordenes.json:/etc/eudiw/notaria/api-ordenes.json:ro   # claves de la API de órdenes (una por cliente)
+    networks: [interna, avance-eudi]
+
+  notaria-issuer-frontend:
+    build: {context: ../frontend}
+    image: notaria-issuer-frontend:local
+    container_name: notaria-issuer-frontend
+    restart: unless-stopped
+    volumes:
+      - ./config/frontend_config.yaml:/etc/issuer_config/frontend_config.yaml:ro
+    networks: [interna, avance-eudi]
+
+  haproxy-notaria:
+    image: haproxy:3.0-alpine
+    container_name: haproxy-notaria
+    restart: unless-stopped
+    volumes: [./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro]
+    depends_on: [notaria-issuer-frontend, notaria-issuer-backend, notaria-issuer-oidc]
+    networks: [interna, avance-eudi]
+
+volumes:
+  postgres-notaria-issuer:
+  status-lists:
+  status-lists-backups:
+  oidc-private:

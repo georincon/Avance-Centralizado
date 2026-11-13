@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css"
+          th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css"
+          th:href="@{/public/css/main.css}">
+    <title>UIS :: Ingreso</title>
+</head>
+<body class="login-body">
+<main class="login-wrapper">
+    <div class="login-left d-none d-md-block"
+         th:style="'background-image: url(' + @{/public/img/ilustracion_background.svg} + ')'">
+    </div>
+    <div class="login-right">
+        <div class="login-right-inner">
+
+            <div class="text-center mb-4">
+                <img class="login-logo" th:src="@{/public/img/uis_logo_v2.svg}" alt="Universidad Industrial de Santander"/>
+            </div>
+
+            <h1 class="login-title">Bienvenido al sistema</h1>
+            <p class="login-subtitle">Emisor de Credenciales Académicas</p>
+
+            <div class="alert alert-danger py-2 mt-3" role="alert" th:if="${error}">
+                <span th:text="${error}">Error message</span>
+            </div>
+
+            <form method="post" th:action="@{/issuer/login/pid}" class="mt-4">
+                <button class="btn btn-primary w-100" type="submit">Ingresar con mi cédula digital (PID)</button>
+            </form>
+            <hr class="my-4">
+            <p class="mt-4 text-body-secondary">
+                Para obtener tus credenciales académicas no necesitas contraseña. Si tienes la <strong>cédula digital (PID)</strong>
+                en tu wallet, preséntala desde la wallet. Si eres estudiante extranjero (CE, pasaporte, PPT o PEP) o no tienes PID,
+                entra con tu número de identificación y el <strong>código de activación</strong> que te entrega el registro de la UIS.
+            </p>
+            <form id="login-form" method="post" enctype="application/x-www-form-urlencoded" th:action="@{/issuer/login}" class="mt-3">
+                <div class="mb-3">
+                    <label for="documento" class="form-label">Número de identificación</label>
+                    <input class="form-control" type="text" name="documento" id="documento" inputmode="text" autocomplete="off"
+                           th:value="${documento} ?: ''" required autofocus>
+                </div>
+                <div class="mb-3">
+                    <label for="codigo" class="form-label">Código de activación</label>
+                    <input class="form-control" type="text" name="codigo" id="codigo" inputmode="numeric" autocomplete="off"
+                           placeholder="0000-0000" required>
+                </div>
+                <button class="btn btn-primary w-100" type="submit">Continuar</button>
+            </form>
+
+            <p class="login-footer-note">
+                Universidad Industrial de Santander &middot; Emisor de Credenciales Académicas EUDI
+            </p>
+        </div>
+    </div>
+</main>
+
+<script type="application/javascript" th:src="@{/webjars/bootstrap/js/bootstrap.min.js}"></script>
+</body>
+</html>

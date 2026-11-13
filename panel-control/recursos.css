@@ -1,0 +1,105 @@
+/* Vista "Recursos": el docker ps del ecosistema, en tabla y en vivo. Reutiliza styles.css del panel. */
+.vista-recursos { background: #f5f7fa; }
+.r-cabecera { display: flex; align-items: center; gap: 22px; padding: 16px 24px; background: #fff; border-bottom: 1px solid #e7ebf0; position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
+.r-volver { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; color: #2365a4; background: #edf5fc; border: 1px solid #e3eff9; border-radius: 10px; padding: 9px 14px 9px 10px; font: 700 11px 'DM Sans', sans-serif; flex: none; }
+.r-volver:hover { background: #deedf9; }
+.r-volver svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.r-titulo h1 { margin: 0; font-size: 20px; color: #203854; letter-spacing: -.4px; }
+.r-titulo p { margin: 3px 0 0; font-size: 10px; color: #8290a0; }
+.r-vivo { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; font: 700 10px 'DM Sans', sans-serif; border-radius: 20px; padding: 6px 12px; background: #f0f2f4; color: #738195; }
+.r-vivo i { width: 8px; height: 8px; border-radius: 50%; background: #b6c0c9; }
+.r-vivo.en-vivo { background: #eaf7f0; color: #18845f; } .r-vivo.en-vivo i { background: #20a475; box-shadow: 0 0 0 3px #d9f0e5; animation: pulso 2s ease-in-out infinite; }
+.r-vivo.caido { background: #fff0ee; color: #c05a4c; } .r-vivo.caido i { background: #d96859; }
+@keyframes pulso { 50% { box-shadow: 0 0 0 6px transparent; } }
+.r-main { max-width: none; margin: 0 auto; padding: 22px 24px 40px; }
+.r-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.r-kpi { background: #fff; border: 1px solid #e9edf1; border-radius: 10px; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; }
+.r-kpi small { display: block; font-size: 10px; color: #738195; }
+.r-kpi b { font: 800 22px Manrope, sans-serif; color: #263e59; }
+.r-kpi span { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font-size: 14px; }
+.r-barra { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+.r-tabs { display: flex; gap: 4px; background: #e9eef3; padding: 4px; border-radius: 10px; }
+.r-tabs button { border: 0; background: none; font: 700 11px 'DM Sans', sans-serif; color: #5d7086; padding: 8px 14px; border-radius: 7px; cursor: pointer; }
+.r-tabs button span { background: #d8e1ea; border-radius: 20px; padding: 1px 7px; margin-left: 4px; font-size: 9px; }
+.r-tabs button[aria-selected="true"] { background: #fff; color: #1f65a4; box-shadow: 0 1px 3px #243e5818; }
+.r-tabs button[aria-selected="true"] span { background: #dcebf8; }
+.r-filtros { display: flex; gap: 8px; flex-wrap: wrap; }
+.r-filtros .search { width: 260px; }
+.r-tabla { background: #fff; border: 1px solid #e8edf1; border-radius: 10px; overflow-x: auto; }
+.r-tabla table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.r-tabla th { text-align: left; font: 700 9px 'DM Sans', sans-serif; letter-spacing: .4px; text-transform: uppercase; color: #8a97a6; padding: 11px 8px; background: #fafbfc; border-bottom: 1px solid #e8edf1; white-space: nowrap; position: sticky; top: 0; }
+.r-tabla td { padding: 10px 8px; border-bottom: 1px solid #f0f3f6; vertical-align: top; color: #3b4f66; }
+.r-tabla tbody tr.fila { cursor: pointer; transition: background .12s; }
+.r-tabla tbody tr.fila:hover { background: #f7fafd; }
+.r-tabla tr.detalle td { background: #fafcfe; padding: 12px 16px 14px 44px; }
+.r-tabla tr:last-child td { border-bottom: 0; }
+.mono { font-family: ui-monospace, 'JetBrains Mono', monospace; font-size: 10.5px; }
+.fuerte { font-weight: 700; color: #2b4059; }
+.tenue { color: #98a3ae; font-size: 9.5px; display: block; margin-top: 2px; }
+.est { display: inline-flex; align-items: center; gap: 7px; border-radius: 20px; padding: 4px 10px; font: 700 9.5px 'DM Sans', sans-serif; white-space: nowrap; background: #f0f2f4; color: #87929e; }
+.est i { width: 7px; height: 7px; border-radius: 50%; background: #b6c0c9; }
+.est.activo { background: #eaf7f0; color: #18845f; } .est.activo i { background: #20a475; box-shadow: 0 0 0 3px #d9f0e5; }
+.est.aviso { background: #fff4e5; color: #b27625; } .est.aviso i { background: #e6a438; }
+.est.malo { background: #fff0ee; color: #c05a4c; } .est.malo i { background: #d96859; }
+.chip { display: inline-block; border-radius: 6px; padding: 2px 7px; font: 600 10px ui-monospace, monospace; background: #edf5fc; color: #2365a1; border: 1px solid #e3eff9; margin: 0 4px 4px 0; white-space: nowrap; }
+.chip.interno { background: #f3f5f7; color: #7a8896; border-color: #e8ecf0; }
+.chip.host { background: #eef9f4; color: #1e7f5c; border-color: #dcf0e6; cursor: copy; }
+.chip.grupo { background: #f0edfb; color: #6f5aa8; border-color: #e6e0f7; font-family: 'DM Sans', sans-serif; }
+.chip.sin { background: #fff4e5; color: #b27625; border-color: #f9ead1; font-family: 'DM Sans', sans-serif; }
+.r-tabla a.abrir { color: #2365a4; text-decoration: none; font-size: 10px; font-weight: 700; margin-left: 6px; }
+.r-tabla a.abrir:hover { text-decoration: underline; }
+.det-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px 24px; font-size: 10.5px; }
+.det-grid h4 { margin: 0 0 4px; font: 700 9px 'DM Sans', sans-serif; letter-spacing: .6px; text-transform: uppercase; color: #8a97a6; }
+.r-pie { font-size: 10px; color: #98a3ae; margin: 10px 2px 0; }
+.r-vacio { padding: 36px; text-align: center; color: #8794a3; font-size: 11px; }
+@media (max-width: 900px) { .r-cabecera, .r-main { padding-left: 16px; padding-right: 16px; } .r-kpis { grid-template-columns: repeat(2, 1fr); } .r-filtros .search { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .r-vivo.en-vivo i { animation: none; } }
+
+.r-filtros select { border: 1px solid #e3e8ed; border-radius: 7px; background: #fff; color: #66778a; padding: 0 8px; height: 31px; font: 10px 'DM Sans', sans-serif; outline: 0; }
+
+/* Tipo de proyecto (Issuer, Verifier, Base de datos…) */
+.tipo { display: inline-block; border-radius: 6px; padding: 2px 8px; font: 800 9px 'DM Sans', sans-serif; letter-spacing: .3px; text-transform: uppercase; margin-right: 6px; background: #eef1f4; color: #66778a; }
+.tipo-issuer { background: #f0edfb; color: #6f5aa8; } .tipo-verifier { background: #e7f6ef; color: #1e7f5c; } .tipo-portal { background: #e6f0fb; color: #2365a4; }
+.tipo-bd { background: #fff1de; color: #b0620f; } .tipo-wallet { background: #e4f6f5; color: #1f8a86; } .tipo-confianza { background: #fbeaf3; color: #b5498a; } .tipo-gateway { background: #eceff3; color: #4a5d73; }
+.grupo-txt { font-size: 9.5px; color: #98a3ae; }
+.puerto { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; white-space: nowrap; }
+.chip.conexion { background: #fff7e8; color: #9a5b00; border-color: #f6e2bb; cursor: copy; font-weight: 700; }
+.chip.conexion:hover { background: #ffefcf; }
+.flecha { font: 600 10px ui-monospace, monospace; color: #7a8896; }
+
+/* Última columna: enlaces a las páginas de cada servicio */
+.r-tabla a.enlace { display: block; width: fit-content; margin: 0 0 4px; padding: 3px 9px; border-radius: 6px; background: #edf5fc; border: 1px solid #e3eff9; color: #2365a4; font: 700 10px 'DM Sans', sans-serif; text-decoration: none; white-space: nowrap; }
+.r-tabla a.enlace:hover { background: #deedf9; }
+.r-tabla a.enlace.apagado { background: #f3f5f7; border-color: #e8ecf0; color: #98a3ae; }
+
+/* La tabla ocupa todo el ancho: sin barra horizontal en pantallas normales. Lo largo se corta con puntos suspensivos. */
+.r-tabla { overflow-x: auto; }
+.r-tabla td .mono.fuerte { word-break: break-all; }
+.r-tabla td { overflow-wrap: anywhere; }
+.r-tabla .chip { overflow-wrap: normal; }
+@media (max-width: 900px) { .r-main { padding-left: 12px; padding-right: 12px; } .r-cabecera { padding-left: 12px; padding-right: 12px; } .r-tabla table { min-width: 1100px; } }
+
+/* Tabla de contenedores: columnas proporcionales y celdas que saltan de línea. */
+.r-tabla table.t-contenedores { table-layout: fixed; width: 100%; }
+.t-contenedores td, .t-contenedores th { overflow-wrap: anywhere; word-break: normal; min-width: 0; }
+.t-contenedores .chip { white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
+.t-contenedores .est { white-space: normal; line-height: 1.3; }
+.t-contenedores .puerto { flex-wrap: wrap; white-space: normal; gap: 2px 8px; }
+.t-contenedores .tenue { white-space: normal; overflow-wrap: anywhere; }
+.t-contenedores .mono { overflow-wrap: anywhere; }
+.t-contenedores a.enlace { white-space: normal; width: auto; max-width: 100%; }
+.t-contenedores .grupo-txt { display: inline-block; }
+@media (max-width: 900px) { .r-tabla table.t-contenedores { min-width: 1100px; } }
+
+/* Prioridad suficiente para ganar a las reglas generales: nada se monta sobre la columna vecina. */
+.r-tabla table.t-contenedores th { white-space: normal; line-height: 1.25; vertical-align: bottom; }
+.r-tabla table.t-contenedores td .tenue { display: block; white-space: normal; overflow-wrap: anywhere; }
+.r-tabla table.t-contenedores td .tenue .tipo { margin-bottom: 2px; }
+.r-tabla table.t-contenedores td .chip { white-space: normal; overflow-wrap: anywhere; max-width: 100%; }
+.r-tabla table.t-contenedores td a.enlace { display: block; width: fit-content; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.r-tabla table.t-contenedores td .puerto { flex-wrap: wrap; white-space: normal; }
+.r-tabla table.t-contenedores td .est { white-space: normal; }
+
+/* Botón de salir: cierra la sesión en este navegador (borra la clave guardada) y vuelve a /login */
+.boton-salir{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid #dde5ec;border-radius:8px;background:#fff;color:#a44239;font:600 11px 'DM Sans',sans-serif;cursor:pointer}
+.boton-salir:hover{background:#fdecea;border-color:#f0c4be}.boton-salir span{font-size:14px}

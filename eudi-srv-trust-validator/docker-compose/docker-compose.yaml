@@ -1,0 +1,126 @@
+# Trust Validator Service — despliegue local del ecosistema EUDI de Avance.
+#
+# QUÉ ES
+#
+# El servicio comprueba si una cadena X.509 es de fiar: busca el ancla de
+# confianza en las Trusted Lists (ETSI TS 119 612) y valida la cadena contra
+# ella. Lo que aquí se despliega es `eudi-srv-trust-validator` compilado desde
+# el código de este repositorio (./gradlew bootBuildImage).
+#
+# DE DÓNDE SACA LAS LISTAS
+#
+# De las listas locales que publica `srv-tl-publisher`, NO de
+# `https://civica.avance.org.co/tl-publisher`. Ese es el punto: el publicador
+# local existe para que nada dependa del host remoto.
+#
+# Las listas se firman con la `Civica TL Signing CA` de la PKI local, así que el
+# almacén de claves que las verifica tiene que contener la raíz y esa sub-CA
+# (`../../srv-tl-publisher/scripts/construir-jks-trust-validator.sh` lo genera).
+#
+# RED
+#
+# `avance-eudi` es la red compartida del ecosistema. El issuer de la
+# Registraduria la usa por su nombre para validar sus propias WIA/KA:
+# `ISSUER_TRUST_SERVICEURL=http://trust-validator:8080/trust`.
+
+name: eudi-srv-trust-validator
+
+services:
+  trust-validator:
+    image: ${TRUST_VALIDATOR_IMAGE:-trust-validator:local}
+    container_name: trust-validator
+    restart: unless-stopped
+    environment:
+      - SERVER_PORT=8080
+      # El nivel DEBUG de DSS: en application.properties esta mal escrito
+      # (`eu.europa.eu.esig` en vez de `eu.europa.esig`), asi que nunca aplicaba.
+      - LOGGING_LEVEL_EU_EUROPA_ESIG=${DSS_LOG_LEVEL:-INFO}
+      # Caché de las listas descargadas. Es caché, no estado: efímera a propósito.
+      - TRUST_VALIDATOR_DSS_FILE_CACHE_LOCATION=/tmp/dss-cache
+      - TRUST_VALIDATOR_LOTE_FILE_CACHE_LOCATION=/tmp/lote-cache
+      # Revocación por CRL.
+      #
+      # Desactivada a propósito: la comprobación descarga la CRL que declara el
+      # CERTIFICADO, y las anclas importadas de las listas remotas apuntan a
+      # las CRL de quienes las emitieron — fuera de este ecosistema. Con la
+      # comprobación activa, una de esas URLs caída convierte una cadena
+      # válida en "no confiable" sin más explicación. Para validarlas en serio
+      # hay que publicar también las CRL de cada emisor.
+      - TRUST_VALIDATOR_ENABLE_CERTIFICATE_REVOCATION_CHECK=${TRUST_VALIDATOR_REVOCATION_CHECK:-false}
+      #
+      # ─── Almacen de anclas de confianza ──────────────────────────────────────
+      #
+      # El camino de la LoTL (DSS) NO extrae anclas en esta build: se comprobo que
+      # tampoco funciona contra la LOTL oficial del testbed EUDI ("Certificates: 0",
+      # "No configuration found for VerificationContext ..."), asi que es una
+      # limitacion de la libreria etsi1196x2 alpha con DSS 6.5 y no de las listas de
+      # este ecosistema (las nuestras son byte a byte las de produccion).
+      #
+      # La LoTL si hace bien lo suyo: descargar la LOTL y las cinco listas, verificar
+      # sus firmas y confirmar que el firmante es el esperado. Para DECIDIR si una
+      # cadena es de fiar se usa el almacen de claves, que contiene las MISMAS
+      # anclas que publica el srv-tl-publisher (las genera
+      # scripts/construir-jks-anclas.sh): el validador y las listas de confianza no
+      # pueden discrepar.
+      - TRUST_VALIDATOR_TRUST_SOURCES_KEY_STORE_LOCATION=file:/claves/anclas-confianza.jks
+      - TRUST_VALIDATOR_TRUST_SOURCES_KEY_STORE_KEY_STORE_TYPE=JKS
+      - TRUST_VALIDATOR_TRUST_SOURCES_KEY_STORE_PASSWORD=changeit
+      #
+      # ─── Wallet Providers ───────────────────────────────────────────────────
+      - TRUST_VALIDATOR_TRUST_SOURCES_WALLET_PROVIDERS_LOTL_LOCATION=${LOTL_LOCATION}
+      - TRUST_VALIDATOR_TRUST_SOURCES_WALLET_PROVIDERS_LOTL_SIGNATURE_VERIFICATION_LOCATION=file:/claves/lotl-trust.jks
+      - TRUST_VALIDATOR_TRUST_SOURCES_WALLET_PROVIDERS_LOTL_SIGNATURE_VERIFICATION_KEY_STORE_TYPE=JKS
+      - TRUST_VALIDATOR_TRUST_SOURCES_WALLET_PROVIDERS_LOTL_SIGNATURE_VERIFICATION_PASSWORD=changeit
+      - TRUST_VALIDATOR_TRUST_SOURCES_WALLET_PROVIDERS_LOTL_ISSUANCE_SERVICE=http://uri.etsi.org/TrstSvc/Svctype/Provider/Wallet
+      - TRUST_VALIDATOR_TRUST_SOURCES_WALLET_PROVIDERS_LOTL_REVOCATION_SERVICE=http://uri.etsi.org/TrstSvc/Svctype/Provider/Wallet
+      #
+      # ─── PID Providers ──────────────────────────────────────────────────────
+      - TRUST_VALIDATOR_TRUST_SOURCES_PID_PROVIDERS_LOTL_LOCATION=${LOTL_LOCATION}
+      - TRUST_VALIDATOR_TRUST_SOURCES_PID_PROVIDERS_LOTL_SIGNATURE_VERIFICATION_LOCATION=file:/claves/lotl-trust.jks
+      - TRUST_VALIDATOR_TRUST_SOURCES_PID_PROVIDERS_LOTL_SIGNATURE_VERIFICATION_KEY_STORE_TYPE=JKS
+      - TRUST_VALIDATOR_TRUST_SOURCES_PID_PROVIDERS_LOTL_SIGNATURE_VERIFICATION_PASSWORD=changeit
+      - TRUST_VALIDATOR_TRUST_SOURCES_PID_PROVIDERS_LOTL_ISSUANCE_SERVICE=http://uri.etsi.org/TrstSvc/Svctype/Provider/PID
+      - TRUST_VALIDATOR_TRUST_SOURCES_PID_PROVIDERS_LOTL_REVOCATION_SERVICE=http://uri.etsi.org/TrstSvc/Svctype/Provider/PID
+      #
+      # ─── QEAA Providers ─────────────────────────────────────────────────────
+      - TRUST_VALIDATOR_TRUST_SOURCES_QEAA_PROVIDERS_LOTL_LOCATION=${LOTL_LOCATION}
+      - TRUST_VALIDATOR_TRUST_SOURCES_QEAA_PROVIDERS_LOTL_SIGNATURE_VERIFICATION_LOCATION=file:/claves/lotl-trust.jks
+      - TRUST_VALIDATOR_TRUST_SOURCES_QEAA_PROVIDERS_LOTL_SIGNATURE_VERIFICATION_KEY_STORE_TYPE=JKS
+      - TRUST_VALIDATOR_TRUST_SOURCES_QEAA_PROVIDERS_LOTL_SIGNATURE_VERIFICATION_PASSWORD=changeit
+      - TRUST_VALIDATOR_TRUST_SOURCES_QEAA_PROVIDERS_LOTL_ISSUANCE_SERVICE=http://uri.etsi.org/TrstSvc/Svctype/EAA/Q
+      - TRUST_VALIDATOR_TRUST_SOURCES_QEAA_PROVIDERS_LOTL_REVOCATION_SERVICE=http://uri.etsi.org/TrstSvc/Svctype/EAA/Q
+      #
+      # ─── PubEAA Providers ───────────────────────────────────────────────────
+      - TRUST_VALIDATOR_TRUST_SOURCES_PUB_EAA_PROVIDERS_LOTL_LOCATION=${LOTL_LOCATION}
+      - TRUST_VALIDATOR_TRUST_SOURCES_PUB_EAA_PROVIDERS_LOTL_SIGNATURE_VERIFICATION_LOCATION=file:/claves/lotl-trust.jks
+      - TRUST_VALIDATOR_TRUST_SOURCES_PUB_EAA_PROVIDERS_LOTL_SIGNATURE_VERIFICATION_KEY_STORE_TYPE=JKS
+      - TRUST_VALIDATOR_TRUST_SOURCES_PUB_EAA_PROVIDERS_LOTL_SIGNATURE_VERIFICATION_PASSWORD=changeit
+      - TRUST_VALIDATOR_TRUST_SOURCES_PUB_EAA_PROVIDERS_LOTL_ISSUANCE_SERVICE=http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA
+      - TRUST_VALIDATOR_TRUST_SOURCES_PUB_EAA_PROVIDERS_LOTL_REVOCATION_SERVICE=http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA
+      #
+      # ─── Wallet Relying Party Access Certificate Providers ──────────────────
+      - TRUST_VALIDATOR_TRUST_SOURCES_WRPAC_PROVIDERS_LOTL_LOCATION=${LOTL_LOCATION}
+      - TRUST_VALIDATOR_TRUST_SOURCES_WRPAC_PROVIDERS_LOTL_SIGNATURE_VERIFICATION_LOCATION=file:/claves/lotl-trust.jks
+      - TRUST_VALIDATOR_TRUST_SOURCES_WRPAC_PROVIDERS_LOTL_SIGNATURE_VERIFICATION_KEY_STORE_TYPE=JKS
+      - TRUST_VALIDATOR_TRUST_SOURCES_WRPAC_PROVIDERS_LOTL_SIGNATURE_VERIFICATION_PASSWORD=changeit
+      - TRUST_VALIDATOR_TRUST_SOURCES_WRPAC_PROVIDERS_LOTL_ISSUANCE_SERVICE=http://uri.etsi.org/TrstSvc/Svctype/CA/RPaccess
+      - TRUST_VALIDATOR_TRUST_SOURCES_WRPAC_PROVIDERS_LOTL_REVOCATION_SERVICE=http://uri.etsi.org/TrstSvc/Svctype/CA/RPaccess
+    volumes:
+      # Sólo material público: los anclas con los que se verifica la firma de
+      # las listas. No lleva claves privadas.
+      - ../claves:/claves:ro
+    networks:
+      avance-eudi:
+        aliases:
+          # Alias de compatibilidad: el issuer de la Registraduria habla con
+          # `http://civica-trust-validator:8080/trust`.
+          - civica-trust-validator
+    # Sin healthcheck: la imagen de Spring Boot que genera `bootBuildImage` no
+    # trae shell (base sin shell), así que no hay curl ni wget dentro para
+    # consultar /actuator/health. El estado se comprueba desde fuera:
+    #   curl -s https://civica-desarrollo.avance.org.co/trust-validator/actuator/health
+
+networks:
+  avance-eudi:
+    name: avance-eudi
+    external: true

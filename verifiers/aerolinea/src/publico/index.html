@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{AEROLINEA}} · Vuelos</title>
+<link rel="icon" href="{{BASE}}/publico/logo.png">
+<style>
+  /* Estilo de aerolínea de gran red: rojo y blanco, buscador de vuelos sobre una portada grande, ofertas con «desde» y pie oscuro. */
+  :root {
+    --rojo: #dc0b17; --rojo-osc: #a50810; --oro: #b38b4d; --oro-claro: #f3ead9; --tinta: #1f1f1f; --suave: #5f5f63; --linea: #e4e0da; --fondo: #f7f5f2;
+    --blanco: #fff; --ok: #12703d; --ok-fondo: #e6f4ec; --mal: #b3261e; --mal-fondo: #fdecea; --noche: #14161d;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--tinta); font: 16px/1.5 "Helvetica Neue", Helvetica, Arial, "Segoe UI", sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
+  a { color: var(--rojo); }
+  .util { background: var(--noche); color: #cfcfd4; font-size: .78rem; }
+  .util div { max-width: 1200px; margin: 0 auto; padding: 7px 24px; display: flex; gap: 22px; justify-content: flex-end; }
+  header { background: #fff; border-bottom: 1px solid var(--linea); position: sticky; top: 0; z-index: 20; }
+  .barra { max-width: 1200px; margin: 0 auto; padding: 12px 24px; display: flex; align-items: center; gap: 30px; flex-wrap: wrap; }
+  .marca { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--tinta); }
+  .marca svg { width: 46px; height: 34px; flex: none; }
+  .marca strong { font-size: 1.45rem; letter-spacing: .01em; font-weight: 800; line-height: 1; color: var(--rojo); }
+  .marca small { display: block; font-size: .62rem; letter-spacing: .26em; text-transform: uppercase; color: var(--oro); font-weight: 700; margin-top: 3px; }
+  nav { display: flex; gap: 24px; }
+  nav a { color: var(--tinta); text-decoration: none; font-weight: 600; font-size: .92rem; padding: 8px 0; border-bottom: 3px solid transparent; cursor: pointer; }
+  nav a:hover, nav a.activo { border-bottom-color: var(--rojo); }
+  .acciones-cab { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+  .persona { display: flex; gap: 10px; align-items: center; font-size: .86rem; }
+  .persona img, .persona .ini { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: var(--oro); color: #fff; display: grid; place-items: center; font-weight: 800; }
+  button, .boton { font: inherit; cursor: pointer; border: 0; border-radius: 4px; font-weight: 700; }
+  button:focus-visible { outline: 3px solid var(--tinta); outline-offset: 2px; }
+  .rojo { background: var(--rojo); color: #fff; padding: 12px 22px; } .rojo:hover:not(:disabled) { background: var(--rojo-osc); }
+  .borde { background: #fff; color: var(--rojo); border: 2px solid var(--rojo); padding: 9px 18px; } .borde:hover { background: var(--rojo); color: #fff; }
+  .claro { background: #fff; color: var(--tinta); border: 1px solid var(--linea); padding: 9px 16px; } .claro:hover { border-color: var(--tinta); }
+  button:disabled { opacity: .55; cursor: default; }
+  /* Portada con buscador */
+  .portada { position: relative; background: linear-gradient(180deg, #1c2f5a 0%, #6c4a73 38%, #e9886a 72%, #f6c28b 100%); color: #fff; overflow: hidden; }
+  .portada svg.paisaje { position: absolute; inset: auto 0 0 0; width: 100%; height: 55%; }
+  .portada .in { position: relative; max-width: 1200px; margin: 0 auto; padding: 46px 24px 70px; }
+  .portada h1 { font-size: clamp(1.9rem, 4.6vw, 3.2rem); line-height: 1.08; margin: 0 0 10px; font-weight: 800; letter-spacing: -.02em; text-shadow: 0 2px 20px rgba(0,0,0,.25); }
+  .portada p.lead { margin: 0 0 24px; max-width: 56ch; font-size: 1.08rem; color: #fbeee6; }
+  .reserva { background: #fff; color: var(--tinta); border-radius: 8px; box-shadow: 0 18px 50px rgba(10,14,40,.35); max-width: 1040px; }
+  .pestanas { display: flex; border-bottom: 1px solid var(--linea); }
+  .pestanas button { flex: 1; background: none; padding: 16px 12px; border-radius: 0; color: var(--suave); font-size: .95rem; border-bottom: 4px solid transparent; }
+  .pestanas button.activo { color: var(--rojo); border-bottom-color: var(--rojo); }
+  .cuerpo-reserva { padding: 22px; }
+  .campos { display: grid; grid-template-columns: 1fr auto 1fr 1fr auto; gap: 12px; align-items: end; }
+  @media (max-width: 860px) { .campos { grid-template-columns: 1fr 1fr; } .campos .cambiar { display: none; } .campos .rojo { grid-column: 1 / -1; } }
+  label { display: flex; flex-direction: column; gap: 5px; font-size: .78rem; font-weight: 700; color: var(--suave); text-transform: uppercase; letter-spacing: .06em; }
+  select, input, textarea { font: inherit; font-size: 1rem; padding: 12px 12px; border: 1px solid #c9c4bc; border-radius: 4px; background: #fff; color: var(--tinta); width: 100%; text-transform: none; letter-spacing: 0; font-weight: 500; }
+  select:focus, input:focus { outline: 2px solid var(--rojo); outline-offset: -1px; }
+  .cambiar { background: #fff; border: 1px solid #c9c4bc; width: 42px; height: 46px; color: var(--rojo); font-size: 1.2rem; }
+  .pasajero-linea { margin-top: 14px; font-size: .9rem; color: var(--suave); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .sello { display: inline-flex; gap: 6px; align-items: center; background: var(--ok-fondo); color: var(--ok); border-radius: 999px; padding: 3px 12px; font-weight: 700; font-size: .8rem; }
+  /* Contenido */
+  main { max-width: 1200px; width: 100%; margin: 0 auto; padding: 34px 24px 56px; flex: 1; }
+  h2 { font-size: 1.6rem; margin: 0 0 6px; letter-spacing: -.01em; } h2 small { color: var(--suave); font-weight: 500; font-size: 1rem; }
+  .sub { color: var(--suave); margin: 0 0 20px; }
+  .ofertas { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 40px; }
+  .oferta { background: #fff; border: 1px solid var(--linea); border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform .15s, box-shadow .15s; text-align: left; padding: 0; font-weight: 400; }
+  .oferta:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,.12); }
+  .oferta .foto { height: 92px; position: relative; }
+  .oferta .cuerpo { padding: 12px 16px 16px; }
+  .oferta .ruta { font-weight: 800; } .oferta .tipo { font-size: .75rem; color: var(--oro); letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
+  .oferta .desde { margin-top: 8px; color: var(--suave); font-size: .8rem; } .oferta .desde b { display: block; color: var(--rojo); font-size: 1.25rem; }
+  .seguridad { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; background: #fff; border: 1px solid var(--linea); border-top: 4px solid var(--oro); border-radius: 8px; padding: 22px; margin-bottom: 40px; }
+  .seguridad h3 { margin: 0 0 4px; font-size: .95rem; } .seguridad p { margin: 0; color: var(--suave); font-size: .88rem; }
+  .vuelo { background: #fff; border: 1px solid var(--linea); border-radius: 8px; margin-bottom: 14px; overflow: hidden; }
+  .vuelo .cabeza { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; padding: 18px 22px; align-items: center; border-bottom: 1px solid var(--linea); }
+  @media (max-width: 760px) { .vuelo .cabeza { grid-template-columns: 1fr; } }
+  .horas { display: flex; align-items: center; gap: 16px; }
+  .horas b { font-size: 1.7rem; letter-spacing: -.02em; } .horas small { display: block; color: var(--suave); font-size: .78rem; }
+  .linea-vuelo { flex: 1; text-align: center; color: var(--suave); font-size: .78rem; min-width: 90px; }
+  .linea-vuelo::before { content: ""; display: block; border-top: 2px solid var(--linea); margin: 0 4px 4px; position: relative; top: 8px; }
+  .linea-vuelo span { background: #fff; position: relative; padding: 0 6px; }
+  .tarifas { display: grid; grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 760px) { .tarifas { grid-template-columns: 1fr; } }
+  .tarifa { padding: 16px 22px; border-right: 1px solid var(--linea); display: flex; flex-direction: column; gap: 6px; }
+  .tarifa:last-child { border-right: 0; }
+  .tarifa h4 { margin: 0; font-size: .85rem; letter-spacing: .1em; text-transform: uppercase; color: var(--oro); }
+  .tarifa .precio { font-size: 1.45rem; font-weight: 800; } .tarifa .precio small { display: block; color: var(--suave); font-weight: 400; font-size: .74rem; }
+  .tarifa p { margin: 0; color: var(--suave); font-size: .82rem; flex: 1; }
+  .panel { background: #fff; border: 1px solid var(--linea); border-radius: 8px; padding: 24px; margin-bottom: 18px; }
+  .panel h3 { margin: 0 0 14px; font-size: 1.1rem; }
+  .dos { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 860px) { .dos { grid-template-columns: 1fr; } }
+  .pasajero { display: flex; gap: 16px; align-items: center; background: var(--fondo); border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .pasajero img { width: 78px; height: 100px; object-fit: cover; border-radius: 6px; background: #ddd; }
+  .pasajero .sin-foto { width: 78px; height: 100px; border-radius: 6px; background: #ddd; display: grid; place-items: center; color: var(--suave); font-size: .7rem; text-align: center; }
+  .pasajero b { font-size: 1.1rem; } .pasajero small { display: block; color: var(--suave); }
+  table.resumen { width: 100%; border-collapse: collapse; font-size: .92rem; } table.resumen td { padding: 7px 0; border-bottom: 1px solid var(--linea); } table.resumen td:last-child { text-align: right; font-weight: 700; }
+  table.resumen tr.total td { font-size: 1.2rem; color: var(--rojo); border-bottom: 0; padding-top: 12px; }
+  form.campos-col { display: grid; gap: 14px; }
+  .aviso { border-radius: 6px; padding: 11px 14px; font-size: .9rem; } .aviso.error { background: var(--mal-fondo); color: var(--mal); } .aviso.info { background: #fff6e0; color: #6d5316; border: 1px solid #ecd9a4; } .aviso.ok { background: var(--ok-fondo); color: var(--ok); }
+  /* Pase de abordar */
+  .pase { display: grid; grid-template-columns: 1fr auto; background: #fff; border-radius: 12px; box-shadow: 0 14px 40px rgba(0,0,0,.14); overflow: hidden; border: 1px solid var(--linea); margin-bottom: 18px; }
+  @media (max-width: 760px) { .pase { grid-template-columns: 1fr; } }
+  .pase .principal { padding: 0; }
+  .pase .franja { background: var(--rojo); color: #fff; padding: 12px 22px; display: flex; justify-content: space-between; align-items: center; font-weight: 800; letter-spacing: .04em; }
+  .pase .franja.cancelado { background: #6b6b70; }
+  .pase .ruta { display: flex; align-items: center; gap: 18px; padding: 18px 22px 8px; }
+  .pase .ruta .ciudad b { font-size: 2.2rem; letter-spacing: -.02em; line-height: 1; display: block; } .pase .ruta .ciudad small { color: var(--suave); }
+  .pase .ruta .avion { flex: 1; text-align: center; color: var(--rojo); font-size: 1.5rem; border-top: 2px dashed var(--linea); position: relative; top: -2px; } .pase .ruta .avion span { background: #fff; padding: 0 8px; position: relative; top: -14px; }
+  .pase dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px 18px; margin: 0; padding: 10px 22px 20px; }
+  .pase dt { color: var(--suave); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; } .pase dd { margin: 0; font-weight: 700; }
+  .pase .talon { border-left: 2px dashed var(--linea); padding: 22px; display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center; min-width: 230px; text-align: center; }
+  @media (max-width: 760px) { .pase .talon { border-left: 0; border-top: 2px dashed var(--linea); } }
+  .pase .talon img.qr { width: 180px; height: 180px; border: 1px solid var(--linea); border-radius: 8px; }
+  .pin { font-family: ui-monospace, monospace; font-size: 2rem; letter-spacing: 8px; font-weight: 800; color: var(--rojo); }
+  .estado-b { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: .75rem; font-weight: 800; } .estado-b.vigente { background: var(--ok-fondo); color: var(--ok); } .estado-b.anulado { background: var(--mal-fondo); color: var(--mal); } .estado-b.abordo { background: #e3e8f7; color: #243a7a; } .estado-b.gris { background: #eee; color: #555; }
+  .embarque { display: grid; grid-template-columns: 200px 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 640px) { .embarque { grid-template-columns: 1fr; } }
+  .embarque img.foto { width: 200px; aspect-ratio: 3/4; object-fit: cover; border-radius: 8px; border: 3px solid #fff; box-shadow: 0 0 0 1px var(--linea), 0 10px 30px rgba(0,0,0,.18); background: #ddd; }
+  .veredicto { padding: 14px 18px; border-radius: 8px; font-weight: 800; font-size: 1.3rem; margin-bottom: 12px; } .veredicto.si { background: var(--ok-fondo); color: var(--ok); } .veredicto.no { background: var(--mal-fondo); color: var(--mal); }
+  .criterio { display: flex; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--linea); } .criterio:last-child { border-bottom: 0; }
+  .criterio .m { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: .8rem; background: var(--ok); } .criterio.no .m { background: var(--mal); }
+  .criterio span { display: block; color: var(--suave); font-size: .86rem; }
+  /* Ventana con el QR */
+  dialog { border: 0; border-radius: 12px; padding: 0; width: min(500px, calc(100vw - 28px)); box-shadow: 0 24px 70px rgba(0,0,0,.4); border-top: 6px solid var(--rojo); }
+  dialog::backdrop { background: rgba(20,22,29,.65); }
+  .modal { padding: 26px; text-align: center; } .modal h2 { font-size: 1.35rem; } .modal .qr { width: 250px; max-width: 100%; border: 1px solid var(--linea); border-radius: 8px; padding: 6px; margin: 8px auto; display: block; }
+  .modal .pide { text-align: left; background: var(--fondo); border-radius: 8px; padding: 10px 14px; font-size: .86rem; color: var(--suave); margin: 10px 0; } .modal .pide b { color: var(--tinta); }
+  .cuenta { color: var(--suave); font-size: .85rem; min-height: 1.3em; }
+  .acciones { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 14px; }
+  footer { background: var(--noche); color: #b7b8c0; margin-top: auto; font-size: .86rem; }
+  footer .cols { max-width: 1200px; margin: 0 auto; padding: 34px 24px 18px; display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 28px; }
+  @media (max-width: 760px) { footer .cols { grid-template-columns: 1fr; } }
+  footer h4 { color: #fff; margin: 0 0 10px; font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; } footer p { margin: 0 0 6px; }
+  footer .legal { max-width: 1200px; margin: 0 auto; padding: 14px 24px 26px; border-top: 1px solid #2a2d38; font-size: .78rem; color: #8c8e98; }
+  .cargando { text-align: center; color: var(--suave); padding: 30px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="util"><div><span>Español (Colombia)</span><span>Ayuda</span><span>Aerolínea de ejemplo · sin validez comercial</span></div></div>
+<header>
+  <div class="barra">
+    <a class="marca" href="#" aria-label="Inicio">
+      <svg viewBox="0 0 46 34" aria-hidden="true"><path d="M2 20 44 4 30 30 22 22 14 28 16 19z" fill="#d71921"/><path d="M16 19 44 4 22 22z" fill="#a8121a"/><path d="M3 31h22" stroke="#b38b4d" stroke-width="2.500" stroke-linecap="round"/></svg>
+      <span><strong>{{AEROLINEA}}</strong><small>Vuela alto</small></span>
+    </a>
+    <nav id="menu"><a data-v="reservar" class="activo">Reservar</a><a data-v="tiquetes">Mis tiquetes</a><a data-v="embarque">Embarque</a></nav>
+    <nav id="navHistorial" style="display:none"><a href="{{BASE}}/auditoria/" id="enlHistorial">Historial</a></nav>
+    <div class="acciones-cab"><div class="persona" id="persona" hidden></div><button class="rojo" id="entrar">Identificarme con mi wallet</button></div>
+  </div>
+</header>
+
+<section class="portada">
+  <svg class="paisaje" viewBox="0 0 1200 300" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 300V190l90-40 80 36 110-70 120 80 100-50 130 74 140-96 120 70 110-44 100 52V300z" fill="#4a3a5e" fill-opacity=".55"/>
+    <path d="M0 300V230l140-48 120 40 160-58 170 66 150-52 140 50 120-34 200 56V300z" fill="#2b2543" fill-opacity=".75"/>
+    <path d="M0 300V262l200-30 220 24 260-34 250 28 270-26V300z" fill="#14161d"/>
+  </svg>
+  <div class="in">
+    <h1>Vuela a donde te lleve<br>tu próximo plan</h1>
+    <p class="lead">Compra tu pasaje con tu wallet: verificamos tu identidad al instante y el tiquete llega a tu teléfono, listo para el embarque.</p>
+    <div class="reserva">
+      <div class="pestanas" id="pestanas"><button data-v="reservar" class="activo">Reservar un vuelo</button><button data-v="tiquetes">Mis tiquetes</button><button data-v="embarque">Embarque</button></div>
+      <div class="cuerpo-reserva" id="widget"></div>
+    </div>
+  </div>
+</section>
+
+<main id="contenido"></main>
+
+<footer>
+  <div class="cols">
+    <div><h4>{{AEROLINEA}}</h4><p>Venta de pasajes con identidad digital verificable. El tiquete es nominal e intransferible y se guarda en tu wallet.</p></div>
+    <div><h4>Datos que pedimos</h4><p>Nombre y apellidos</p><p>Número de documento</p><p>Fecha de nacimiento</p><p>Foto del documento</p></div>
+    <div><h4>Antes de viajar</h4><p>Llega con tu documento de identidad.</p><p>Los menores de edad pueden necesitar permiso de salida del país.</p></div>
+  </div>
+  <div class="legal">Aerolínea ficticia para probar el ecosistema EUDI Wallet. No vende pasajes reales y sus tiquetes no tienen validez comercial.</div>
+</footer>
+
+<dialog id="modal" aria-labelledby="m-titulo"><div class="modal" id="m"></div></dialog>
+
+<script>
+(() => {
+  const BASE = '{{BASE}}'
+  const $ = (id) => document.getElementById(id)
+  const modal = $('modal'), m = $('m'), contenido = $('contenido'), widget = $('widget')
+  let persona = null, ciudades = [], hoy = '', vistaActual = 'reservar', busqueda = null, sondeo = null, cuenta = null
+
+  function el(tag, props = {}, ...hijos) {
+    const e = document.createElement(tag)
+    for (const [k, v] of Object.entries(props)) {
+      if (k === 'class') e.className = v
+      else if (k.startsWith('on')) e.addEventListener(k.slice(2), v)
+      else if (k === 'style') e.style.cssText = v
+      else if (v !== undefined && v !== null && v !== false) e.setAttribute(k, v === true ? '' : v)
+    }
+    for (const h of hijos.flat()) if (h != null && h !== false) e.append(h.nodeType ? h : document.createTextNode(String(h)))
+    return e
+  }
+  let versionPagina = null
+  const api = async (ruta, opciones = {}) => {
+    const r = await fetch(BASE + ruta, { ...opciones, headers: { 'content-type': 'application/json' }, body: opciones.body && JSON.stringify(opciones.body) })
+    // Si el servidor se actualizó mientras esta página estaba abierta, se recarga para tomar la versión nueva (no mientras se espera la wallet).
+    try { const v = r.headers.get('x-version'); if (v) { if (versionPagina && v !== versionPagina && !modal.open) { location.reload(); return new Promise(() => {}) } versionPagina ??= v } } catch (e) {}
+    return { ok: r.ok, estado: r.status, cuerpo: await r.json().catch(() => ({})) }
+  }
+  const cop = (n) => `$ ${Number(n).toLocaleString('es-CO')}`
+  const fechaLarga = (f) => new Date(`${f}T12:00:00Z`).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+  const duracion = (min) => `${Math.floor(min / 60)} h ${String(min % 60).padStart(2, '0')} min`
+  const svg = (s) => { const t = document.createElement('template'); t.innerHTML = s.trim(); return t.content.firstChild }
+  const MOVIL = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+  // En el mismo teléfono la wallet abre otra app y la página se recarga al volver: lo que el paso necesita para continuar se guarda aquí.
+  const RETOMAR = 'aerolinea_retomar'
+  const guardarRetomar = (d) => { try { sessionStorage.setItem(RETOMAR, JSON.stringify(d)) } catch {} }
+  const leerRetomar = () => { try { return JSON.parse(sessionStorage.getItem(RETOMAR) ?? 'null') } catch { return null } }
+  const borrarRetomar = () => { try { sessionStorage.removeItem(RETOMAR) } catch {} }
+  const parar = () => { clearInterval(sondeo); clearInterval(cuenta); sondeo = cuenta = null }
+  modal.addEventListener('close', parar)
+  const cerrar = () => { parar(); if (modal.open) modal.close() }
+
+  // ---- Identificación y ventana del QR ----------------------------------------------------------
+  async function cargarPersona() {
+    const { ok, cuerpo } = await api('/api/yo')
+    persona = ok ? cuerpo : null
+    const caja = $('persona')
+    caja.replaceChildren(); caja.hidden = !persona
+    $('entrar').hidden = !!persona
+    if (!persona) return
+    caja.append(persona.foto ? el('img', { src: persona.foto, alt: '' }) : el('span', { class: 'ini' }, persona.nombres[0]),
+      el('span', {}, persona.nombres.split(' ')[0]), el('button', { class: 'claro', onclick: async () => { await api('/api/salir', { method: 'POST' }); persona = null; busqueda = null; await cargarPersona(); ir('reservar') } }, 'Salir'))
+  }
+
+  // Abre la ventana con el QR de una solicitud al verifier y llama a `listo` con el resultado cuando la wallet responde.
+  async function pedirALaWallet({ proposito, titulo, sub, pide, demo, previa, retomar, listo }) {
+    parar()
+    m.replaceChildren(el('div', { class: 'cargando' }, 'Preparando el código…'))
+    if (!modal.open) modal.showModal()
+    const { ok, cuerpo } = await api('/api/solicitud', { method: 'POST', body: { proposito, demo, previa, dispositivo: MOVIL ? 'mismo' : 'otro' } })
+    if (!ok) { m.replaceChildren(el('h2', {}, 'No se pudo'), el('div', { class: 'aviso error' }, cuerpo.error ?? 'Error'), el('div', { class: 'acciones' }, el('button', { class: 'claro', onclick: cerrar }, 'Cerrar'))); return }
+    const restante = el('div', { class: 'cuenta' })
+    if (MOVIL) guardarRetomar({ id: cuerpo.id, proposito, previa, vista: vistaActual, busqueda, ...retomar })
+    m.replaceChildren(
+      el('h2', { id: 'm-titulo' }, titulo), el('p', { class: 'sub', style: 'margin:0 0 8px' }, MOVIL ? 'Abre tu wallet, revisa y acepta. Volverás aquí automáticamente.' : sub),
+      MOVIL ? el('a', { class: 'rojo', href: cuerpo.enlace, style: 'display:block;text-align:center;text-decoration:none;border-radius:8px;font-weight:700;margin:12px 0' }, 'Abrir mi wallet')
+        : el('img', { class: 'qr', src: cuerpo.qr, alt: 'Código QR para la wallet' }), restante,
+      el('div', { class: 'pide' }, el('b', {}, 'Se pide: '), pide),
+      el('div', { class: 'acciones' }, el('button', { class: 'claro', onclick: () => navigator.clipboard?.writeText(cuerpo.enlace) }, 'Copiar enlace'), el('button', { class: 'claro', onclick: cerrar }, 'Cancelar')))
+    const limite = Date.now() + cuerpo.vence_en * 1000
+    cuenta = setInterval(() => { const s = Math.max(0, Math.round((limite - Date.now()) / 1000)); restante.textContent = `El código vence en ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` }, 1000)
+    if (MOVIL) return // la wallet vuelve a /volver; no hace falta sondear
+    sondeo = setInterval(async () => {
+      const { cuerpo: r } = await api('/api/solicitud/' + cuerpo.id)
+      if (r.estado === 'listo') { parar(); modal.close(); await listo(r, cuerpo.id) }
+      else if (r.estado === 'rechazada') {
+        parar()
+        m.replaceChildren(el('h2', {}, 'No se pudo verificar'), el('div', { class: 'aviso error' }, r.motivo), el('div', { class: 'acciones' }, el('button', { class: 'rojo', onclick: () => pedirALaWallet({ proposito, titulo, sub, pide, demo, previa, retomar, listo }) }, 'Generar un código nuevo'), el('button', { class: 'claro', onclick: cerrar }, 'Cerrar')))
+      }
+    }, 2000)
+  }
+
+  const PIDE_PASAJERO = 'tu nombre y apellidos, número de documento, fecha de nacimiento y foto, del documento de identidad digital (PID).'
+  function identificarse(despues, retomar) {
+    pedirALaWallet({
+      retomar: { identificar: true, ...retomar },
+      proposito: 'identificacion', titulo: 'Identifícate con tu wallet', sub: 'La aerolínea necesita saber quién viaja: el tiquete es nominal.', pide: PIDE_PASAJERO,
+      listo: async () => { await cargarPersona(); if (despues) despues(); else ir(vistaActual) },
+    })
+  }
+  $('entrar').addEventListener('click', () => identificarse())
+
+  // ---- Navegación ------------------------------------------------------------------------------
+  function ir(v) {
+    vistaActual = v
+    for (const b of document.querySelectorAll('#pestanas button')) b.classList.toggle('activo', b.dataset.v === v)
+    for (const a of document.querySelectorAll('#menu a')) a.classList.toggle('activo', a.dataset.v === v)
+    if (v === 'reservar') { widgetReservar(); vistaInicio() }
+    else if (v === 'tiquetes') { widgetTexto('Tus tiquetes están en tu wallet. Aquí puedes volver a recibirlos o cancelarlos.'); vistaTiquetes() }
+    else { widgetEmbarque() }
+  }
+  for (const b of document.querySelectorAll('#pestanas button')) b.addEventListener('click', () => ir(b.dataset.v))
+  for (const a of document.querySelectorAll('#menu a')) a.addEventListener('click', () => { ir(a.dataset.v); window.scrollTo({ top: 0, behavior: 'smooth' }) })
+  const widgetTexto = (t) => widget.replaceChildren(el('p', { style: 'margin:0;color:var(--suave)' }, t))
+
+  // ---- Reservar --------------------------------------------------------------------------------
+  function widgetReservar(pre = {}) {
+    const opciones = (sel) => ciudades.map((c) => el('option', { value: c.codigo, ...(c.codigo === sel ? { selected: true } : {}) }, `${c.nombre} (${c.codigo})`))
+    const origen = el('select', { id: 'f-origen' }, ...opciones(pre.origen ?? 'BGA'))
+    const destino = el('select', { id: 'f-destino' }, ...opciones(pre.destino ?? 'BOG'))
+    const fecha = el('input', { type: 'date', min: hoy, value: pre.fecha ?? hoy })
+    const error = el('div', { class: 'aviso error', hidden: true, style: 'margin-top:12px' })
+    const cambiar = el('button', { class: 'cambiar', type: 'button', title: 'Invertir', 'aria-label': 'Invertir origen y destino', onclick: () => { const o = origen.value; origen.value = destino.value; destino.value = o } }, '⇄')
+    const buscar = el('button', { class: 'rojo', type: 'button', onclick: async () => {
+      error.hidden = true
+      if (origen.value === destino.value) { error.textContent = 'Elige un origen y un destino distintos.'; error.hidden = false; return }
+      busqueda = { origen: origen.value, destino: destino.value, fecha: fecha.value }
+      await vistaVuelos()
+    } }, 'Buscar vuelos')
+    widget.replaceChildren(
+      el('div', { class: 'campos' }, el('label', {}, 'Origen', origen), cambiar, el('label', {}, 'Destino', destino), el('label', {}, 'Fecha de salida', fecha), buscar),
+      el('div', { class: 'pasajero-linea' }, persona ? [el('span', { class: 'sello' }, '✔ Pasajero verificado'), `${persona.nombres} ${persona.apellidos}`] : ['Un pasajero por compra. Te identificas con tu wallet antes de pagar.']), error)
+  }
+
+  const COLORES = ['#2b4c8c', '#a8121a', '#2f6f5e', '#6c4a73', '#b38b4d', '#3b6aa0']
+  async function vistaInicio() {
+    contenido.replaceChildren(el('div', { class: 'cargando' }, 'Cargando ofertas…'))
+    const { cuerpo } = await api('/api/ofertas')
+    contenido.replaceChildren(
+      el('h2', {}, 'Destinos populares'), el('p', { class: 'sub' }, 'Precios desde, por adulto, en tarifa Básica, con tasas incluidas.'),
+      el('div', { class: 'ofertas' }, ...cuerpo.ofertas.slice(0, 8).map((o, i) => el('button', { class: 'oferta', onclick: () => { busqueda = { origen: o.origen, destino: o.destino, fecha: hoy }; widgetReservar(busqueda); vistaVuelos() } },
+        el('div', { class: 'foto', style: `background:linear-gradient(135deg,${COLORES[i % COLORES.length]},#14161d)` }),
+        el('div', { class: 'cuerpo' }, el('div', { class: 'tipo' }, o.internacional ? 'Internacional' : 'Nacional'), el('div', { class: 'ruta' }, `${o.origen_nombre} → ${o.destino_nombre}`),
+          el('div', { class: 'desde' }, 'Desde', el('b', {}, `${cop(o.desde)} COP`)))))),
+      el('div', { class: 'seguridad' },
+        el('div', {}, el('h3', {}, 'Nombre y documento'), el('p', {}, 'El tiquete es nominal: debe coincidir con tu documento de identidad.')),
+        el('div', {}, el('h3', {}, 'Fecha de nacimiento'), el('p', {}, 'Define si viajas como adulto, niño o infante, y qué tarifa te corresponde.')),
+        el('div', {}, el('h3', {}, 'Foto del documento'), el('p', {}, 'Se compara contigo en el embarque. No se guarda más allá de la compra.')),
+        el('div', {}, el('h3', {}, 'Todo con tu wallet'), el('p', {}, 'No escribes tus datos: los comparte tu wallet, ya verificados por la Registraduría.')))
+    )
+  }
+
+  async function vistaVuelos() {
+    contenido.replaceChildren(el('div', { class: 'cargando' }, 'Buscando vuelos…'))
+    const q = new URLSearchParams(busqueda)
+    const { ok, cuerpo } = await api('/api/vuelos?' + q)
+    if (!ok) { contenido.replaceChildren(el('div', { class: 'aviso error' }, cuerpo.error ?? 'No se pudo buscar.')); return }
+    const nombre = (c) => ciudades.find((x) => x.codigo === c)?.nombre ?? c
+    const lista = cuerpo.vuelos.length ? cuerpo.vuelos.map((v) => el('div', { class: 'vuelo' },
+      el('div', { class: 'cabeza' },
+        el('div', { class: 'horas' }, el('div', {}, el('b', {}, v.salida), el('small', {}, `${nombre(v.origen)} (${v.origen})`)),
+          el('div', { class: 'linea-vuelo' }, el('span', {}, `✈ ${duracion(v.duracion_min)}`)), el('div', {}, el('b', {}, v.llegada), el('small', {}, `${nombre(v.destino)} (${v.destino})`))),
+        el('div', {}, el('b', {}, v.vuelo), el('div', { style: 'color:var(--suave);font-size:.85rem' }, 'Sin escalas · ', v.internacional ? 'Internacional' : 'Nacional'))),
+      el('div', { class: 'tarifas' }, ...Object.entries(v.tarifas).map(([clave, t]) => el('div', { class: 'tarifa' },
+        el('h4', {}, t.nombre), el('div', { class: 'precio' }, `${cop(t.total)}`, el('small', {}, `COP · tarifa ${cop(t.tarifa)} + tasas ${cop(t.tasas)}`)),
+        el('p', {}, t.equipaje, ' ', t.cambios),
+        el('button', { class: 'rojo', onclick: () => elegir(v, clave) }, 'Elegir')))))) : [el('div', { class: 'aviso info' }, 'No hay vuelos ese día en esa ruta. Prueba otra fecha o destino.')]
+    contenido.replaceChildren(
+      el('h2', {}, `${nombre(busqueda.origen)} → ${nombre(busqueda.destino)} `, el('small', {}, fechaLarga(busqueda.fecha))),
+      el('p', { class: 'sub' }, cuerpo.identificado ? `Precios para ti: pasajero ${cuerpo.categoria.toLowerCase()}.` : 'Precios de adulto. Al identificarte se ajustan a tu edad.'),
+      ...lista)
+    contenido.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  function elegir(v, tarifa) {
+    if (!persona) return identificarse(() => elegir(v, tarifa), { elegir: { v, tarifa } })
+    vistaCompra(v, tarifa)
+  }
+
+  async function vistaCompra(v, tarifa) {
+    const { cuerpo } = await api('/api/vuelos?' + new URLSearchParams(busqueda))
+    const vuelo = cuerpo.vuelos.find((x) => x.salida === v.salida)
+    const nombre = (c) => ciudades.find((x) => x.codigo === c)?.nombre ?? c
+    const edadA = (nac) => { const n = new Date(`${nac}T00:00:00Z`), f = new Date(`${busqueda.fecha}T00:00:00Z`); let e = f.getUTCFullYear() - n.getUTCFullYear(); if (f < new Date(Date.UTC(f.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()))) e -= 1; return e }
+    const edad = edadA(persona.fecha_nacimiento)
+
+    // Una compra puede llevar varios pasajeros: yo (datos verificados con mi wallet) y hasta 3 menores a mi cargo (los datos de
+    // cada menor los escribo yo, que respondo por él). Cada pasajero tiene su propio tiquete.
+    const propio = { t: vuelo.tarifas[tarifa], categoria: cuerpo.categoria, edad }
+    const yo = el('input', { type: 'checkbox', checked: true, style: 'width:auto' })
+    const menores = [] // { campos, t, categoria, edad, caja }
+    const listaMenores = el('div', { class: 'campos-col' })
+    const agregar = el('button', { type: 'button', class: 'borde' }, '+ Agregar un menor a mi cargo')
+    const resumenFilas = el('tbody')
+    const total = el('td', {}), nota = el('div'), error = el('div', { class: 'aviso error', hidden: true })
+    const pagar = el('button', { class: 'rojo', type: 'submit' })
+
+    const pintar = () => {
+      const filas = []
+      if (yo.checked) filas.push([`${persona.nombres.split(' ')[0]} · ${propio.categoria}`, propio.t.total])
+      for (const m of menores) filas.push([`${m.campos.nombre.value.trim() || 'Menor a mi cargo'} · ${m.categoria ?? 'indica su fecha de nacimiento'}`, m.t?.total ?? 0])
+      resumenFilas.replaceChildren(...filas.map(([k, x]) => el('tr', {}, el('td', {}, k), el('td', {}, cop(x)))))
+      const suma = filas.reduce((a2, f) => a2 + f[1], 0)
+      total.textContent = `${cop(suma)} COP`
+      pagar.textContent = `Pagar ${cop(suma)} COP (simulado)`
+      pagar.disabled = filas.length === 0
+      const hayMenor = (yo.checked && edad < 18) || menores.some((m) => m.edad !== null && m.edad < 18)
+      nota.replaceChildren(vuelo.internacional && hayMenor
+        ? el('div', { class: 'aviso info' }, 'Hay un pasajero menor de edad en un vuelo internacional: en el embarque se exigirá el permiso de salida del país que otorga una notaría. Si todavía no lo tienes, pídelo en la notaría antes de viajar.') : '')
+    }
+    yo.addEventListener('change', pintar)
+
+    const nuevoMenor = () => {
+      const campos = {
+        nombre: el('input', { maxlength: 120, required: true, placeholder: 'Nombre completo del menor' }),
+        tipo: el('select', {}, el('option', { value: 'Registro civil' }, 'Registro civil'), el('option', { value: 'Tarjeta de identidad' }, 'Tarjeta de identidad')),
+        documento: el('input', { inputmode: 'numeric', required: true, placeholder: 'Número del documento' }),
+        nacimiento: el('input', { type: 'date', required: true, max: hoy }),
+      }
+      const m = { campos, t: null, categoria: null, edad: null }
+      const quitar = el('button', { type: 'button', class: 'claro', onclick: () => { menores.splice(menores.indexOf(m), 1); m.caja.remove(); agregar.hidden = false; pintar() } }, 'Quitar')
+      m.caja = el('div', { class: 'panel', style: 'padding:16px;margin:0;background:var(--fondo)' },
+        el('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px' }, el('b', {}, 'Menor a mi cargo'), quitar),
+        el('div', { class: 'campos-col' },
+          el('label', {}, 'Nombre completo', campos.nombre),
+          el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:12px' }, el('label', {}, 'Tipo de documento', campos.tipo), el('label', {}, 'Número', campos.documento)),
+          el('label', {}, 'Fecha de nacimiento', campos.nacimiento)))
+      campos.nombre.addEventListener('input', pintar)
+      campos.nacimiento.addEventListener('change', async () => {
+        m.edad = edadA(campos.nacimiento.value)
+        const r = await api('/api/vuelos?' + new URLSearchParams({ ...busqueda, nacimiento: campos.nacimiento.value }))
+        if (r.ok) { m.t = r.cuerpo.vuelos.find((x) => x.salida === v.salida).tarifas[tarifa]; m.categoria = r.cuerpo.categoria }
+        pintar()
+      })
+      menores.push(m); listaMenores.append(m.caja)
+      agregar.hidden = menores.length >= 3
+      pintar()
+    }
+    agregar.addEventListener('click', nuevoMenor)
+
+    const email = el('input', { type: 'email', required: true, placeholder: 'tucorreo@ejemplo.com', autocomplete: 'email', value: persona.contacto?.email ?? '' })
+    const tel = el('input', { type: 'tel', required: true, placeholder: '3001234567', autocomplete: 'tel', value: persona.contacto?.telefono ?? '' })
+    const deLaWallet = !!(persona.contacto?.email || persona.contacto?.telefono)
+    const form = el('form', { class: 'campos-col', onsubmit: async (e) => {
+      e.preventDefault(); error.hidden = true
+      const pasajeros = []
+      if (yo.checked) pasajeros.push({ tipo: 'yo' })
+      for (const m of menores) pasajeros.push({ tipo: 'menor', nombre: m.campos.nombre.value, tipo_documento: m.campos.tipo.value, documento: m.campos.documento.value, nacimiento: m.campos.nacimiento.value })
+      pagar.disabled = true
+      const r = await api('/api/comprar', { method: 'POST', body: { ...busqueda, salida: v.salida, tarifa, email: email.value, telefono: tel.value, pasajeros } })
+      if (!r.ok) { error.textContent = r.cuerpo.error; error.hidden = false; pagar.disabled = false; return }
+      vistaEntrega(r.cuerpo.reservas)
+    } },
+      el('h3', { style: 'margin:0' }, '¿Quién viaja?'),
+      el('label', { style: 'flex-direction:row;align-items:center;gap:10px;text-transform:none;letter-spacing:0;font-size:1rem;color:var(--tinta)' }, yo, `Yo (${persona.nombres} ${persona.apellidos}) · ${propio.categoria}`),
+      listaMenores, agregar,
+      el('h3', { style: 'margin:8px 0 0' }, 'Contacto'),
+      el('label', {}, 'Correo electrónico', email), el('label', {}, 'Teléfono de contacto', tel),
+      el('div', { class: 'aviso info' }, deLaWallet
+        ? 'Tu correo y tu teléfono los compartió tu wallet (vienen de tu documento digital). Puedes cambiarlos si prefieres que la aerolínea te avise en otros datos; si falta alguno, escríbelo.'
+        : 'El correo y el teléfono no vienen de tu documento: los escribes tú para que la aerolínea pueda avisarte de cambios en el vuelo.'),
+      nota, error, pagar)
+    pintar()
+    contenido.replaceChildren(
+      el('h2', {}, 'Pasajeros y pago'), el('p', { class: 'sub' }, 'Tus datos los compartió tu wallet y los verificó la Registraduría. Puedes comprar en la misma operación el tiquete de menores a tu cargo: cada uno recibe el suyo.'),
+      el('div', { class: 'dos' },
+        el('div', { class: 'panel' },
+          el('div', { class: 'pasajero' }, persona.foto ? el('img', { src: persona.foto, alt: 'Foto del documento' }) : el('div', { class: 'sin-foto' }, 'Sin foto'),
+            el('div', {}, el('span', { class: 'sello' }, '✔ Verificado con tu wallet'), el('div', {}, el('b', {}, `${persona.nombres} ${persona.apellidos}`)),
+              el('small', {}, `Documento ${persona.documento}`), el('small', {}, `Nacimiento ${fechaLarga(persona.fecha_nacimiento)} · ${edad} años`))),
+          form),
+        el('div', { class: 'panel' }, el('h3', {}, 'Resumen'),
+          el('table', { class: 'resumen' },
+            el('tr', {}, el('td', {}, `${nombre(vuelo.origen)} → ${nombre(vuelo.destino)}`), el('td', {}, vuelo.vuelo)),
+            el('tr', {}, el('td', {}, fechaLarga(busqueda.fecha)), el('td', {}, `${vuelo.salida} – ${vuelo.llegada}`)),
+            el('tr', {}, el('td', {}, `Tarifa ${propio.t.nombre} (con tasas)`), el('td', {}, '')),
+            resumenFilas,
+            el('tr', { class: 'total' }, el('td', {}, 'Total'), total)),
+          el('p', { style: 'color:var(--suave);font-size:.82rem' }, propio.t.equipaje, ' ', propio.t.cambios))))
+    contenido.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  // ---- Tiquete (pase de abordar) ---------------------------------------------------------------
+  // Ciclo de vida de un tiquete: emitido → en la wallet → abordado (usado); o cancelado.
+  const ETIQUETA_USO = { emitido: 'EMITIDO · AÚN NO ESTÁ EN TU WALLET', en_wallet: 'EN TU WALLET · LISTO PARA EL EMBARQUE', abordado: 'ABORDADO · TIQUETE USADO', cancelado: 'TIQUETE CANCELADO' }
+  function pase(r, oferta) {
+    const cod = (t) => /\((\w+)\)/.exec(t)?.[1] ?? t
+    return el('div', { class: 'pase' },
+      el('div', { class: 'principal' },
+        el('div', { class: `franja${r.uso === 'cancelado' || r.uso === 'abordado' ? ' cancelado' : ''}` }, el('span', {}, '{{AEROLINEA}}'.toUpperCase()), el('span', {}, ETIQUETA_USO[r.uso] ?? 'TIQUETE ELECTRÓNICO')),
+        el('div', { class: 'ruta' }, el('div', { class: 'ciudad' }, el('b', {}, cod(r.origen)), el('small', {}, r.origen.replace(/\s*\(.*\)/, ''))),
+          el('div', { class: 'avion' }, el('span', {}, '✈')), el('div', { class: 'ciudad' }, el('b', {}, cod(r.destino)), el('small', {}, r.destino.replace(/\s*\(.*\)/, '')))),
+        el('dl', {}, ...[['Fecha', fechaLarga(r.fecha)], ['Salida', r.salida], ['Llegada', r.llegada], ['Vuelo', r.vuelo], ['Reserva', r.reserva], ['Tiquete', r.numero_tiquete], ['Tarifa', r.tarifa], ['Pasajero', r.pasajero ?? r.categoria], ['Tipo', r.categoria + (r.menor ? ' · menor de edad' : '')], ['Valor', r.valor_pagado]]
+          .map(([k, v]) => el('div', {}, el('dt', {}, k), el('dd', {}, v))))),
+      oferta ? el('div', { class: 'talon' }, el('b', {}, 'Recíbelo en tu wallet'), el('img', { class: 'qr', src: oferta.qr, alt: 'QR de la oferta' }), el('div', { class: 'pin' }, oferta.pin),
+        el('small', { style: 'color:var(--suave)' }, 'Escanea y escribe este PIN. La oferta vale 15 minutos y sirve una vez.')) : null)
+  }
+
+  // Uno o varios tiquetes recién comprados (o uno que se vuelve a pedir): cada uno con su QR y su PIN.
+  function vistaEntrega(items) {
+    const varios = items.length > 1
+    contenido.replaceChildren(
+      el('div', { class: 'aviso ok', style: 'margin-bottom:16px' }, varios
+        ? `✔ Compra confirmada. Reserva ${items[0].reserva.reserva} con ${items.length} pasajeros: un tiquete por pasajero, cada uno con su propio código y PIN.`
+        : `✔ Compra confirmada. Reserva ${items[0].reserva.reserva}. Se emitió tu tiquete electrónico.`),
+      ...items.map(({ reserva, oferta }) => pase(reserva, oferta)),
+      el('div', { class: 'acciones', style: 'justify-content:flex-start' }, el('button', { class: 'rojo', onclick: () => ir('tiquetes') }, 'Ir a mis tiquetes'), el('button', { class: 'borde', onclick: () => ir('reservar') }, 'Comprar otro')))
+    contenido.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  async function vistaTiquetes() {
+    if (!persona) { contenido.replaceChildren(el('div', { class: 'panel' }, el('h3', {}, 'Identifícate para ver tus tiquetes'), el('p', { class: 'sub' }, 'Tus tiquetes están asociados a tu documento.'), el('button', { class: 'rojo', onclick: () => identificarse(() => ir('tiquetes')) }, 'Identificarme con mi wallet'))); return }
+    contenido.replaceChildren(el('div', { class: 'cargando' }, 'Cargando…'))
+    const { cuerpo } = await api('/api/tiquetes')
+    // Una reserva agrupa los tiquetes de una misma compra (tú y los menores a tu cargo).
+    const grupos = new Map()
+    for (const r of cuerpo) { grupos.set(r.reserva, [...(grupos.get(r.reserva) ?? []), r]) }
+    const recibir = async (r, reexpedir) => {
+      if (reexpedir && !confirm('¿Reexpedir este tiquete? La copia que tienes en tu wallet dejará de valer y recibirás una nueva.')) return
+      const x = await api(`/api/tiquetes/${r.numero}/oferta`, { method: 'POST', body: reexpedir ? { reexpedir: true } : {} })
+      if (x.ok) vistaEntrega([{ reserva: r, oferta: x.cuerpo.oferta }]); else alert(x.cuerpo.error)
+    }
+    const acciones = (r) => {
+      if (r.uso === 'cancelado') return el('span', { class: 'estado-b anulado' }, 'Cancelado')
+      if (r.uso === 'abordado') return el('span', { class: 'estado-b anulado', style: 'background:#eee;color:#555' }, 'Abordado · usado: ya no vale')
+      const b = [el('span', { class: 'estado-b vigente' }, r.uso === 'en_wallet' ? 'En tu wallet' : 'Emitido, falta recibirlo')]
+      b.push(r.uso === 'emitido'
+        ? el('button', { class: 'borde', onclick: () => recibir(r, false) }, 'Recibir en mi wallet')
+        : el('button', { class: 'claro', title: 'Si perdiste tu tiquete: la copia anterior se revoca', onclick: () => recibir(r, true) }, 'Reexpedir (lo perdí)'))
+      b.push(el('button', { class: 'claro', onclick: async () => { if (confirm('¿Cancelar este tiquete? No se puede deshacer.')) { await api(`/api/tiquetes/${r.numero}/cancelar`, { method: 'POST' }); vistaTiquetes() } } }, 'Cancelar tiquete'))
+      return b
+    }
+    contenido.replaceChildren(el('h2', {}, 'Mis tiquetes'), el('p', { class: 'sub' }, 'Cada tiquete se entrega una sola vez a una wallet. Al abordar se usa y deja de valer. Cancelarlo también lo revoca.'),
+      ...(grupos.size ? [...grupos.entries()].map(([codigo, lista]) => el('div', { style: 'margin-bottom:26px' },
+        el('h3', { style: 'margin:0 0 10px;font-size:1rem;color:var(--suave)' }, `Reserva ${codigo} · ${lista.length} pasajero${lista.length > 1 ? 's' : ''}`),
+        ...lista.map((r) => el('div', {}, pase(r, null), el('div', { class: 'acciones', style: 'justify-content:flex-start;margin:-6px 0 14px' }, acciones(r)))))) : [el('div', { class: 'aviso info' }, 'Todavía no has comprado ningún tiquete.')]))
+  }
+
+  // ---- Embarque --------------------------------------------------------------------------------
+  const ETIQUETA_USO_CORTA = { emitido: ['Emitido', 'gris'], en_wallet: ['En wallet · espera el embarque', 'vigente'], abordado: ['Abordó', 'abordo'], cancelado: ['Cancelado', 'anulado'] }
+
+  // La pestaña de embarque: los vuelos con pasajeros dados de alta, el manifiesto del vuelo elegido (con el estado de cada tiquete) y la
+  // verificación en el mostrador.
+  async function widgetEmbarque() {
+    const demo = el('input', { type: 'checkbox', checked: true, style: 'width:auto' })
+    widget.replaceChildren(
+      el('p', { style: 'margin:0 0 12px;color:var(--suave)' }, 'En el mostrador, la persona se identifica y presenta su tiquete y los de los menores a su cargo, todos en un solo código. Se comprueba que cada tiquete es de esta aerolínea, está vigente y es de quien lo presenta. Los que cumplen abordan y quedan usados. Un menor en un vuelo internacional necesita además su permiso de salida del país.'),
+      el('label', { style: 'flex-direction:row;align-items:center;gap:10px;text-transform:none;letter-spacing:0;font-size:.9rem;color:var(--tinta);margin-bottom:14px' }, demo, 'Modo demostración: no exigir que el vuelo sea hoy'),
+      el('button', { class: 'rojo', onclick: () => pedirALaWallet({
+        proposito: 'embarque', demo: demo.checked, retomar: {}, titulo: 'Embarque: presenta tu tiquete', sub: 'Escanea con tu wallet y elige todos los tiquetes que embarcan contigo.',
+        pide: 'tus tiquetes (reserva, vuelo, origen, destino, fecha, quién viaja y su responsable) y, del documento de identidad, tu nombre, documento y foto.',
+        listo: (r, id) => resultadoEmbarque(r.embarque, id),
+      }) }, 'Verificar tiquetes y documento'))
+    contenido.replaceChildren(el('div', { id: 'manifiestos' }))
+    cargarManifiestos()
+  }
+
+  async function cargarManifiestos(elegido) {
+    const caja = $('manifiestos'); if (!caja) return
+    const { cuerpo } = await api('/api/vuelos-con-tiquetes')
+    const vuelos = cuerpo.vuelos ?? []
+    const cuadro = el('div')
+    const mostrar = async (v) => {
+      const r = await api(`/api/manifiesto?vuelo=${encodeURIComponent(v.vuelo)}&fecha=${v.fecha}`)
+      const n = (u) => r.cuerpo.pasajeros.filter((x) => x.uso === u).length
+      cuadro.replaceChildren(
+        el('p', { class: 'sub', style: 'margin:10px 0' }, `${r.cuerpo.pasajeros.length} pasajeros dados de alta · ${n('abordado')} abordaron · ${n('en_wallet')} esperan el embarque · ${n('emitido')} aún sin recibir`),
+        el('table', { class: 'resumen' }, el('tr', {}, ...['Reserva', 'Tiquete', 'Pasajero', 'Documento', 'Tipo', 'Estado'].map((h) => el('td', { style: 'font-weight:700;color:var(--suave)' }, h))),
+          ...r.cuerpo.pasajeros.map((x) => el('tr', {}, el('td', { style: 'text-align:left;font-weight:600' }, x.reserva), el('td', { style: 'text-align:left;font-weight:400' }, x.tiquete),
+            el('td', { style: 'text-align:left;font-weight:400' }, x.pasajero), el('td', { style: 'text-align:left;font-weight:400' }, x.documento),
+            el('td', { style: 'text-align:left;font-weight:400' }, x.tipo + (x.menor ? ' · menor' : '')),
+            el('td', { style: 'text-align:left' }, el('span', { class: `estado-b ${(ETIQUETA_USO_CORTA[x.uso] ?? ['', 'vigente'])[1]}` }, (ETIQUETA_USO_CORTA[x.uso] ?? [x.uso])[0]))))))
+    }
+    const lista = vuelos.length
+      ? el('select', { onchange: (e) => mostrar(vuelos[Number(e.target.value)]) }, ...vuelos.map((v, i) => el('option', { value: i, ...(elegido === `${v.vuelo}|${v.fecha}` ? { selected: true } : {}) }, `${v.vuelo} · ${v.origen} → ${v.destino} · ${fechaLarga(v.fecha)} ${v.salida} · ${v.tiquetes} tiquete${v.tiquetes > 1 ? 's' : ''}`)))
+      : null
+    caja.replaceChildren(el('h2', {}, 'Pasajeros del vuelo'), el('p', { class: 'sub' }, 'Los tiquetes dados de alta para cada vuelo y su estado. Los datos van enmascarados: este portal de ejemplo no tiene acceso de personal.'),
+      el('div', { class: 'panel' }, vuelos.length ? [el('label', {}, 'Vuelo', lista), cuadro] : el('div', { class: 'aviso info' }, 'Todavía no hay tiquetes emitidos para ningún vuelo.')))
+    if (vuelos.length) mostrar(vuelos.find((v) => `${v.vuelo}|${v.fecha}` === elegido) ?? vuelos[0])
+  }
+
+  const pedirPermiso = (e, id) => pedirALaWallet({
+    proposito: 'permiso', previa: id, retomar: {}, titulo: 'Permiso de salida del país', sub: 'Escanea con la wallet del adulto responsable y elige el permiso de cada menor.',
+    pide: 'el permiso de salida de menor que otorgó una notaría: quién lo otorgó, el menor, el destino y las fechas del viaje.',
+    listo: (r) => resultadoEmbarque(e, id, r.permiso).then(cargarManifiestos),
+  })
+
+  // Resultado de presentar uno o varios tiquetes. `permiso` llega después del segundo paso, con un resultado por menor.
+  async function resultadoEmbarque(e, id, permiso) {
+    const fila = (c) => el('div', { class: `criterio${c.cumple ? '' : ' no'}` }, el('div', { class: 'm' }, c.cumple ? '✔' : '✖'), el('div', {}, el('b', {}, c.nombre), el('span', {}, c.detalle)))
+    const delPermiso = (numeroTiquete) => permiso?.resultados.find((x) => x.tiquete === numeroTiquete)
+    const estadoDe = (t) => {
+      const pr = delPermiso(t.numero)
+      if (t.abordo || pr?.abordo) return 'abordo'
+      if (t.requierePermiso && t.ok && !pr) return 'pendiente'
+      return 'no'
+    }
+    const etiqueta = { abordo: ['✔ Abordó', 'si'], pendiente: ['⏳ Falta el permiso de salida del país', 'pend'], no: ['✖ No puede abordar', 'no'] }
+    const pendientes = e.tiquetes.filter((t) => estadoDe(t) === 'pendiente')
+    contenido.replaceChildren(
+      el('div', { id: 'resultado' }),
+      el('div', { id: 'manifiestos' }))
+    const cuadroR = $('resultado')
+    cuadroR.replaceChildren(
+      el('h2', {}, `Resultado del embarque · ${e.tiquetes.length} tiquete${e.tiquetes.length > 1 ? 's' : ''}`),
+      el('div', { class: 'panel' }, el('div', { class: 'embarque' },
+        e.pasajero.foto ? el('img', { class: 'foto', src: e.pasajero.foto, alt: 'Foto del documento' }) : el('div', { class: 'sin-foto', style: 'width:200px;height:260px' }, 'Sin foto'),
+        el('div', {},
+          el('p', { style: 'margin:0 0 2px;font-size:1.25rem;font-weight:800' }, e.pasajero.nombre),
+          el('p', { style: 'margin:0 0 12px;color:var(--suave)' }, `Documento ${e.pasajero.documento} · se identificó con su wallet. Compara la foto con la persona.`),
+          ...e.tiquetes.map((t) => {
+            const est = estadoDe(t), pr = delPermiso(t.numero)
+            return el('div', { style: 'border:1px solid var(--linea);border-radius:8px;padding:14px;margin-bottom:12px' },
+              el('div', { class: `veredicto ${etiqueta[est][1] === 'pend' ? '' : etiqueta[est][1]}`, style: etiqueta[est][1] === 'pend' ? 'background:#fff6e0;color:#6d5316;font-size:1.05rem' : 'font-size:1.05rem' }, `${etiqueta[est][0]} · ${t.viajero.menor ? `Menor: ${t.viajero.nombre}` : t.viajero.nombre}`),
+              el('p', { style: 'margin:0 0 8px;color:var(--suave);font-size:.88rem' }, `${t.vuelo} · ${t.origen} → ${t.destino} · ${fechaLarga(t.fecha)} ${t.hora} · reserva ${t.reserva} · tiquete ${t.numero} · ${t.tarifa}${t.viajero.menor ? ` · documento del menor ${t.viajero.documento}` : ''}`),
+              ...t.criterios.map(fila),
+              pr ? [el('h3', { style: 'margin:14px 0 6px;font-size:.95rem' }, 'Permiso de salida del país'), ...pr.criterios.map(fila),
+                pr.datos ? el('p', { style: 'margin:8px 0 0;color:var(--suave);font-size:.85rem' }, `Permiso n.º ${pr.datos.numero} · otorgado por ${pr.datos.otorgante} (${pr.datos.calidad}) · viaja con: ${pr.datos.acompanante ?? 'viaja solo(a)'} · otro progenitor: ${pr.datos.otro_progenitor}.`) : null] : null)
+          }),
+          pendientes.length ? el('div', {}, el('div', { class: 'aviso info', style: 'margin-bottom:12px' }, `${pendientes.length === 1 ? 'Hay un pasajero menor' : `Hay ${pendientes.length} pasajeros menores`} en un vuelo internacional. Pide al adulto responsable el permiso de salida del país que le dio una notaría (uno por menor).`),
+            el('button', { class: 'rojo', onclick: () => pedirPermiso(e, id) }, `Verificar ${pendientes.length === 1 ? 'el permiso' : 'los permisos'} de salida`)) : null))))
+    contenido.scrollIntoView({ behavior: 'smooth' })
+    await cargarManifiestos()
+  }
+
+  // ---- Arranque --------------------------------------------------------------------------------
+  ;(async () => {
+    const { cuerpo } = await api('/api/destinos')
+    ciudades = cuerpo.ciudades; hoy = cuerpo.hoy
+    await cargarPersona()
+    ir('reservar')
+    await volverDeLaWallet()
+  })()
+
+  // Al volver de la wallet (mismo teléfono): ?error=… si algo falló, o ?vuelta=<id> si ya se verificó. En ese caso se retoma el
+  // paso exactamente donde lo dejaría el sondeo tras escanear el QR.
+  async function volverDeLaWallet() {
+    const q = new URLSearchParams(location.search)
+    const error = q.get('error'), vuelta = q.get('vuelta')
+    if (!error && !vuelta) return
+    history.replaceState(null, '', BASE + '/')
+    const guardado = leerRetomar()
+    borrarRetomar()
+    if (error) { m.replaceChildren(el('h2', {}, 'No se pudo verificar'), el('div', { class: 'aviso error' }, error), el('div', { class: 'acciones' }, el('button', { class: 'claro', onclick: cerrar }, 'Cerrar'))); modal.showModal(); return }
+    if (!guardado || guardado.id !== vuelta) return
+    const { ok, cuerpo: r } = await api('/api/solicitud/' + encodeURIComponent(vuelta))
+    if (!ok || r.estado !== 'listo') return
+    busqueda = guardado.busqueda ?? null
+    if (guardado.proposito === 'identificacion') {
+      await cargarPersona()
+      if (guardado.elegir) elegir(guardado.elegir.v, guardado.elegir.tarifa); else ir(guardado.vista ?? 'reservar')
+    } else if (guardado.proposito === 'embarque') {
+      ir('embarque'); await resultadoEmbarque(r.embarque, vuelta)
+    } else if (guardado.proposito === 'permiso') {
+      const { cuerpo: previa } = await api('/api/solicitud/' + encodeURIComponent(guardado.previa))
+      if (previa.estado === 'listo') { ir('embarque'); await resultadoEmbarque(previa.embarque, guardado.previa, r.permiso).then(cargarManifiestos) }
+    }
+  }
+})()
+</script>
+<script>
+/* Enlace «Historial»: oculto salvo en redes de administración (el proxy responde 403 fuera de ellas). */
+try {
+  fetch('{{BASE}}/auditoria/api/ping', { cache: 'no-store' }).then((r) => {
+    if (r.status === 200 || r.status === 204) { const e = document.getElementById('enlHistorial'); if (e) { e.hidden = false; e.style.display = ''; if (e.parentElement.id === 'navHistorial') e.parentElement.style.display = '' } }
+  }).catch(() => {})
+} catch (e) {}
+</script>
+</body>
+</html>

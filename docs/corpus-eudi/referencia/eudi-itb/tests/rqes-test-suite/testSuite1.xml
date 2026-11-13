@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite id="testSuite1" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <gitb:name>Remote Qualified Electronic Signature</gitb:name>
+        <gitb:description>This scenario will test the digital wallet qualified electronic signature functionality, where the document to be signed is retrieved as defined in ETSI 119 432 v1.3.1.</gitb:description>
+        <gitb:version>1.0</gitb:version>
+    </metadata>
+    <actors>
+        <gitb:actor id="relyingParty">
+            <gitb:name>Relying Party</gitb:name>
+            <gitb:desc>The Relying Party that will be used for testing and that will make available the document for signing.</gitb:desc>
+        </gitb:actor>        
+        <gitb:actor id="simulatedDocumentRetrieval">
+            <gitb:name>Simulated Document Retrieval</gitb:name>
+            <gitb:desc>An actor that simulates a document retrieval request.</gitb:desc>
+        </gitb:actor>
+        <gitb:actor id="wallet">
+            <gitb:name>Wallet</gitb:name>
+            <gitb:desc>The Wallet that will be tested against the Relying Party.</gitb:desc>
+        </gitb:actor>
+    </actors>
+    <testcase id="testCase1_documentRetrieval"/>
+</testsuite>

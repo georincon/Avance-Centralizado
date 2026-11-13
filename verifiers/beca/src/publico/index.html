@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{NOMBRE}} · Admisiones y becas</title>
+<link rel="icon" href="{{BASE}}/publico/marca.svg">
+<style>
+  /* Inter, alojada aquí: la página no llama a Google Fonts. */
+  @font-face { font-family: 'Inter'; font-weight: 300 700; font-display: swap; src: url('{{BASE}}/publico/fuentes/inter-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: 'Inter'; font-weight: 300 700; font-display: swap; src: url('{{BASE}}/publico/fuentes/inter-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+  /* Estilo inspirado en la sobriedad de un instituto tecnológico: rojo cardenal, gris plata, negro y blanco, tipografía suiza. */
+  :root {
+    --cardenal: #A31F34; --cardenal-osc: #750014; --plata: #8A8B8C; --plata-clara: #C2C0BF; --tinta: #1a1a1a; --suave: #5b5b5d;
+    --fondo: #ffffff; --gris: #f2f2f2; --borde: #dcdcdc; --ok: #14733f; --ok-fondo: #e7f4ec; --error: #A31F34; --error-fondo: #fbeaed;
+    /* Alias de los estilos de las ventanas y resultados */
+    --azul: var(--tinta); --cielo: var(--cardenal); --superficie: #fff; --texto: var(--tinta); --marca: var(--cardenal);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--tinta); font: 16px/1.55 "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
+  a { color: var(--cardenal); }
+  /* Cabecera */
+  .utilidad { background: var(--tinta); color: #d9d9d9; font-size: .78rem; }
+  .utilidad div { max-width: 1180px; margin: 0 auto; padding: 7px 24px; display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+  body > header { background: #fff; border-bottom: 1px solid var(--borde); position: sticky; top: 0; z-index: 5; }
+  .barra { max-width: 1180px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; gap: 30px; flex-wrap: wrap; }
+  .marca { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--tinta); }
+  .marca svg { width: 46px; height: 34px; flex: none; }
+  .marca strong { font-size: 1.28rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.05; display: block; }
+  .marca small { color: var(--suave); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; }
+  nav { display: flex; gap: 26px; margin-left: auto; flex-wrap: wrap; }
+  nav a { color: var(--tinta); text-decoration: none; font-weight: 500; font-size: .95rem; padding: 6px 0; border-bottom: 3px solid transparent; }
+  nav a:hover { border-bottom-color: var(--cardenal); }
+  /* Portada tipo «spotlight» */
+  .portada { background: var(--gris); border-bottom: 1px solid var(--borde); }
+  .portada .in { max-width: 1180px; margin: 0 auto; padding: 56px 24px; display: grid; grid-template-columns: 1fr 1.05fr; gap: 40px; align-items: center; }
+  .portada .etq { color: var(--cardenal); font-weight: 600; font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; display: block; margin-bottom: 18px; }
+  .portada h1 { font-size: clamp(2.3rem, 5vw, 3.9rem); line-height: 1.02; font-weight: 500; letter-spacing: -.035em; margin: 0 0 22px; }
+  .portada h1 b { font-weight: 700; color: var(--cardenal); }
+  .portada p { color: #3a3a3c; max-width: 52ch; margin: 0 0 12px; font-size: 1.08rem; }
+  .portada .enlace { display: inline-block; margin-top: 12px; font-weight: 600; color: var(--cardenal); text-decoration: none; border-bottom: 2px solid var(--cardenal); padding-bottom: 2px; }
+  .portada .enlace::after { content: " →"; }
+  .portada .arte { width: 100%; display: block; }
+  /* Secciones */
+  main { max-width: 1180px; width: 100%; flex: 1; margin: 0 auto; padding: 46px 24px 64px; }
+  .titulo { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; border-top: 4px solid var(--tinta); padding-top: 16px; margin: 0 0 26px; }
+  .titulo h2 { margin: 0; font-size: 1.9rem; font-weight: 500; letter-spacing: -.025em; }
+  .sub-titulo { color: var(--suave); margin: -10px 0 26px; max-width: 70ch; }
+  .convocatorias { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr)); gap: 28px; margin: 0 0 48px; }
+  .conv { background: #fff; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--borde); padding-top: 0; }
+  .conv::before { content: ""; display: block; height: 150px; margin-bottom: 8px; background: var(--gris); background-image: var(--arte); background-size: cover; background-position: center; }
+  .conv.beca::before { background-color: #ececec; }
+  .conv .tipo { color: var(--cardenal); font-size: .75rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; }
+  .conv h3 { margin: 0; font-size: 1.45rem; line-height: 1.15; font-weight: 500; letter-spacing: -.02em; text-transform: none; color: var(--tinta); }
+  .conv p { margin: 0; color: var(--suave); font-size: .96rem; }
+  .conv ul { margin: 4px 0 8px; padding: 0; list-style: none; display: grid; gap: 5px; font-size: .92rem; flex: 1; }
+  .conv li { display: flex; gap: 10px; } .conv li::before { content: "—"; color: var(--plata); }
+  .conv button { align-self: flex-start; }
+  .conv.hecha .tipo::after { content: " · radicada"; color: var(--ok); }
+  .privacidad { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; border-top: 1px solid var(--borde); padding-top: 34px; }
+  @media (max-width: 860px) { .portada .in { grid-template-columns: 1fr; } .privacidad { grid-template-columns: 1fr; } nav { margin-left: 0; } }
+  .caja h2 { font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; margin: 0 0 12px; color: var(--ok); }
+  .caja.no h2 { color: var(--cardenal); }
+  .caja ul { margin: 0; padding: 0; list-style: none; color: var(--suave); } .caja li { margin: 8px 0; padding-left: 18px; position: relative; }
+  .caja li::before { content: ""; position: absolute; left: 0; top: .62em; width: 8px; height: 2px; background: var(--plata); }
+  /* Botones */
+  button.p, button.s { font: inherit; font-weight: 600; font-size: .92rem; border-radius: 0; padding: 11px 22px; cursor: pointer; border: 2px solid var(--cardenal); letter-spacing: .01em; }
+  button.p { background: var(--cardenal); color: #fff; } button.p:hover:not(:disabled) { background: var(--cardenal-osc); border-color: var(--cardenal-osc); }
+  button.s { background: transparent; color: var(--cardenal); } button.s:hover { background: var(--cardenal); color: #fff; }
+  button:disabled { background: var(--gris); color: var(--plata); border-color: var(--borde); cursor: default; }
+  button:focus-visible { outline: 3px solid var(--tinta); outline-offset: 2px; }
+  /* Ventana con el QR */
+  dialog { border: 0; border-radius: 0; padding: 0; width: min(540px, calc(100vw - 28px)); background: #fff; color: var(--tinta); box-shadow: 0 24px 70px rgba(0,0,0,.45); border-top: 6px solid var(--cardenal); }
+  dialog::backdrop { background: rgba(26,26,26,.7); }
+  .cuerpo { padding: 28px; } .cuerpo h2 { margin: 0 0 4px; font-size: 1.5rem; font-weight: 500; letter-spacing: -.02em; }
+  .sub { color: var(--suave); margin: 0 0 16px; font-size: .95rem; }
+  .qr { display: block; margin: 8px auto 12px; width: 260px; max-width: 100%; height: auto; background: #fff; padding: 8px; border: 1px solid var(--borde); }
+  .pasos { color: var(--suave); font-size: .92rem; margin: 0 0 12px; padding-left: 20px; }
+  .pide { background: var(--gris); padding: 12px 14px; font-size: .9rem; color: var(--suave); margin: 0 0 14px; } .pide b { color: var(--tinta); }
+  .aviso { background: #fff7d6; color: #5c4a00; border-left: 4px solid #e0b400; padding: 10px 14px; font-size: .9rem; margin: 0 0 14px; }
+  .acciones { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; margin-top: 16px; }
+  .boton-wallet { display: block; text-align: center; text-decoration: none; background: var(--cardenal); color: #fff; font-weight: 600; padding: 14px 22px; margin: 8px 0 12px; border: 2px solid var(--cardenal); }
+  .boton-wallet:hover { background: var(--cardenal-osc); }
+  .cuenta { color: var(--suave); font-size: .85rem; text-align: center; min-height: 1.3em; }
+  .cargando { text-align: center; color: var(--suave); padding: 30px 0; }
+  .sello { display: inline-flex; align-items: center; gap: 8px; background: var(--ok-fondo); color: var(--ok); font-weight: 600; padding: 6px 12px; margin-bottom: 12px; }
+  .sello.mal { background: var(--error-fondo); color: var(--error); }
+  /* Resultados */
+  #compartidos { margin-top: 48px; } #compartidos > h2 { font-size: 1.9rem; font-weight: 500; letter-spacing: -.025em; margin: 0 0 4px; border-top: 4px solid var(--tinta); padding-top: 16px; }
+  #compartidos > p { color: var(--suave); margin: 0 0 18px; }
+  .compartido { background: #fff; border: 1px solid var(--borde); border-left: 6px solid var(--ok); padding: 22px 26px; margin-bottom: 18px; }
+  .compartido.nuevo { animation: resaltar 1.6s ease-out; }
+  @keyframes resaltar { from { box-shadow: 0 0 0 4px var(--plata-clara); } to { box-shadow: 0 0 0 0 transparent; } }
+  .veredicto { display: flex; gap: 14px; align-items: center; padding: 14px 16px; margin-bottom: 8px; font-weight: 600; background: var(--ok-fondo); color: var(--ok); }
+  .veredicto.no { background: var(--error-fondo); color: var(--error); }
+  .criterio { display: flex; gap: 14px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--borde); } .criterio:last-of-type { border-bottom: 0; }
+  .criterio .marca { flex: none; width: 24px; height: 24px; display: grid; place-items: center; font-weight: 700; color: #fff; background: var(--ok); font-size: .8rem; }
+  .criterio.no .marca { background: var(--cardenal); }
+  .criterio b { display: block; font-weight: 600; } .criterio span { color: var(--suave); font-size: .9rem; }
+  h3 { font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; color: var(--plata); font-weight: 600; margin: 20px 0 4px; }
+  dl { margin: 0; } .fila { display: flex; justify-content: space-between; gap: 18px; padding: 10px 0; border-bottom: 1px solid var(--borde); } .fila:last-child { border-bottom: 0; }
+  dt { color: var(--suave); } dd { margin: 0; text-align: right; font-weight: 600; }
+  .radicado { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 1.6rem; letter-spacing: 3px; color: var(--cardenal); font-weight: 700; text-align: center; padding: 14px; border: 2px solid var(--cardenal); margin: 12px 0; }
+  /* Pie */
+  footer { background: var(--tinta); color: #cfcfcf; margin-top: auto; }
+  footer .in { max-width: 1180px; margin: 0 auto; padding: 42px 24px 28px; display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 30px; font-size: .88rem; }
+  footer .nombre { color: #fff; font-size: 1.15rem; font-weight: 700; letter-spacing: -.01em; margin: 0 0 8px; }
+  footer p { margin: 0 0 6px; } footer h4 { color: #fff; font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; margin: 0 0 10px; font-weight: 600; }
+  footer .legal { max-width: 1180px; margin: 0 auto; padding: 14px 24px 26px; border-top: 1px solid #3a3a3a; font-size: .78rem; color: #9a9a9a; }
+  @media (max-width: 860px) { footer .in { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="utilidad"><div><span>Admisiones y becas · convocatorias abiertas</span><span>Institución de ejemplo para el ecosistema EUDI Wallet</span></div></div>
+<header>
+  <div class="barra">
+    <a class="marca" href="#" aria-label="Inicio"><svg viewBox="0 0 46 34" aria-hidden="true"><rect x="0" y="6" width="10" height="28" fill="#A31F34"/><rect x="12" y="0" width="10" height="34" fill="#A31F34"/><rect x="24" y="12" width="10" height="22" fill="#8A8B8C"/><rect x="36" y="20" width="10" height="14" fill="#8A8B8C"/></svg>
+      <span><strong>{{NOMBRE}}</strong><small>Admisiones y becas</small></span></a>
+    <nav aria-label="Principal"><a href="#convocatorias">Convocatorias</a><a href="#requisitos">Qué se pide</a><a href="#compartidos">Resultados</a><a href="{{BASE}}/auditoria/" id="enlHistorial" hidden>Historial</a></nav>
+  </div>
+</header>
+<section class="portada"><div class="in">
+  <div>
+    <span class="etq">Admisiones + becas</span>
+    <h1>Postúlate <b>sin mostrar quién eres</b></h1>
+    <p>Con un solo código QR tu wallet comparte dos credenciales: que eres mayor de edad y tu formación académica. Sabrás en segundos si cumples los requisitos.</p>
+    <p>Tu nombre y tu documento solo se piden después, si decides continuar.</p>
+    <a class="enlace" href="#convocatorias">Ver convocatorias</a>
+  </div>
+  <svg class="arte" viewBox="0 0 560 400" role="img" aria-label="Fachada con columnas y cúpula">
+    <rect width="560" height="400" fill="#e6e6e6"/>
+    <circle cx="410" cy="110" r="150" fill="#A31F34" fill-opacity=".10"/>
+    <rect x="0" y="330" width="560" height="70" fill="#8A8B8C" fill-opacity=".35"/>
+    <g fill="#fff" stroke="#1a1a1a" stroke-width="3">
+      <path d="M130 140a150 130 0 0 1 300 0z" fill="#A31F34" stroke="#750014"/>
+      <rect x="262" y="48" width="36" height="22" fill="#750014" stroke="none"/><rect x="274" y="28" width="12" height="22" fill="#750014" stroke="none"/>
+      <path d="M96 150h368l-26 40H122z"/>
+      <rect x="132" y="196" width="296" height="14"/>
+      <g stroke-width="2.500"><rect x="146" y="210" width="24" height="108"/><rect x="190" y="210" width="24" height="108"/><rect x="234" y="210" width="24" height="108"/><rect x="278" y="210" width="24" height="108"/><rect x="322" y="210" width="24" height="108"/><rect x="366" y="210" width="24" height="108"/></g>
+      <rect x="118" y="318" width="324" height="12"/><rect x="100" y="330" width="360" height="12"/>
+    </g>
+    <g fill="#1a1a1a" fill-opacity=".14"><rect x="40" y="355" width="60" height="6"/><rect x="460" y="355" width="64" height="6"/></g>
+  </svg>
+</div></section>
+<main>
+  <div class="titulo" id="convocatorias"><h2>Convocatorias abiertas</h2></div>
+  <p class="sub-titulo">Elige una para generar el código. Tu wallet te mostrará exactamente qué se pide antes de que aceptes.</p>
+  <div class="convocatorias" id="convocatorias-lista" role="list"></div>
+  <section class="privacidad" id="requisitos" aria-label="Qué datos se piden">
+    <div class="caja si"><h2>Lo que se pide para evaluar</h2><ul>
+      <li>Del documento de identidad: solo que eres <b>mayor de 18 años</b></li><li>De tu credencial académica: nivel, estado, programa, título y <b>promedio acumulado</b></li></ul></div>
+    <div class="caja no"><h2>Lo que no se pide</h2><ul>
+      <li>Nombre, documento y fecha de nacimiento (solo si luego confirmas tu identidad)</li><li>Créditos, datos de contacto y cualquier otro dato</li></ul></div>
+  </section>
+  <div class="aviso" id="error" role="alert" hidden style="border-left-color:var(--cardenal);background:var(--error-fondo);color:var(--error)"></div>
+  <section id="compartidos" hidden aria-live="polite">
+    <h2>Resultados</h2>
+    <p>Lo que se evaluó en cada convocatoria. Solo se muestra en esta pantalla.</p>
+    <div id="lista-compartidos"></div>
+  </section>
+</main>
+<footer>
+  <div class="in">
+    <div><p class="nombre">{{NOMBRE}}</p><p>Admisiones y becas con identidad digital verificable.</p><p>Los datos no se guardan: se muestran en esta pantalla unos minutos y se borran.</p></div>
+    <div><h4>Convocatorias</h4><p>Inscripción a maestría</p><p>Beca de excelencia</p><p>Beca de continuidad</p></div>
+    <div><h4>Privacidad</h4><p>Evaluación sin nombre ni documento.</p><p>Identidad solo si decides continuar.</p></div>
+  </div>
+  <div class="legal">Institución ficticia para probar el ecosistema EUDI Wallet. No representa a ninguna universidad real y sus resultados no tienen validez académica.</div>
+</footer>
+
+<dialog id="modal" aria-labelledby="titulo"><div class="cuerpo" id="contenido"></div></dialog>
+
+<script>
+(() => {
+  const BASE = '{{BASE}}'
+  const $ = (id) => document.getElementById(id)
+  const modal = $('modal'), contenido = $('contenido')
+  let sondeo = null, cuenta = null
+  const resultados = new Map()   // clave de convocatoria -> { conv, id, evaluacion, radicado, identidad, hora } (solo en memoria)
+  let convocatorias = []
+  // En el mismo teléfono la wallet abre otra app y vuelve con una carga nueva de la página: lo que está en memoria se
+  // pierde. Por eso se guardan en sessionStorage solo los ids de las solicitudes (no datos de la persona); los resultados
+  // se piden de nuevo al servidor, que los conserva unos minutos y solo los entrega a la sesión que los creó.
+  const MOVIL = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+  const leerGuardado = () => { try { return JSON.parse(sessionStorage.getItem('beca_resultados') ?? '{}') } catch { return {} } }
+  const guardar = () => {
+    try {
+      sessionStorage.setItem('beca_resultados', JSON.stringify(Object.fromEntries([...resultados].map(([k, v]) => [k, { pre: v.id, ident: v.identId, hora: v.hora.getTime() }]))))
+    } catch {}
+  }
+  // Miniaturas de cada convocatoria: formas geométricas sobrias en rojo cardenal y gris plata (SVG propio, sin datos de nadie).
+  const arte = (marcado) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 150' preserveAspectRatio='xMidYMid slice'>${marcado}</svg>`)}")`
+  const ARTE = {
+    base: arte("<rect width='400' height='150' fill='#e6e6e6'/>"),
+    'inscripcion-maestria': arte("<rect width='400' height='150' fill='#e6e6e6'/><g fill='#A31F34'><rect x='70' y='40' width='50' height='110'/><rect x='130' y='20' width='50' height='130'/></g><g fill='#8A8B8C'><rect x='190' y='60' width='50' height='90'/><rect x='250' y='84' width='50' height='66'/></g>"),
+    'beca-excelencia': arte("<rect width='400' height='150' fill='#e6e6e6'/><circle cx='200' cy='75' r='56' fill='#A31F34'/><circle cx='200' cy='75' r='38' fill='none' stroke='#fff' stroke-width='3'/><path d='M200 46l9 19 21 3-15 15 4 21-19-10-19 10 4-21-15-15 21-3z' fill='#fff'/><rect x='40' y='128' width='320' height='4' fill='#8A8B8C'/>"),
+    'beca-continuidad': arte("<rect width='400' height='150' fill='#e6e6e6'/><g fill='#8A8B8C'><rect x='60' y='110' width='60' height='40'/><rect x='120' y='86' width='60' height='64'/></g><g fill='#A31F34'><rect x='180' y='62' width='60' height='88'/><rect x='240' y='38' width='60' height='112'/></g><path d='M70 100 L290 24' stroke='#1a1a1a' stroke-width='3' stroke-dasharray='6 6' fill='none'/>"),
+  }
+
+  function el(tag, props = {}, ...hijos) {
+    const e = document.createElement(tag)
+    for (const [k, v] of Object.entries(props)) {
+      if (k === 'class') e.className = v
+      else if (k.startsWith('on')) e.addEventListener(k.slice(2), v)
+      else e.setAttribute(k, v)
+    }
+    for (const h of hijos.flat()) if (h != null) e.append(h.nodeType ? h : document.createTextNode(String(h)))
+    return e
+  }
+  const api = async (ruta, opciones) => {
+    const r = await fetch(BASE + ruta, opciones)
+    return { ok: r.ok, estado: r.status, cuerpo: await r.json().catch(() => ({})) }
+  }
+  const parar = () => { clearInterval(sondeo); clearInterval(cuenta); sondeo = cuenta = null }
+  modal.addEventListener('close', parar)
+  const cerrar = () => { parar(); modal.close() }
+  const fila = (k, v) => el('div', { class: 'fila' }, el('dt', {}, k), el('dd', {}, v ?? '—'))
+
+  async function iniciar(conv, paso = 'preevaluacion', previa) {
+    parar()
+    contenido.replaceChildren(el('div', { class: 'cargando' }, 'Preparando el código…'))
+    if (!modal.open) modal.showModal()
+    const { ok, cuerpo } = await api('/api/solicitud', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ convocatoria: conv.clave, paso, previa, dispositivo: MOVIL ? 'mismo' : 'otro' }),
+    })
+    if (!ok) return mostrarError(cuerpo.error ?? 'No se pudo crear la solicitud.', conv, paso, previa)
+    mostrarQr(conv, paso, previa, cuerpo)
+  }
+
+  function mostrarQr(conv, paso, previa, s) {
+    const identidad = paso === 'identidad'
+    const restante = el('div', { class: 'cuenta' })
+    contenido.replaceChildren(
+      el('h2', { id: 'titulo' }, identidad ? `Confirmar identidad · ${conv.nombre}` : conv.nombre),
+      el('p', { class: 'sub' }, identidad ? 'Último paso: tu wallet comparte quién eres para radicar la solicitud.' : (MOVIL ? 'Abre tu wallet para compartir.' : 'Escanea el código con tu wallet.')),
+      MOVIL ? el('a', { class: 'boton-wallet', href: s.enlace }, 'Abrir mi wallet') : el('img', { class: 'qr', src: s.qr, alt: 'Código QR para escanear con la wallet' }),
+      restante,
+      el('ol', { class: 'pasos' }, el('li', {}, MOVIL ? 'Toca «Abrir mi wallet».' : 'Abre tu wallet y escanea el código.'), el('li', {}, 'Revisa las credenciales que se piden y acepta.'), el('li', {}, MOVIL ? 'Volverás aquí automáticamente con el resultado.' : 'El resultado aparece aquí.')),
+      el('div', { class: 'pide' },
+        el('b', {}, 'Se pide: '), identidad ? 'Tu documento de identidad: nombres, apellidos y número de documento.' : 'Documento de identidad (solo «mayor de 18») + credencial académica (nivel, estado, programa, título y promedio).',
+        el('br'), el('b', {}, 'Condiciones: '), conv.requisitos.join(' · ')),
+      !identidad ? el('p', { class: 'aviso' }, 'El promedio se comparte para compararlo con el mínimo: la credencial no permite probar «promedio ≥ X» sin mostrarlo.') : '',
+      el('div', { class: 'acciones' }, el('button', { class: 's', onclick: () => navigator.clipboard?.writeText(s.enlace) }, 'Copiar enlace'), el('button', { class: 's', onclick: cerrar }, 'Cancelar')),
+    )
+    const limite = Date.now() + s.vence_en * 1000
+    cuenta = setInterval(() => {
+      const seg = Math.max(0, Math.round((limite - Date.now()) / 1000))
+      restante.textContent = `El código vence en ${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, '0')}`
+    }, 1000)
+    if (MOVIL) return   // la wallet vuelve a /volver y la página recupera el resultado al cargarse
+    sondeo = setInterval(async () => {
+      const { cuerpo } = await api('/api/solicitud/' + s.id)
+      if (cuerpo.estado === 'listo') { parar(); registrar(conv, s.id, paso, cuerpo) }
+      else if (cuerpo.estado === 'rechazada') { parar(); mostrarError(cuerpo.motivo, conv, paso, previa) }
+    }, 2000)
+  }
+
+  function registrar(conv, id, paso, r) {
+    const previo = resultados.get(conv.clave)
+    resultados.set(conv.clave, {
+      conv,
+      id: paso === 'preevaluacion' ? id : previo?.id ?? id,
+      identId: paso === 'identidad' ? id : previo?.identId,
+      evaluacion: r.evaluacion ?? previo?.evaluacion,
+      identidad: r.identidad ?? previo?.identidad,
+      radicado: r.radicado ?? previo?.radicado,
+      hora: previo?.hora ?? new Date(),
+    })
+    if (modal.open) modal.close()
+    guardar()
+    pintar(conv.clave)
+  }
+
+  function pintar(nuevo) {
+    for (const t of convocatorias) {
+      const v = resultados.get(t.clave)
+      t.caja.className = `conv ${t.tipo === 'Beca' ? 'beca' : ''}${v?.radicado ? ' hecha' : ''}`
+      t.boton.disabled = !!v
+      t.boton.textContent = v ? (v.radicado ? '✔ Radicada' : 'Evaluada') : 'Evaluar mis requisitos'
+    }
+    const lista = $('lista-compartidos')
+    $('compartidos').hidden = resultados.size === 0
+    lista.replaceChildren(...[...resultados.values()].map(({ conv, id, evaluacion: ev, identidad: i, radicado, hora }) => {
+      const hijos = [
+        el('div', { class: `veredicto${ev.cumple ? '' : ' no'}` }, ev.cumple ? '✔' : '✖',
+          el('div', {}, `${conv.nombre}: ${ev.cumple ? 'cumples los requisitos' : 'no cumples todos los requisitos'}`,
+            el('div', { class: 'sub', style: 'margin:0;font-weight:400' }, `Evaluada a las ${hora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}, sin conocer tu identidad.`))),
+        ...ev.criterios.map((c) => el('div', { class: `criterio${c.cumple ? '' : ' no'}` }, el('div', { class: 'marca' }, c.cumple ? '✔' : '✖'), el('div', {}, el('b', {}, c.nombre), el('span', {}, c.detalle)))),
+        el('h3', {}, 'Datos compartidos'),
+        el('dl', {}, fila('Programa', ev.datos.programa), fila('Título', ev.datos.titulo), fila('Promedio acumulado', ev.datos.promedio != null ? ev.datos.promedio.toFixed(2) : '—'), fila('Institución', ev.datos.institucion)),
+      ]
+      if (i) hijos.push(el('h3', {}, 'Solicitud radicada'), el('div', { class: 'radicado' }, radicado),
+        el('dl', {}, fila('Nombres', i.nombres), fila('Apellidos', i.apellidos), fila('Documento', i.documento)))
+      const acciones = [el('button', { class: 's', onclick: () => { resultados.delete(conv.clave); guardar(); pintar() } }, 'Quitar de la pantalla')]
+      if (ev.cumple && !i) acciones.unshift(el('button', { class: 'p', onclick: () => iniciar(conv, 'identidad', id) }, `Continuar y radicar ${conv.tipo === 'Beca' ? 'la postulación' : 'la inscripción'}`))
+      hijos.push(el('div', { class: 'acciones' }, ...acciones))
+      return el('article', { class: `compartido${conv.clave === nuevo ? ' nuevo' : ''}`, style: ev.cumple ? '' : 'border-color:var(--error);border-left-color:var(--error)' }, ...hijos)
+    }))
+    if (nuevo) lista.querySelector('.nuevo')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
+  function mostrarError(motivo, conv, paso, previa) {
+    contenido.replaceChildren(
+      el('span', { class: 'sello mal' }, '✖ No verificado'),
+      el('h2', { id: 'titulo' }, 'No se pudo verificar'),
+      el('p', { class: 'sub' }, motivo),
+      el('div', { class: 'acciones' }, el('button', { class: 's', onclick: cerrar }, 'Cerrar'), el('button', { class: 'p', onclick: () => iniciar(conv, paso, previa) }, 'Generar un código nuevo')),
+    )
+  }
+
+  api('/api/convocatorias').then(({ cuerpo }) => {
+    convocatorias = cuerpo.convocatorias.map((c) => {
+      const boton = el('button', { class: 'p', onclick: () => { if (!resultados.has(c.clave)) iniciar(c) } }, 'Evaluar mis requisitos')
+      const caja = el('article', { class: `conv ${c.tipo === 'Beca' ? 'beca' : ''}`, role: 'listitem', style: `--arte:${ARTE[c.clave] ?? ARTE.base}` },
+        el('span', { class: 'tipo' }, c.tipo), el('h3', {}, c.nombre), el('p', {}, c.descripcion),
+        el('ul', {}, ...c.requisitos.map((q) => el('li', {}, q))), boton)
+      return { ...c, boton, caja }
+    })
+    $('convocatorias-lista').replaceChildren(...convocatorias.map((c) => c.caja))
+    return restaurar()
+  })
+
+  // Al cargar: recupera los resultados de esta sesión del navegador y, si la wallet acaba de volver (?volver=<id>),
+  // el de esa solicitud.
+  async function restaurar() {
+    const params = new URLSearchParams(location.search)
+    const error = params.get('error'), volver = params.get('volver')
+    if (error || volver) history.replaceState(null, '', BASE + '/')
+    if (error) { $('error').hidden = false; $('error').textContent = error }
+    const pedir = async (id) => { const { ok, cuerpo } = await api('/api/solicitud/' + encodeURIComponent(id)); return ok && cuerpo.estado === 'listo' ? cuerpo : null }
+    for (const [clave, g] of Object.entries(leerGuardado())) {
+      const conv = convocatorias.find((c) => c.clave === clave)
+      const pre = conv && await pedir(g.pre)
+      if (!pre?.evaluacion) continue
+      const ident = g.ident ? await pedir(g.ident) : null
+      resultados.set(clave, { conv, id: g.pre, identId: ident ? g.ident : undefined, evaluacion: pre.evaluacion, identidad: ident?.identidad, radicado: ident?.radicado, hora: new Date(g.hora) })
+    }
+    if (volver) {
+      const r = await pedir(volver)
+      const conv = r && convocatorias.find((c) => c.clave === r.clave)
+      if (conv) return registrar(conv, volver, r.paso, r)
+      $('error').hidden = false; $('error').textContent = 'No se pudo recuperar el resultado. Inténtalo de nuevo.'
+    }
+    if (resultados.size) { guardar(); pintar() }
+  }
+})()
+</script>
+<script>
+/* Enlace «Historial»: oculto salvo en redes de administración (el proxy responde 403 fuera de ellas). */
+try {
+  fetch('{{BASE}}/auditoria/api/ping', { cache: 'no-store' }).then((r) => {
+    if (r.status === 200 || r.status === 204) { const e = document.getElementById('enlHistorial'); if (e) { e.hidden = false; e.style.display = '' } }
+  }).catch(() => {})
+} catch (e) {}
+</script>
+</body>
+</html>

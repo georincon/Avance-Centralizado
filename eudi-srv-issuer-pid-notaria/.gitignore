@@ -1,0 +1,7 @@
+.env
+secretos/
+**/__pycache__/
+**/private/*.pem
+backend/app/config_issuer_backend.yaml
+docker-compose/.env
+docker-compose/config/

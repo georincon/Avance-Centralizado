@@ -1,0 +1,499 @@
+/*
+ * Copyright (c) 2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.etsi1196x2.consultation
+
+import eu.europa.ec.eudi.etsi1196x2.consultation.certs.*
+import eu.europa.ec.eudi.etsi1196x2.consultation.certs.AuthorityInformationAccess
+import eu.europa.ec.eudi.etsi1196x2.consultation.certs.AuthorityKeyIdentifier
+import org.bouncycastle.asn1.ASN1ObjectIdentifier
+import org.bouncycastle.asn1.ASN1OctetString
+import org.bouncycastle.asn1.ASN1Sequence
+import org.bouncycastle.asn1.x500.X500Name
+import org.bouncycastle.asn1.x500.style.IETFUtils
+import org.bouncycastle.asn1.x509.*
+import org.bouncycastle.asn1.x509.qualified.QCStatement
+import org.bouncycastle.cert.X509CertificateHolder
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder
+import org.slf4j.LoggerFactory
+import java.security.cert.X509Certificate
+import java.security.interfaces.ECPublicKey
+import java.security.interfaces.RSAPublicKey
+import javax.security.auth.x500.X500Principal
+import kotlin.time.toKotlinInstant
+import org.bouncycastle.asn1.x509.AuthorityInformationAccess as BcAuthorityInformationAccess
+import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier as BcAuthorityKeyIdentifier
+import org.bouncycastle.asn1.x509.CertificatePolicies as BcCertificatePolicies
+
+/**
+ * JVM/Android implementations of certificate constraint extractors for [X509Certificate].
+ *
+ * This object provides platform-specific functions to extract certificate information
+ * required by the constraint validators defined in commonMain.
+ */
+public object CertificateOperationsJvm : CertificateOperations<X509Certificate> {
+
+    private val logger = LoggerFactory.getLogger(CertificateOperationsJvm::class.java)
+
+    /**
+     * Extracts basic constraints information from an X509Certificate.
+     *
+     * @return [eu.europa.ec.eudi.etsi1196x2.consultation.certs.BasicConstraintsInfo] with isCa and pathLenConstraint
+     */
+    public override fun getBasicConstraints(certificate: X509Certificate): BasicConstraintsInfo {
+        val basicConstraints = certificate.basicConstraints
+        val isCa = basicConstraints >= 0
+        return BasicConstraintsInfo(
+            isCa = isCa,
+            pathLenConstraint = basicConstraints.takeIf { isCa },
+        )
+    }
+
+    /**
+     * Extracts QCStatement information from an X509Certificate.
+     *
+     * QCStatements are encoded in the certificate extension with OID 1.3.6.1.5.5.7.1.3.
+     * This function parses the DER-encoded extension value to extract QC type OIDs.
+     *
+     * @return list of [eu.europa.ec.eudi.etsi1196x2.consultation.certs.QCStatementInfo] or empty list if no QCStatements present
+     */
+    public override fun getQcStatements(certificate: X509Certificate): List<QCStatementInfo> {
+        val qcStatementsExtension = certificate.extension(Extension.qCStatements)
+        return qcStatementsExtension?.parseQcStatements().orEmpty()
+    }
+
+    /**
+     * Extracts key usage information from an X509Certificate.
+     *
+     * @return [eu.europa.ec.eudi.etsi1196x2.consultation.certs.KeyUsageBits] or null if keyUsage extension is not present
+     */
+    public override fun getKeyUsage(certificate: X509Certificate): KeyUsageBits? =
+        certificate.keyUsage?.let { keyUsage ->
+            KeyUsageBits(
+                digitalSignature = keyUsage.getOrElse(0) { false },
+                nonRepudiation = keyUsage.getOrElse(1) { false },
+                keyEncipherment = keyUsage.getOrElse(2) { false },
+                dataEncipherment = keyUsage.getOrElse(3) { false },
+                keyAgreement = keyUsage.getOrElse(4) { false },
+                keyCertSign = keyUsage.getOrElse(5) { false },
+                crlSign = keyUsage.getOrElse(6) { false },
+                encipherOnly = keyUsage.getOrElse(7) { false },
+                decipherOnly = keyUsage.getOrElse(8) { false },
+            )
+        }
+
+    private fun X509Certificate.asHolder(): X509CertificateHolder =
+        JcaX509CertificateHolder(this)
+
+    private fun X509Certificate.extension(oid: ASN1ObjectIdentifier): Extension? =
+        asHolder().extensions?.getExtension(oid)
+
+    /**
+     * Extracts validity period information from an X509Certificate.
+     *
+     * @return [eu.europa.ec.eudi.etsi1196x2.consultation.certs.ValidityPeriod] with notBefore and notAfter timestamps
+     */
+    public override fun getValidityPeriod(certificate: X509Certificate): ValidityPeriod =
+        ValidityPeriod(
+            notBefore = certificate.notBefore.toInstant().toKotlinInstant(),
+            notAfter = certificate.notAfter.toInstant().toKotlinInstant(),
+        )
+
+    /**
+     * Extracts certificate policy OIDs from an X509Certificate.
+     *
+     * Certificate policies are encoded in the certificate extension with OID 2.5.29.32.
+     * This function parses the DER-encoded extension value to extract policy OIDs.
+     *
+     * @return list of certificate policy OIDs or null if no policies present
+     */
+    public override fun getCertificatePolicies(certificate: X509Certificate): List<String>? {
+        val certPoliciesExtension = certificate.extension(Extension.certificatePolicies)
+        return certPoliciesExtension?.parseCertificatePolicies()
+    }
+
+    /**
+     * Checks if an X509Certificate is self-signed.
+     *
+     * A certificate is self-signed if its subject and issuer are the same.
+     *
+     * @return true if self-signed, false otherwise
+     */
+    public override fun isSelfSigned(certificate: X509Certificate): Boolean =
+        certificate.subjectX500Principal == certificate.issuerX500Principal
+
+    /**
+     * Extracts Authority Information Access (AIA) extension from an X509Certificate.
+     *
+     * @return [AuthorityInformationAccess] or null if extension is not present or parsing fails
+     */
+    public override fun getAiaExtension(certificate: X509Certificate): AuthorityInformationAccess? {
+        val aiaExtension = certificate.extension(Extension.authorityInfoAccess)
+        return aiaExtension?.parseAiaExtension()
+    }
+
+    /**
+     * Helper function to parse AIA from DER-encoded extension value.
+     */
+    private fun Extension.parseAiaExtension(): AuthorityInformationAccess? = try {
+        var caIssuersUri: String? = null
+        var ocspUri: String? = null
+
+        val aia = BcAuthorityInformationAccess.getInstance(extnValue.octets)
+        val accessDescriptions = aia.accessDescriptions
+        for (accessDescription in accessDescriptions) {
+            val accessMethod = accessDescription.accessMethod
+            val accessLocation = accessDescription.accessLocation
+
+            if (accessLocation.tagNo == GeneralName.uniformResourceIdentifier) {
+                val uri = accessLocation.name.toString()
+                when (accessMethod) {
+                    AccessDescription.id_ad_caIssuers -> caIssuersUri = uri
+                    AccessDescription.id_ad_ocsp -> ocspUri = uri
+                }
+            }
+        }
+        AuthorityInformationAccess(caIssuersUri, ocspUri)
+    } catch (e: Exception) {
+        logger.warn("Failed to parse AIA extension from certificate: ${e.message}", e)
+        null
+    }
+
+    /**
+     * Helper function to parse QCStatements from DER-encoded extension value.
+     *
+     * The QCStatements extension has the following ASN.1 structure (ETSI EN 319 412-5):
+     * ```
+     * QCStatements ::= SEQUENCE OF QCStatement
+     * QCStatement ::= SEQUENCE {
+     *   statementId   OBJECT IDENTIFIER,
+     *   statementInfo ANY DEFINED BY statementId OPTIONAL
+     * }
+     * ```
+     *
+     * The extension value is wrapped in an OCTET STRING, so we need to unwrap it first.
+     *
+     * @receiver derValue the DER-encoded extension value
+     * @return list of [QCStatementInfo] or empty list if parsing fails
+     *
+     * @see [ETSI EN 319 412-5](https://www.etsi.org/deliver/etsi_en/319400_319499/31941205/)
+     */
+    private fun Extension.parseQcStatements(): List<QCStatementInfo> = try {
+        val qcStatements = ASN1Sequence.getInstance(extnValue.octets)
+
+        qcStatements.mapNotNull { qcStatementObj ->
+            val qcStatement = QCStatement.getInstance(qcStatementObj) ?: return@mapNotNull null
+
+            val statementId = qcStatement.statementId.id
+
+            if (statementId == ETSI319412.QC_TYPE) {
+                val typeIdentifier = qcStatement.statementInfo?.let { statementInfo ->
+                    val qcTypeSeq = ASN1Sequence.getInstance(statementInfo)
+                    if (qcTypeSeq.size() != 1) {
+                        throw IllegalStateException("Invalid QCType sequence length. Expected length to be 1 but was: ${qcTypeSeq.size()}")
+                    }
+                    ASN1ObjectIdentifier.getInstance(qcTypeSeq.getObjectAt(0)).id
+                }
+                if (typeIdentifier != null) {
+                    QCStatementInfo.QcType(innerIdentifier = typeIdentifier)
+                } else {
+                    throw IllegalStateException("Invalid QCType, missing inner identifier")
+                }
+            } else {
+                QCStatementInfo.OtherQcStatement(statementId = statementId)
+            }
+        }
+    } catch (e: Exception) {
+        logger.warn("Failed to parse QCStatements from certificate: ${e.message}", e)
+        emptyList()
+    }
+
+    /**
+     * Helper function to parse Certificate Policies from DER-encoded extension value.
+     *
+     * The Certificate Policies extension has the following ASN.1 structure (RFC 5280):
+     * ```
+     * CertificatePolicies ::= SEQUENCE SIZE (1..MAX) OF PolicyInformation
+     * PolicyInformation ::= SEQUENCE {
+     *   policyIdentifier   CertPolicyId,
+     *   policyQualifiers   SEQUENCE SIZE (1..MAX) OF PolicyQualifierInfo OPTIONAL
+     * }
+     * CertPolicyId ::= OBJECT IDENTIFIER
+     * ```
+     *
+     * The extension value is wrapped in an OCTET STRING, so we need to unwrap it first.
+     *
+     * @receiver the DER-encoded extension value
+     * @return list of policy OIDs or empty list if parsing fails
+     *
+     * @see [RFC 5280 Section 4.2.1.4](https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.4)
+     */
+    private fun Extension.parseCertificatePolicies(): List<String> = try {
+        val certPolicies = BcCertificatePolicies.getInstance(extnValue.octets)
+
+        certPolicies.policyInformation.map { policyInfo ->
+            policyInfo.policyIdentifier.id
+        }
+    } catch (e: Exception) {
+        logger.warn("Failed to parse CertificatePolicies from certificate: ${e.message}", e)
+        emptyList()
+    }
+
+    /**
+     * Extracts the subject Distinguished Name from an X509Certificate.
+     *
+     * @return [DistinguishedName] or null if parsing fails
+     */
+    public override fun getSubject(certificate: X509Certificate): DistinguishedName? = try {
+        certificate.subjectX500Principal.asDistinguishedName()
+    } catch (e: Exception) {
+        logger.warn("Failed to parse subject DN from certificate: ${e.message}", e)
+        null
+    }
+
+    /**
+     * Extracts the issuer Distinguished Name from an X509Certificate.
+     *
+     * @return [DistinguishedName] or null if parsing fails
+     */
+    public override fun getIssuer(certificate: X509Certificate): DistinguishedName? = try {
+        certificate.issuerX500Principal.asDistinguishedName()
+    } catch (e: Exception) {
+        logger.warn("Failed to parse issuer DN from certificate: ${e.message}", e)
+        null
+    }
+
+    /**
+     * Extracts Subject Alternative Names from an X509Certificate.
+     *
+     * @return list of [SubjectAlternativeName] or null if extension is not present
+     */
+    public override fun getSubjectAltNames(certificate: X509Certificate): List<SubjectAlternativeName>? =
+        try {
+            val sanExtension = certificate.extension(Extension.subjectAlternativeName)
+            if (sanExtension == null) {
+                null
+            } else {
+                val names = GeneralNames.getInstance(sanExtension.extnValue.octets)
+                val sanList = names.names.mapNotNull { generalName ->
+                    val type = generalName.tagNo
+                    val name = generalName.name
+                    val value = name.toString()
+
+                    when (type) {
+                        GeneralName.otherName -> SubjectAlternativeName.OtherName(type.toString(), value)
+                        GeneralName.rfc822Name -> SubjectAlternativeName.Email(value)
+                        GeneralName.dNSName -> SubjectAlternativeName.DNSName(value)
+                        GeneralName.x400Address -> SubjectAlternativeName.OtherName(type.toString(), value)
+                        GeneralName.directoryName -> SubjectAlternativeName.OtherName(type.toString(), value)
+                        GeneralName.ediPartyName -> SubjectAlternativeName.OtherName(type.toString(), value)
+                        GeneralName.uniformResourceIdentifier -> SubjectAlternativeName.Uri(value)
+                        GeneralName.iPAddress -> SubjectAlternativeName.IPAddress(ASN1OctetString.getInstance(name).octets)
+
+                        GeneralName.registeredID -> SubjectAlternativeName.RegisteredId(value)
+                        else -> SubjectAlternativeName.OtherName(type.toString(), value)
+                    }
+                }
+                sanList
+            }
+        } catch (e: Exception) {
+            logger.warn("Failed to parse SubjectAltNames from certificate: ${e.message}", e)
+            null
+        }
+
+    /**
+     * Extracts CRL Distribution Points from an X509Certificate.
+     *
+     * @return list of [CrlDistributionPoint] or empty list if extension is not present
+     */
+    public override fun getCrlDistributionPoints(certificate: X509Certificate): List<CrlDistributionPoint> = try {
+        val crldpExtension = certificate.extension(Extension.cRLDistributionPoints)
+        crldpExtension?.parseCrlDistributionPoints().orEmpty()
+    } catch (e: Exception) {
+        logger.warn("Failed to parse CRLDistributionPoints from certificate: ${e.message}", e)
+        emptyList()
+    }
+
+    /**
+     * Helper function to parse CRL Distribution Points from DER-encoded extension value.
+     */
+    private fun Extension.parseCrlDistributionPoints(): List<CrlDistributionPoint> = try {
+        val crlDistPoint = CRLDistPoint.getInstance(extnValue.octets)
+        val dps = crlDistPoint.distributionPoints ?: return emptyList()
+        dps.mapNotNull { dp ->
+            if (dp == null) return@mapNotNull null
+            val dpName = dp.distributionPoint
+            var uri: String? = null
+            if (dpName != null && dpName.type == DistributionPointName.FULL_NAME) {
+                val generalNames = GeneralNames.getInstance(dpName.name)
+                uri = generalNames.names
+                    .firstOrNull { it.tagNo == GeneralName.uniformResourceIdentifier }
+                    ?.name?.toString()
+            }
+            CrlDistributionPoint(uri, null)
+        }
+    } catch (e: Exception) {
+        logger.warn("Failed to parse CRLDistributionPoints: ${e.message}", e)
+        emptyList()
+    }
+
+    /**
+     * Extracts Authority Key Identifier from an X509Certificate.
+     *
+     * @return [AuthorityKeyIdentifier] or null if extension is not present
+     */
+    public override fun getAuthorityKeyIdentifier(certificate: X509Certificate): AuthorityKeyIdentifier? = try {
+        val akiExtension = certificate.extension(Extension.authorityKeyIdentifier)
+        akiExtension?.parseAuthorityKeyIdentifier()
+    } catch (e: Exception) {
+        logger.warn("Failed to parse AuthorityKeyIdentifier from certificate: ${e.message}", e)
+        null
+    }
+
+    /**
+     * Extracts Subject Key Identifier from an X509Certificate.
+     *
+     * @return the Subject Key Identifier as a byte array, or null if extension is not present
+     */
+    public override fun getSubjectKeyIdentifier(certificate: X509Certificate): ByteArray? = try {
+        val skiExtension = certificate.extension(Extension.subjectKeyIdentifier)
+        skiExtension?.parseSubjectKeyIdentifier()
+    } catch (e: Exception) {
+        logger.warn("Failed to parse SubjectKeyIdentifier from certificate: ${e.message}", e)
+        null
+    }
+
+    /**
+     * Helper function to parse Authority Key Identifier from DER-encoded extension value.
+     */
+    private fun Extension.parseAuthorityKeyIdentifier(): AuthorityKeyIdentifier? = try {
+        val aki = BcAuthorityKeyIdentifier.getInstance(extnValue.octets)
+        val keyIdentifier = aki.keyIdentifierOctets?.copyOf()
+        val authorityCertSerialNumber = aki.authorityCertSerialNumber?.toByteArray()
+        val authorityCertIssuer = aki.authorityCertIssuer
+            ?.let { generalNames -> generalNames.names.map { it.name.toString() } }
+
+        AuthorityKeyIdentifier(keyIdentifier, authorityCertIssuer, authorityCertSerialNumber)
+    } catch (e: Exception) {
+        logger.warn("Failed to parse AuthorityKeyIdentifier: ${e.message}", e)
+        null
+    }
+
+    /**
+     * Helper function to parse Subject Key Identifier from DER-encoded extension value.
+     *
+     * The SubjectKeyIdentifier extension contains an OCTET STRING with the key identifier.
+     * Per RFC 5280 Section 4.2.1.2, the keyIdentifier is an octet string.
+     */
+    private fun Extension.parseSubjectKeyIdentifier(): ByteArray? = try {
+        ASN1OctetString.getInstance(extnValue.octets).octets.copyOf()
+    } catch (e: Exception) {
+        logger.warn("Failed to parse SubjectKeyIdentifier: ${e.message}", e)
+        null
+    }
+
+    /**
+     * Extracts the certificate serial number.
+     *
+     * @return [SerialNumber] as a byte array (always positive per RFC 5280)
+     */
+    public override fun getSerialNumber(certificate: X509Certificate): SerialNumber =
+        SerialNumber(certificate.serialNumber.toByteArray())
+
+    /**
+     * Extracts the certificate version.
+     *
+     * @return [Version] (X509Certificate.version returns 1=v1, 2=v2, 3=v3; we convert to 0=v1, 1=v2, 2=v3)
+     */
+    public override fun getVersion(certificate: X509Certificate): Version =
+        Version(certificate.version - 1) // Java returns 1-based, we use 0-based
+
+    /**
+     * Extracts subject public key information.
+     *
+     * @return [PublicKeyInfo] with algorithm, key size, and parameters
+     */
+    public override fun getSubjectPublicKeyInfo(certificate: X509Certificate): PublicKeyInfo = try {
+        val publicKey = certificate.publicKey
+        val algorithm = publicKey.algorithm
+        val encodedBytes = publicKey.encoded
+
+        // Determine key size based on algorithm type
+        val keySize = when (publicKey) {
+            is RSAPublicKey -> publicKey.modulus.bitLength()
+            is ECPublicKey -> {
+                // Try to get key size from params, otherwise use encoded length as fallback
+                val paramsSize = publicKey.params?.order?.bitLength()
+                if (paramsSize != null) {
+                    paramsSize
+                } else {
+                    // Fallback: estimate from encoded key length
+                    // EC keys: ~32 bytes = 256 bits, ~48 bytes = 384 bits, ~66 bytes = 521 bits
+                    val encodedLen = encodedBytes.size
+                    when {
+                        encodedLen >= 100 -> 521
+                        encodedLen >= 60 -> 384
+                        else -> 256
+                    }
+                }
+            }
+
+            else -> null
+        }
+
+        // Get algorithm parameters (e.g., EC curve OID)
+        val parameters = try {
+            val spki = SubjectPublicKeyInfo.getInstance(encodedBytes)
+            val algParams = spki.algorithm?.parameters
+            algParams?.toASN1Primitive()?.encoded
+        } catch (_: Exception) {
+            null
+        }
+
+        PublicKeyInfo(algorithm, keySize, parameters)
+    } catch (e: Exception) {
+        logger.warn("Failed to parse SubjectPublicKeyInfo: ${e.message}", e)
+        PublicKeyInfo(certificate.publicKey.algorithm, null, null)
+    }
+
+    public override fun hasExtension(certificate: X509Certificate, oid: String): Boolean =
+        runCatching { certificate.extension(ASN1ObjectIdentifier(oid)) != null }
+            .getOrDefault(false)
+
+    public override fun getExtensionCriticality(certificate: X509Certificate): Map<String, Boolean> {
+        val holder = certificate.asHolder()
+        val extensions = holder.extensions ?: return emptyMap()
+        return extensions.extensionOIDs.associate { oid ->
+            oid.id to (extensions.getExtension(oid)?.isCritical == true)
+        }
+    }
+
+    // Helper functions omitted for brevity
+}
+
+internal fun X500Principal.asDistinguishedName(): DistinguishedName {
+    val x500Name = X500Name(this.name)
+    val attributes = mutableMapOf<String, String>()
+
+    x500Name.rdNs.forEach { rdn ->
+        rdn.typesAndValues.forEach { tv ->
+            val oid = tv.type.id
+            val value = IETFUtils.valueToString(tv.value)
+            attributes[oid] = value
+        }
+    }
+
+    return DistinguishedName(attributes)
+}

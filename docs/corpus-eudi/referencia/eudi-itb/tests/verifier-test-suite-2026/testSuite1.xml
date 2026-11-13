@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite id="verificationTestSuite" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <gitb:name>Remote Presentation</gitb:name>
+        <gitb:description>This scenario will validate the secure remote presentation of a PID verifiable credential from a digital wallet to a verifier, using the OpenID for Verifiable Presentations (OID4VP) 1.0 protocol.</gitb:description>
+        <gitb:version>1.0</gitb:version>
+    </metadata>
+	<!-- 
+		Define the actors involved in the test suite. The test cases referencing an actor with the role of SUT (System Under Test)
+		must be passed to complete conformance testing.
+
+		Depending on options selected during the test suite's upload, the actor definitions will be created or updated in the target specification.
+	-->
+    <actors>
+		<gitb:actor id="verifier">
+            <gitb:name>Verifier</gitb:name>
+            <gitb:desc>Verifier</gitb:desc>
+        </gitb:actor>
+        <gitb:actor id="simulatedInitTransaction">
+            <gitb:name>Simulated Init Transaction</gitb:name>
+            <gitb:desc>Simulated Init Transaction.</gitb:desc>
+        </gitb:actor>
+        <gitb:actor id="wallet">
+            <gitb:name>Wallet</gitb:name>
+            <gitb:desc>Wallet SUT.</gitb:desc>
+        </gitb:actor>
+    </actors>
+	<!-- 
+		The list of included test cases (referenced using their ID). The ordering of the test cases here defines their execution
+		order when running the test suite.
+	-->
+    <testcase id="verify_pid_qr_from_verifier"/>
+    <testcase id="verify_dc_api_pid_presentation"/>
+    <testcase id="verify_pid_mdoc_qr_from_verifier"/>
+    <testcase id="verify_dc_api_pid_mdoc_presentation"/>
+    <testcase id="verify_mdl_qr_from_verifier"/>
+    <testcase id="verify_dc_api_mdoc_presentation"/>
+    <testcase id="verify_pid_qr_from_verifier_invalid_access_certificate"/>
+    <testcase id="verify_dc_api_pid_verifier_invalid_access_certificate"/>
+    <testcase id="verify_pid_qr_from_verifier_untrusted_verifier_registration_cert"/>
+    <testcase id="verify_dc_api_pid_presentation_untrusted_registration_certificate"/>
+    <testcase id="verify_pid_qr_from_verifier_missmatched_verifier_access_reg_cert"/>
+    <testcase id="verify_dc_api_pid_from_verifier_missmatched_verifier_access_reg_cert"/>
+    <testcase id="verify_pid_qr_from_verifier_with_over_asking_certificate"/>
+    <testcase id="verify_pid_dc_api_from_verifier_with_over_asking_certificate"/>
+</testsuite>

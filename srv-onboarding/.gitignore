@@ -1,0 +1,28 @@
+# Onboarding — identity proofing del ecosistema EUDI de Avance
+#
+# El codigo viene de OnboardingAddi (fuentes copiadas aqui). Se versiona como proyecto propio
+# para que no se duplique al clonar o re-clonar una wallet.
+
+# Secretos
+.env
+*.jks
+*.keystore
+*.p12
+
+# Samples de prueba del onboarding (cedulas/fotos personales; no versionar)
+imagenes-test/
+
+# Build
+**/build/
+**/out/
+**/.gradle/
+**/bin/
+.gradle/
+.idea/
+*.iml
+*.log
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store

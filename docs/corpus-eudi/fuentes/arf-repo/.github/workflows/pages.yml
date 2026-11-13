@@ -1,0 +1,85 @@
+# Deploy the ARF MkDocs site as static content to GitHub Pages.
+# (PDFs are built per-release by release-pdf.yml, not here.)
+name: Deploy ARF to Pages
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Least-privilege default; the deploy job opts into what it needs.
+permissions:
+  contents: read
+
+# Publishing must not be interrupted mid-push, or the gh-pages branch can be
+# left in an inconsistent state. Queue concurrent runs instead of cancelling.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # mike pushes the built site to the gh-pages branch.
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: 'main'
+          fetch-depth: 0 # full history + tags required by mike and get-previous-tag
+
+      - name: Get latest tag
+        id: latest_tag
+        uses: WyriHaximus/github-action-get-previous-tag@61819f33034117e6c686e6a31dba995a85afc9de # v2.0.0
+
+      - name: Setup python environment
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: 3.x
+          cache: pip
+
+      - run: echo "cache_id=$(date --utc '+%V')" >> "$GITHUB_ENV"
+
+      - name: Setup mkdocs-material cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          key: mkdocs-material-${{ env.cache_id }}
+          path: .cache
+          restore-keys: |
+            mkdocs-material-
+
+      - name: Install mkdocs theme
+        run: pip install -r requirements.txt
+
+      # Regenerate includes/references.md from the Section 10 reference tables before
+      # mike builds and publishes the site (kept in sync with the committed copy).
+      - name: Generate reference link definitions
+        run: python3 tools/gen_references.py
+
+      - name: Configure git author for mike
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Setup version number
+        run: |
+          VERSION=${{ steps.latest_tag.outputs.tag }}
+          echo "arf_version=${VERSION:1}" >> "$GITHUB_ENV"
+
+      - name: Deploy mkdocs
+        # DISABLE_MKDOCS_2_WARNING: keep Material for MkDocs' MkDocs-2.0
+        # deprecation notice out of the deploy log.
+        env:
+          DISABLE_MKDOCS_2_WARNING: "true"
+        run: |
+          mike deploy --push --update-aliases "${{ env.arf_version }}" latest
+          mike set-default --allow-empty --push latest
+
+    # PDFs are no longer built here. They are produced once per release and
+    # attached as release assets by .github/workflows/release-pdf.yml.

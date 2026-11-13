@@ -1,0 +1,432 @@
+{
+  "co.notaria.permiso_salida_menor": {
+    "format": "dc+sd-jwt",
+    "scope": "co.notaria.permiso_salida_menor",
+    "cryptographic_binding_methods_supported": [
+      "jwk"
+    ],
+    "credential_signing_alg_values_supported": [
+      "ES256"
+    ],
+    "proof_types_supported": {
+      "jwt": {
+        "proof_signing_alg_values_supported": [
+          "ES256"
+        ],
+        "key_attestations_required": {
+          "key_storage": [
+            "iso_18045_high"
+          ],
+          "user_authentication": [
+            "iso_18045_high"
+          ],
+          "preferred_key_storage_status_period": 2678400
+        }
+      },
+      "attestation": {
+        "proof_signing_alg_values_supported": [
+          "ES256"
+        ],
+        "key_attestations_required": {
+          "key_storage": [
+            "iso_18045_high"
+          ],
+          "user_authentication": [
+            "iso_18045_high"
+          ],
+          "preferred_key_storage_status_period": 2678400
+        }
+      }
+    },
+    "vct": "urn:co:notaria:permiso-salida-menor:1",
+    "credential_metadata": {
+      "display": [
+        {
+          "name": "Permiso de salida de menor",
+          "locale": "es",
+          "description": "Autorización de un progenitor para que un menor viaje fuera del país",
+          "background_color": "#2d447c",
+          "text_color": "#FFFFFF",
+          "logo": {
+            "uri": "https://civica-desarrollo.avance.org.co/notaria-issuer/static/notaria/logo.png",
+            "alt_text": "Notaría Avance"
+          },
+          "background_image": {
+            "uri": "https://civica-desarrollo.avance.org.co/notaria-issuer/static/notaria/fondos/notaria-permiso-menor.jpg"
+          }
+        }
+      ],
+      "credential_reuse_policy": {
+        "id": "arf_annex_ii",
+        "options": [
+          {
+            "details": [
+              "limited_time"
+            ],
+            "reissue_trigger_lifetime_left": 7776000
+          }
+        ]
+      },
+      "claims": [
+        {
+          "path": [
+            "numero"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Número",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "fecha"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Fecha",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "notaria"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Notaría",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "notario"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Notario",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "otorgante_nombre"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Otorgante",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "otorgante_documento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Documento del otorgante",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "calidad"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "En calidad de",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "menor_nombre"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Menor",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "menor_documento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Documento del menor",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "destino"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Destino",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "fecha_salida"
+          ],
+          "mandatory": true,
+          "value_type": "full-date",
+          "source": "user",
+          "display": [
+            {
+              "name": "Fecha de salida",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "fecha_regreso"
+          ],
+          "mandatory": true,
+          "value_type": "full-date",
+          "source": "user",
+          "display": [
+            {
+              "name": "Fecha de regreso",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "acompanante"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Viaja con",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "otro_progenitor"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Otro progenitor",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "otorgante_tipo_documento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Tipo de documento del otorgante",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "proposito_viaje"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Propósito del viaje",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "acompanante_documento"
+          ],
+          "mandatory": false,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Documento de quien viaja con el menor",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "menor_nacionalidad"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Nacionalidad del menor",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "fecha_hora_comparecencia"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Fecha y hora de la comparecencia",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "medio_comparecencia"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Medio de comparecencia",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "advertencia_legal"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Advertencia legal",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "simulacion"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Aviso",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "issuing_authority"
+          ],
+          "mandatory": true,
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Autoridad emisora",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "issuing_country"
+          ],
+          "mandatory": true,
+          "source": "issuer",
+          "display": [
+            {
+              "name": "País emisor",
+              "locale": "es"
+            }
+          ]
+        }
+      ]
+    },
+    "issuer_config": {
+      "issuing_authority": "Notaría Avance",
+      "organization_id": "notaria-avance",
+      "validity": 3650,
+      "organization_name": "Notaría Avance",
+      "doctype": "urn:co:notaria:permiso-salida-menor:1",
+      "emulated_claims": {
+        "numero": "{consecutivo}",
+        "fecha": "{hoy}",
+        "notaria": "Notaría Avance",
+        "notario": "Andrea Restrepo Vélez",
+        "otorgante_tipo_documento": "Cédula de ciudadanía",
+        "menor_nacionalidad": "Colombiana",
+        "fecha_hora_comparecencia": "{ahora}",
+        "medio_comparecencia": "Virtual, con verificación biométrica contra la Registraduría (simulada)",
+        "advertencia_legal": "Autorización de un progenitor para la salida de un menor (Ley 1098 de 2006, art. 110). Migración Colombia puede exigir el documento físico autenticado en el control migratorio.",
+        "simulacion": "Documento emulado por una notaría simulada del ecosistema de pruebas: no tiene validez legal.",
+        "issuing_country": "CO"
+      },
+      "persona_claims": {
+        "otorgante_nombre": "nombre_completo",
+        "otorgante_documento": "documento"
+      }
+    }
+  }
+}

@@ -1,0 +1,158 @@
+/*
+ * Copyright (c) 2025-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.trustvalidator.config
+
+import arrow.core.NonEmptyList
+import eu.europa.ec.eudi.etsi1196x2.consultation.*
+import eu.europa.ec.eudi.etsi1196x2.consultation.dss.ConcurrentCacheDataLoader
+import eu.europa.ec.eudi.etsi1196x2.consultation.dss.DssOptions
+import eu.europa.ec.eudi.etsi1196x2.consultation.dss.GetTrustAnchorsFromLoTL
+import eu.europa.ec.eudi.trustvalidator.adapter.out.consultation.or
+import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource
+import eu.europa.esig.dss.tsl.function.GrantedOrRecognizedAtNationalLevelTrustAnchorPeriodPredicate
+import eu.europa.esig.dss.tsl.source.LOTLSource
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import java.net.URI
+import java.net.URL
+import java.nio.file.Path
+import java.security.cert.TrustAnchor
+import java.security.cert.X509Certificate
+import java.util.concurrent.ExecutorService
+import kotlin.time.Clock
+import kotlin.time.Duration
+
+private val log = LoggerFactory.getLogger("isChainTrustedForContextUsingLoTL")
+
+fun TrustSourcesConfigurationProperties.isChainTrustedForContextUsingLoTL(
+    scope: DisposableScope,
+    cacheDirectory: Path,
+    fileCacheExpiration: Duration,
+    inMemoryCacheExpiration: Duration,
+    executorService: ExecutorService,
+    clock: Clock,
+    validateCertificateChainUsingPKIX: ValidateCertificateChainUsingPKIX<List<X509Certificate>, TrustAnchor>,
+): IsChainTrustedForContext<NonEmptyList<X509Certificate>, VerificationContext, TrustAnchor>? =
+    lotlSources()
+        .takeIf { it.isNotEmpty() }
+        ?.let { lotlSources ->
+            log.info(lotlSources)
+
+            val getTrustAnchorsFromLoTL =
+                with(scope) {
+                    GetTrustAnchorsFromLoTL(
+                        DssOptions(
+                            loader =
+                                ConcurrentCacheDataLoader(
+                                    DssOptions.DefaultHttpLoader,
+                                    fileCacheExpiration,
+                                    cacheDirectory,
+                                ),
+                            executorService = executorService,
+                        ),
+                    ).cached(clock = clock, expectedQueries = lotlSources.size, ttl = inMemoryCacheExpiration).bind()
+                }
+
+            getTrustAnchorsFromLoTL.validator(
+                lotlSources,
+                ValidateCertificateChainUsingDirectTrustJvm or validateCertificateChainUsingPKIX,
+            )
+        }
+
+private fun TrustSourcesConfigurationProperties.lotlSources(): Map<VerificationContext, LOTLSource> =
+    buildMap {
+        // Wallet Providers
+        if (walletProviders?.lotl != null) {
+            val walletProvidersIssuance = walletProviders.lotl.issuanceLoTLSource()
+            val walletProvidersRevocation = walletProviders.lotl.revocationLoTLSource()
+
+            put(VerificationContext.WalletProviderAttestation, walletProvidersIssuance)
+            put(VerificationContext.WalletOrKeyStorageStatus, walletProvidersRevocation)
+        }
+
+        // PID Providers
+        if (pidProviders?.lotl != null) {
+            put(VerificationContext.PID, pidProviders.lotl.issuanceLoTLSource())
+            put(VerificationContext.PIDStatus, pidProviders.lotl.revocationLoTLSource())
+        }
+
+        // QEAA Providers
+        if (qeaaProviders?.lotl != null) {
+            put(VerificationContext.QEAA, qeaaProviders.lotl.issuanceLoTLSource())
+            put(VerificationContext.QEAAStatus, qeaaProviders.lotl.revocationLoTLSource())
+        }
+
+        // PubEAA Providers
+        if (pubEaaProviders?.lotl != null) {
+            put(VerificationContext.PubEAA, pubEaaProviders.lotl.issuanceLoTLSource())
+            put(VerificationContext.PubEAAStatus, pubEaaProviders.lotl.revocationLoTLSource())
+        }
+
+        // EAA Providers
+        if (!eaaProviders.isNullOrEmpty()) {
+            eaaProviders.forEach { eaaProvider ->
+                if (null != eaaProvider.lotl) {
+                    put(VerificationContext.EAA(eaaProvider.useCase), eaaProvider.lotl.issuanceLoTLSource())
+                    put(VerificationContext.EAAStatus(eaaProvider.useCase), eaaProvider.lotl.revocationLoTLSource())
+                }
+            }
+        }
+
+        // Wallet Relying Party Access Certificate Providers
+        if (wrpacProviders?.lotl != null) {
+            put(VerificationContext.WalletRelyingPartyAccessCertificate, wrpacProviders.lotl.issuanceLoTLSource())
+        }
+
+        // Wallet Relying Party Registration Certificate Providers
+        if (wrprcProviders?.lotl != null) {
+            put(VerificationContext.WalletRelyingPartyRegistrationCertificate, wrprcProviders.lotl.issuanceLoTLSource())
+            put(VerificationContext.WalletRelyingPartyRegistrationCertificateStatus, wrprcProviders.lotl.revocationLoTLSource())
+        }
+    }
+
+private fun TrustedListsConfigurationProperties.LoTLConfigurationProperties.issuanceLoTLSource(): LOTLSource =
+    lotlSourceOf(location, signatureVerification, issuanceService)
+
+private fun TrustedListsConfigurationProperties.LoTLConfigurationProperties.revocationLoTLSource(): LOTLSource =
+    lotlSourceOf(location, signatureVerification, revocationService)
+
+private fun lotlSourceOf(
+    location: URL,
+    signatureVerificationKeyStore: KeyStoreConfigurationProperties?,
+    serviceType: URI,
+): LOTLSource =
+    LOTLSource().apply {
+        url = location.toExternalForm()
+        trustAnchorValidityPredicate = GrantedOrRecognizedAtNationalLevelTrustAnchorPeriodPredicate()
+        tlVersions = listOf(5, 6)
+        trustServicePredicate = { serviceType.toString() == it.serviceInformation.serviceTypeIdentifier }
+        if (null != signatureVerificationKeyStore) {
+            certificateSource =
+                signatureVerificationKeyStore.location.inputStream.use {
+                    KeyStoreCertificateSource(
+                        it,
+                        signatureVerificationKeyStore.keyStoreType,
+                        (signatureVerificationKeyStore.password?.value ?: "").toCharArray(),
+                    )
+                }
+        }
+    }
+
+private fun Logger.info(lotlSources: Map<VerificationContext, LOTLSource>) {
+    lotlSources.entries.forEach { (context, lotl) ->
+        info("Configured VerificationContext $context using LoTL ${lotl.url}")
+    }
+}

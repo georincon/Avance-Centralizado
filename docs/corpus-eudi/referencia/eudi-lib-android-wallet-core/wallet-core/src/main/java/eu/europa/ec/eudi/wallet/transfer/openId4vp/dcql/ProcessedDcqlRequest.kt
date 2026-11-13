@@ -1,0 +1,250 @@
+/*
+ * Copyright (c) 2025 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eu.europa.ec.eudi.wallet.transfer.openId4vp.dcql
+
+import eu.europa.ec.eudi.iso18013.transfer.response.ReaderAuthPolicy
+import eu.europa.ec.eudi.iso18013.transfer.response.ReaderAuthPolicyException
+import eu.europa.ec.eudi.iso18013.transfer.response.RequestProcessor
+import eu.europa.ec.eudi.iso18013.transfer.response.ResponseResult
+import eu.europa.ec.eudi.openid4vp.Consensus
+import eu.europa.ec.eudi.openid4vp.ResolvedRequestObject
+import eu.europa.ec.eudi.openid4vp.VerifiablePresentation
+import eu.europa.ec.eudi.openid4vp.VerifiablePresentations
+import eu.europa.ec.eudi.openid4vp.dcql.QueryId
+import eu.europa.ec.eudi.wallet.document.DocumentManager
+import eu.europa.ec.eudi.wallet.internal.getSessionTranscriptBytes
+import eu.europa.ec.eudi.wallet.internal.verifiablePresentationForMsoMdoc
+import eu.europa.ec.eudi.wallet.internal.verifiablePresentationForSdJwtVc
+import eu.europa.ec.eudi.wallet.internal.requireIssuedDocument
+import eu.europa.ec.eudi.wallet.registration.RegistrationCertificateResult
+import eu.europa.ec.eudi.wallet.transfer.openId4vp.FORMAT_MSO_MDOC
+import eu.europa.ec.eudi.wallet.transfer.openId4vp.FORMAT_SD_JWT_VC
+import eu.europa.ec.eudi.wallet.transfer.openId4vp.OpenId4VpResponse
+import org.multipaz.presentment.CredentialMatchSourceOpenID4VP
+import org.multipaz.presentment.CredentialPresentmentSetOptionMemberMatch
+import org.multipaz.presentment.CredentialQueryResult
+import org.multipaz.presentment.CredentialSelection
+import org.multipaz.request.Requester
+import org.multipaz.securearea.KeyUnlockData
+import org.multipaz.trustmanagement.TrustMetadata
+
+/**
+ * Implementation of [RequestProcessor.ProcessedRequest.Success] for DCQL OpenID4VP flows.
+ *
+ * Holds the [CredentialQueryResult] tree produced by [DcqlRequestProcessor] together
+ * with the verifier's [Requester] and [TrustMetadata]. [generateResponse] takes the
+ * user's [CredentialSelection] and emits an [OpenId4VpResponse] containing
+ * one [VerifiablePresentation] per match, grouped by the originating credential query.
+ *
+ * @property resolvedRequestObject the parsed OpenID4VP authorization request — used by
+ *   the SD-JWT VC presentation builder (client id, nonce) and for session transcript
+ *   derivation in MSO mdoc presentations.
+ * @property documentManager bridges the credential identifier back to the wallet's
+ *   [eu.europa.ec.eudi.wallet.document.IssuedDocument].
+ * @property msoMdocNonce nonce used for both MSO mdoc handover binding and JARM
+ *   encryption.
+ * @property multipleByQueryId the `multiple` flag for each query. Drives
+ *   [presentmentSelections]: when `multiple = false`, each candidate credential becomes
+ *   its own option; when `multiple = true`, all candidates of the query are grouped into
+ *   one option.
+ * @param wrpRegistration the relying party's registration information resolved for
+ *   this request, or null when none was available. Exposed uniformly through
+ *   [RequestProcessor.ProcessedRequest.Success.wrpRegistration].
+ */
+class ProcessedDcqlRequest(
+    val resolvedRequestObject: ResolvedRequestObject,
+    private val documentManager: DocumentManager,
+    presentmentData: CredentialQueryResult,
+    requester: Requester,
+    trustMetadata: TrustMetadata?,
+    val msoMdocNonce: String,
+    private val readerAuthPolicy: ReaderAuthPolicy,
+    private val multipleByQueryId: Map<QueryId, Boolean> = emptyMap(),
+    wrpRegistration: RegistrationCertificateResult? = null
+) : RequestProcessor.ProcessedRequest.Success(
+    presentmentData = presentmentData,
+    requester = requester,
+    trustMetadata = trustMetadata,
+    wrpRegistration = wrpRegistration
+) {
+
+    /**
+     * The options the user can choose from. For a query with `multiple = false` (the
+     * default), each candidate credential becomes its own option; for `multiple = true`,
+     * all candidates of the query are grouped into one option. Falls back to the default
+     * behaviour when no per-query flags were supplied.
+     */
+    override val presentmentSelections: List<CredentialSelection> by lazy {
+        if (multipleByQueryId.isEmpty()) {
+            super.presentmentSelections
+        } else {
+            buildMultipleAwareSelections(presentmentData, multipleByQueryId)
+        }
+    }
+
+    /**
+     * Generates an [OpenId4VpResponse] with one [VerifiablePresentation] per selected
+     * match.
+     *
+     * Matches are grouped by their originating credential query's id (projected to a
+     * [QueryId] for [OpenId4VpResponse.respondedDocuments]). Format selection
+     * (`mso_mdoc` vs `dc+sd-jwt`) is driven by the source query's format, so a single
+     * selection can mix formats across queries.
+     *
+     * Per-credential [keyUnlockData] is keyed by `match.credential.identifier`.
+     */
+    override suspend fun generateResponse(
+        selection: CredentialSelection,
+        keyUnlockData: Map<String, KeyUnlockData>
+    ): ResponseResult = generateResponse(
+        selection = selection,
+        keyUnlockData = keyUnlockData,
+        sessionTranscriptProvider = { it.getSessionTranscriptBytes() },
+        sdJwtAudience = null
+    )
+
+    /**
+     * Core response builder, parameterized so the DC API channel can inject the
+     * `OpenID4VPDCAPIHandover`-based session transcript (via [sessionTranscriptProvider],
+     * which receives [resolvedRequestObject]) and the SD-JWT VC `aud` ([sdJwtAudience],
+     * `origin:<origin>` for DC API). The default 2-arg override reproduces the HTTP behaviour.
+     */
+    suspend fun generateResponse(
+        selection: CredentialSelection,
+        keyUnlockData: Map<String, KeyUnlockData>,
+        sessionTranscriptProvider: (ResolvedRequestObject) -> ByteArray,
+        sdJwtAudience: String?
+    ): ResponseResult {
+        // Confirm the user's consent-UI changes did not break the original DCQL
+        // request — e.g. a deselected credential leaves a required query uncovered,
+        // or a deselected claim breaks the source query's `claims` / `claim_sets`
+        // satisfaction. The caller should treat this failure as a denial and either
+        // re-prompt the user or return access_denied to the verifier.
+        validateSelection(selection, resolvedRequestObject.query)?.let { error ->
+            return ResponseResult.Failure(
+                IllegalStateException("Selection does not satisfy verifier request: $error"),
+            )
+        }
+
+        // Reader authentication policy enforcement
+        val isReaderTrustVerified = trustMetadata != null
+        val readerAuthPresent = requester.requesterIdentities.isNotEmpty()
+        val rejectByPolicy = when (readerAuthPolicy) {
+            ReaderAuthPolicy.DoNotEnforce -> false
+            is ReaderAuthPolicy.EnforceIfPresent -> readerAuthPresent && !isReaderTrustVerified
+            is ReaderAuthPolicy.AlwaysRequire -> !isReaderTrustVerified
+        }
+        if (rejectByPolicy) {
+            return ResponseResult.Failure(
+                ReaderAuthPolicyException("Reader authentication policy rejected the request")
+            )
+        }
+
+        return try {
+            val verifiablePresentationsMap =
+                mutableMapOf<QueryId, MutableList<VerifiablePresentation>>()
+            val respondedDocumentsMap =
+                mutableMapOf<QueryId, MutableList<OpenId4VpResponse.RespondedDocument>>()
+
+            for (match in selection.matches) {
+                val source = match.source as? CredentialMatchSourceOpenID4VP ?: continue
+                val dcqlQuery = source.credentialQuery
+                val queryId = QueryId(dcqlQuery.id)
+                val format = dcqlQuery.format
+
+                val vp = when (format) {
+                    FORMAT_MSO_MDOC -> verifiablePresentationForMsoMdoc(
+                        match = match,
+                        documentManager = documentManager,
+                        sessionTranscript = sessionTranscriptProvider(resolvedRequestObject),
+                        keyUnlockData = keyUnlockData[match.credential.identifier],
+                        transactionData = match.transactionData
+                    )
+
+                    FORMAT_SD_JWT_VC -> verifiablePresentationForSdJwtVc(
+                        resolvedRequestObject = resolvedRequestObject,
+                        match = match,
+                        documentManager = documentManager,
+                        keyUnlockData = keyUnlockData[match.credential.identifier],
+                        audience = sdJwtAudience,
+                        transactionData = match.transactionData
+                    )
+
+                    else -> throw IllegalArgumentException("Unsupported format: $format")
+                }
+
+                val responseFormat = if (format == FORMAT_SD_JWT_VC) FORMAT_SD_JWT_VC else FORMAT_MSO_MDOC
+                val issuedDocument = match.credential.requireIssuedDocument(documentManager)
+
+                verifiablePresentationsMap.getOrPut(queryId) { mutableListOf() }.add(vp)
+                respondedDocumentsMap.getOrPut(queryId) { mutableListOf() }.add(
+                    OpenId4VpResponse.RespondedDocument(
+                        documentId = issuedDocument.id,
+                        format = responseFormat,
+                    )
+                )
+            }
+
+            // OpenID4VP §8.1 requires a non-empty vp_token in PositiveConsensus. Fail
+            // fast — the caller should dispatch NegativeConsensus instead.
+            if (verifiablePresentationsMap.isEmpty()) {
+                return ResponseResult.Failure(
+                    IllegalStateException(
+                        "No verifiable presentations produced for the selection. " +
+                                "If the user declined or there is nothing to disclose, " +
+                                "dispatch Consensus.NegativeConsensus via OpenId4VpManager " +
+                                "instead of calling generateResponse()."
+                    )
+                )
+            }
+
+            val verifiablePresentations = VerifiablePresentations(
+                verifiablePresentationsMap.mapValues { it.value.toList() }
+            )
+            val response = OpenId4VpResponse(
+                resolvedRequestObject = resolvedRequestObject,
+                vpToken = Consensus.PositiveConsensus(verifiablePresentations),
+                msoMdocNonce = msoMdocNonce,
+                respondedDocuments = respondedDocumentsMap.mapValues { it.value.toList() }
+            )
+            ResponseResult.Success(response)
+        } catch (e: Exception) {
+            ResponseResult.Failure(e)
+        }
+    }
+
+    /**
+     * Returns a copy of this request with its presentment tree replaced by [presentmentData],
+     * preserving the resolved request, document manager, requester, trust metadata, nonce,
+     * per-query `multiple` flags (so the `multiple`-aware [presentmentSelections] logic is kept) and
+     * the resolved relying party registration. Useful for narrowing the offered credentials to a
+     * previously made selection.
+     */
+    fun withPresentmentData(presentmentData: CredentialQueryResult): ProcessedDcqlRequest =
+        ProcessedDcqlRequest(
+            resolvedRequestObject = resolvedRequestObject,
+            documentManager = documentManager,
+            presentmentData = presentmentData,
+            requester = requester,
+            trustMetadata = trustMetadata,
+            msoMdocNonce = msoMdocNonce,
+            readerAuthPolicy = readerAuthPolicy,
+            multipleByQueryId = multipleByQueryId,
+            wrpRegistration = wrpRegistration as? RegistrationCertificateResult
+        )
+}
+

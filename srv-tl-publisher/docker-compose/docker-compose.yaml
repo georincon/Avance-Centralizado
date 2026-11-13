@@ -1,0 +1,152 @@
+# Publicador local de Trusted Lists (ETSI TS 119 612) del ecosistema EUDI de Avance.
+#
+# POR QUÉ EXISTE
+#
+# El despliegue público publica sus listas en
+# `https://civica.avance.org.co/tl-publisher/`. Mientras las Consumiese de ahí,
+# todo el ecosistema dependía de ese host: si caía, se caía la capa de
+# confianza entera, y probar cualquier cambio obligaba a tocar producción.
+#
+# Este servicio es el publicador LOCAL: misma PKI, mismas anclas, mismo
+# formato, y su propia firma. A partir de aquí, `civica.avance.org.co` deja de
+# ser una dependencia de nada.
+#
+# QUÉ HAY DENTRO
+#
+#   tlp-db        MySQL. Guarda el esquema (las listas y las TRUSTED_LISTS) y el
+#                 registro de publicaciones: cada lista publicada es INMUTABLE
+#                 y se sirve por su número de secuencia para siempre.
+#   tl-publisher  Genera el XML conforme a TS 119 612, lo valida contra el
+#                 XSD, lo firma con XAdES, le asigna secuencia y lo sirve.
+#   pki           Sirve lo que los certificados prometen en sus extensiones AIA
+#                 y CRLDP, y refresca las CRLs. Sin él esas URLs son promesas
+#                 rotas.
+#
+# RED
+#
+# `avance-eudi` es la red compartida del ecosistema: el proxy unico
+# (srv-nw-nginx) enruta por nombre de servicio, así que este proyecto tiene que
+# estar en ella. No es de este proyecto — `docker compose down` no la borra.
+#
+# ARRANQUE
+#
+#   ./up.sh              levanta y publica
+#   ./scripts/…          ver scripts/README.md
+
+name: srv-tl-publisher
+
+services:
+  tlp-db:
+    image: ${TLP_DB_IMAGE}
+    container_name: tlp-db
+    ports:
+      - "127.0.0.1:${TLP_DB_PORT:-3307}:3306"
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${TLP_DB_ROOT_PASSWORD}
+      - MYSQL_USER=tlp_user
+      - MYSQL_PASSWORD=${TLP_DB_PASSWORD}
+      - MYSQL_DATABASE=trusted_lists
+    volumes:
+      - tlp-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tlpublisher
+
+  tl-publisher:
+    build: ../app
+    image: srv-tl-publisher:latest
+    container_name: tl-publisher
+    restart: unless-stopped
+    depends_on:
+      tlp-db:
+        condition: service_healthy
+    environment:
+      # TODO lo que el publicador publica se deriva de aquí. Si el dominio
+      # cambia, hay que republicar las listas: las URLs van dentro del XML
+      # firmado.
+      - PUBLIC_DOMAIN=${PUBLIC_DOMAIN}
+      - DB_HOST=tlp-db
+      - DB_PORT=3306
+      - DB_USER=tlp_user
+      - DB_PASSWORD=${TLP_DB_PASSWORD}
+      - DB_NAME=trusted_lists
+      # Publicar consume un número de secuencia que no se puede reutilizar, así
+      # que el endpoint va detrás de una clave. Sin ella responde 503 en vez de
+      # quedar abierto.
+      - PUBLISHER_API_KEY=${TL_PUBLISHER_API_KEY}
+      - SCHEME_TERRITORY=${SCHEME_TERRITORY:-CO}
+      # La clave con la que se abre la administracion (viaja en la cabecera
+      # X-Api-Key). Sin ella la administracion responde 503: es preferible a que
+      # exista abierta.
+      - TL_OPERATOR_KEY=${TL_OPERATOR_KEY}
+      # La emision de certificados de acceso la hace el servicio de PKI, que es
+      # el unico que tiene las claves privadas. El publicador no guarda ninguna.
+      - PKI_ISSUE_URL=http://tl-publisher-pki:8080/issue/rp-access
+      - PKI_ISSUE_API_KEY=${PKI_ISSUE_API_KEY}
+    volumes:
+      # El firmante con el que se firman las listas. Vive FUERA de la imagen
+      # para que rotarlo no obligue a reconstruirla.
+      - ../firma:/app/firma:ro
+      # Sólo material PÚBLICO de la PKI: de aquí salen los anclas de confianza
+      # que se publican en las listas. Las claves privadas no entran.
+      - ../pki/publico:/app/pki-publico:ro
+      # Una lista publicada es INMUTABLE y se sirve por su secuencia para
+      # siempre, así que no puede vivir en el sistema de ficheros de un
+      # contenedor que se recrea.
+      - ../listas-publicadas:/var/lib/tl-publisher
+    user: "${PKI_UID:-1000}:${PKI_GID:-1000}"
+    networks:
+      # `default` para alcanzar `tlp-db` por su nombre; `avance-eudi` para que
+      # el proxy unico (srv-nw-nginx) lo alcance a el.
+      - tlpublisher
+      - avance-eudi
+
+  pki:
+    build: ../pki-servicio
+    image: srv-tl-publisher-pki:latest
+    container_name: tl-publisher-pki
+    restart: unless-stopped
+    environment:
+      - PUBLIC_DOMAIN=${PUBLIC_DOMAIN}
+      # Las CRLs se emiten con nextUpdate a 24 h. Se regeneran cada 6 h porque
+      # una CRL vencida hace fallar una validación estricta igual que una
+      # revocación, aunque no haya cambiado nada.
+      - CRL_REFRESH_HOURS=6
+      # La clave con la que el publicador pide emitir un certificado de acceso
+      # (POST /issue/rp-access). Sin ella el servicio responde 503 a cada registro de verifier.
+      - PKI_ISSUE_API_KEY=${PKI_ISSUE_API_KEY}
+    # Corre con el uid del dueño de las claves: las de las sub-CAs están en
+    # 0400 y no se van a aflojar en el host para que quepan en la imagen.
+    user: "${PKI_UID:-1000}:${PKI_GID:-1000}"
+    volumes:
+      # SOLO subca/ y publico/. `pki/root/` NO se monta: así la clave de la
+      # raíz no está al alcance de este contenedor por construcción.
+      - ../pki/subca:/pki/subca:ro
+      # La sub-CA `rp` es la unica que se abre en escritura: al emitir un access certificate
+      # (POST /issue/rp-access) hay que anotar el serial, index.txt y newcerts/. Las demas
+      # siguen de solo lectura.
+      - ../pki/subca/rp:/pki/subca/rp
+      - ../pki/publico:/pki/publico
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - avance-eudi
+
+networks:
+  tlpublisher:
+    name: srv-tl-publisher_default
+    external: true
+  avance-eudi:
+    name: avance-eudi
+    external: true
+
+volumes:
+  tlp-db-data:

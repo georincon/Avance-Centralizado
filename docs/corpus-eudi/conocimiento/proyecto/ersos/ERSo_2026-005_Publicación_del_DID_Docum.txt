@@ -1,0 +1,101 @@
+                                                                                     Identificación OID:   1.3.6.1.4.1.31144.3.2.002.1.1
+                                                                                                 Fecha:    02-01-2020
+                                       ESPECIFICACION DE REQUISITOS                            Versión:    1.1
+                                                SOFTWARE                                  Clasificación:   Interno
+                                                  (ERSo)                                       Elaboró:    Arquitecto software
+                                                                                                Revisó:    Líder de proyecto
+                                                                                               Aprobó:     Representante Legal
+
+
+PROYECTO                               Identidad Digital Soberana SSI                               ERSo                 2026-005
+TITULO                                 Publicación del DID Document bajo did:web
+DESARROLLADOR                          Geovani Rincón
+FECHA ERSO                             Viernes, 18 de septiembre de 2026
+FECHA DESARROLLO                       Miércoles, 30 de septiembre de 2026 7:30 a.m
+FECHA DE PRUEBA                        Viernes, 2 de octubre de 2026 7:30 a.m
+
+
+CAPACIDADES DEL                        Se requiere habilitar de forma opcional la publicación y el servicio web de un DID Document
+PROCESO                                mediante el método did:web, con clave P-256 convertida a Multikey, sin alterar el camino base
+                                       del piloto.
+                                       Entre las capacidades del proceso se encuentran:
+                                            •   Generar un identificador did:web conforme al método y al dominio configurado.
+                                            •   Construir el DID Document con la clave pública P-256 en representación Multikey.
+                                            •   Publicar el documento en la ruta web calculada y servirlo por HTTPS.
+                                            •   Comprobar la publicación mediante lectura desde la URL pública y comparación de
+                                                contenido/hash.
+
+
+CONDICIONES DEL                             •   El método admitido es did:web; no se integra ION ni anclajes equivalentes.
+PROCESO
+                                            •   La aceptación se limita al laboratorio de pruebas de identidad.
+                                            •   No se publica por defecto ningún DID permanente del ciudadano.
+
+
+
+
+DESCRIPCION DEL PROCESO
+Contexto y propósito funcional. Publicar un DID Document significa dejarlo disponible en una URL HTTPS para que cualquiera
+pueda resolverlo y obtener las claves públicas del sujeto. Esta ERSo usa el método did:web, donde la URL se deriva del dominio,
+y clave P-256 expresada como Multikey. El desarrollador debe entender que no conviene publicar por defecto un DID de cada
+ciudadano: un identificador público persistente facilita la correlación entre contextos de uso, y el piloto no necesita ese punto de
+exposición. También debe tener presente que did:web depende del DNS, del HTTPS y del operador del dominio.
+Literatura y temas a consultar. Consultar en la web: W3C DIDs v1.1, la especificación del método did:web (did:web Method
+Specification) y el formato Multikey / multibase. Revisar ejemplos de publicación de did.json en una ruta HTTPS y buenas
+prácticas de servido de documentos estáticos.
+Qué debe hacer.
+      1.   Generar el identificador did:web conforme al método y al dominio configurado.
+      2.   Construir el DID Document con la clave pública P-256 en representación Multikey, limitado al material público de
+           verificación, relaciones de uso de claves y servicios opcionales permitidos.
+      3.   Publicar el documento en la ruta web calculada y servirlo por HTTPS.
+      4.   Comprobar la publicación leyendo desde la URL pública y comparando contenido y hash.
+      5.   Asegurar que el documento no incluye credenciales personales, claves privadas ni datos civiles.
+
+
+FSOF-FO-002 OID 1.3.6.1.4.1.31144.3.2.002.1.1          FORMATO ESPECIFICACION REQUISITOS SOFTWARE                       Página 1 de 2
+                                                                                      Identificación OID:     1.3.6.1.4.1.31144.3.2.002.1.1
+                                                                                                  Fecha:      02-01-2020
+                                       ESPECIFICACION DE REQUISITOS                             Versión:      1.1
+                                                SOFTWARE                                   Clasificación:     Interno
+                                                  (ERSo)                                        Elaboró:      Arquitecto software
+                                                                                                 Revisó:      Líder de proyecto
+                                                                                                Aprobó:       Representante Legal
+
+
+
+
+Criterios de aceptación
+
+
+
+
+                                #                     Criterio
+                                          1           El documento se sirve por HTTPS en la URL calculada;
+                                                      evidencia: lectura desde la URL pública.
+                                          2           El documento contiene la clave pública correcta;
+                                                      evidencia: documento publicado y comparación de
+                                                      hash.
+                                          3           El documento no expone claves privadas ni datos
+                                                      civiles; evidencia: revisión del contenido publicado.
+
+                                          4           Un id desajustado se rechaza y el camino base opera
+                                                      con la extensión desactivada; evidencia: pruebas
+                                                      negativas y de regresión.
+
+
+
+
+Actividad                                       Responsable                               Fecha y hora                      Firma
+Análisis y diseño ERSo                          Rocío Villamizar
+Asignar desarrollador ERSo                      Rocío Villamizar
+Implementar ERSo                                Geovani Rincón
+Aceptar archivos al repositorio central         Rocío Villamizar
+Elaborar plantilla de pruebas                   Luis González
+Realizar pruebas funcionales                    Luis González
+Archivo de ERSo                                 Rocío Villamizar
+
+
+
+
+FSOF-FO-002 OID 1.3.6.1.4.1.31144.3.2.002.1.1          FORMATO ESPECIFICACION REQUISITOS SOFTWARE                          Página 2 de 2
+

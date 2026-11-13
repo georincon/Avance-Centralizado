@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% include 'partials/cabeza.html' %}
+    <title>Identifícate · Notaría Avance</title>
+</head>
+<body>
+    {% include 'partials/cabecera.html' %}
+    <main class="pagina estrecha" role="main">
+        <h1>Identifícate con tu billetera</h1>
+        <p class="sub">Para otorgar un acto ante la notaría necesitamos saber quién eres. Comparte tu documento de identidad digital (PID):
+            la notaría solo recibe tu número de documento, tus nombres y apellidos, y si eres mayor de edad.</p>
+
+        <div class="panel entrega">
+            <img class="qr" src="{{ qr }}" alt="Código QR para identificarte">
+            <div>
+                <div class="etiqueta">Desde otro dispositivo</div>
+                <p class="ayuda" style="margin:2px 0 10px">Escanea el código con tu billetera y acepta compartir tus datos. Esta página continúa sola.</p>
+                <div class="etiqueta">En este teléfono</div>
+                <div class="acciones" style="margin-top:6px">
+                    <a class="btn" href="{{ enlace }}">Abrir mi billetera</a>
+                </div>
+            </div>
+        </div>
+        <div id="estado" class="aviso" role="status">Esperando a que compartas tus datos desde la billetera…</div>
+        <div class="acciones"><a class="btn sec" href="{{ url_for('initial_page') }}">Cancelar</a></div>
+    </main>
+    {% include 'partials/pie.html' %}
+    <script>
+    (function () {
+      var estado = document.getElementById('estado');
+      function consultar() {
+        fetch({{ estado_url | tojson }}, { credentials: 'include' })
+          .then(function (r) { return r.json().then(function (j) { return { http: r.status, j: j }; }); })
+          .then(function (x) {
+            if (x.j.estado === 'listo') { estado.textContent = 'Listo. Continuando…'; window.location.href = x.j.siguiente; return; }
+            if (x.j.estado === 'error') { estado.className = 'aviso error'; estado.textContent = 'No pudimos identificarte: ' + x.j.motivo + '. Recarga la página para intentarlo de nuevo.'; return; }
+            setTimeout(consultar, 2000);
+          })
+          .catch(function () { setTimeout(consultar, 3000); });
+      }
+      consultar();
+    })();
+    </script>
+</body>
+</html>

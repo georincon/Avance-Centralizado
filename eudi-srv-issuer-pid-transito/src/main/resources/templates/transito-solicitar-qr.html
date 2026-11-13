@@ -1,0 +1,53 @@
+<!--
+  Código propio de este fork (emulador de la Dirección de Tránsito de Bucaramanga).
+  No es parte del eudi-srv-pid-issuer original de la Comisión Europea.
+-->
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/main.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/transito-theme.css}">
+    <link rel="icon" type="image/png" th:href="@{/public/img/transito/favicon.png}">
+    <title>Dirección de Tránsito de Bucaramanga :: Tu código QR</title>
+</head>
+<body>
+<div class="dtb-header">
+    <img th:src="@{/public/img/transito/logo-itt.png}" alt="Logo Dirección de Tránsito de Bucaramanga">
+    <div>
+        <h1>Dirección de Tránsito de Bucaramanga</h1>
+        <p class="dtb-subtitle mb-0">Licencia de conducción móvil (mDL)</p>
+    </div>
+</div>
+<main class="container p-4" style="max-width: 480px;">
+    <h2 class="mb-2">Hola, <span th:text="${nombres}">ciudadano</span></h2>
+    <h5 class="mb-1 text-body-secondary" id="titulo-qr">Escanea este código con tu wallet</h5>
+    <p class="mb-3 text-body-secondary" th:if="${categorias}">Categorías: <strong th:text="${categorias}">B1, C1</strong></p>
+
+    <div class="mb-3 solo-movil" hidden>
+        <a class="btn btn-primary btn-lg w-100" id="abrir-wallet" th:href="${uri}" th:attr="data-offer=${uri}">Compartir con mi wallet</a>
+        <p class="text-center text-body-secondary small mt-2 mb-0">Estás en el celular: envía la solicitud directo a tu wallet, sin escanear el código.
+            Si no la tienes instalada, te llevamos a descargarla.</p>
+    </div>
+
+    <div class="d-flex justify-content-center mb-3 qr-bloque">
+        <!--/*@thymesVar id="qrCode" type="kotlin.String"*/-->
+        <img class="qr-code" th:src="'data:' + ${qrCodeMediaType} + ';base64,' + ${qrCode}" alt="Código QR">
+    </div>
+
+    <div class="mb-3 text-center">
+        <p>O copia este enlace en tu wallet:</p>
+        <code class="credentials-offer-uri" th:text="${uri}">uri</code>
+    </div>
+
+    <p class="text-body-secondary" style="font-size: 0.85rem;" th:unless="${#strings.isEmpty(openid4VciVersion)}">
+        OpenID4VCI versión <span th:text="${openid4VciVersion}">1.0</span>
+    </p>
+
+    <a class="btn btn-outline-secondary w-100" th:href="@{/transito/solicitar}">Hacer otra solicitud</a>
+</main>
+<script type="application/javascript" th:src="@{/public/js/abrir-wallet.js}"></script>
+</body>
+</html>

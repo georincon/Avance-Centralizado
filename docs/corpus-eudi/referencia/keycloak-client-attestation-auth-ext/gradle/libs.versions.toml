@@ -1,0 +1,71 @@
+[versions]
+kotlin = "2.3.10"
+java = "21"
+keycloak = "26.6.2"
+spotless = "8.7.0"
+ktlint = "1.8.0"
+statium = "0.5.1"
+ktor = "3.4.3"
+kotlinx-serialization = "1.10.0"
+shadow = "9.4.3"
+kotlinx-coroutines = "1.10.2"
+jersey = "4.0.2"
+arrow = "2.2.2"
+dokka = "2.2.0"
+maven-publish = "0.37.0"
+uri-kmp = "0.0.21"
+mockk = "1.14.11"
+
+[libraries]
+# Kotlin
+kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test" }
+
+# KotlinX Serialization
+kotlinx-serialization-bom = { module = "org.jetbrains.kotlinx:kotlinx-serialization-bom", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json" }
+
+# KotlinX Coroutines
+kotlinx-coroutines-bom = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-bom", version.ref = "kotlinx-coroutines" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test" }
+
+# Ktor
+ktor-bom = { module = "io.ktor:ktor-bom", version.ref = "ktor" }
+ktor-client-java = { module = "io.ktor:ktor-client-java" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock" }
+
+# Arrow
+arrow-stack = { module = "io.arrow-kt:arrow-stack", version.ref = "arrow" }
+arrow-core = { module = "io.arrow-kt:arrow-core" }
+arrow-core-serialization = { module = "io.arrow-kt:arrow-core-serialization" }
+
+# KeyCloak
+keycloak-dependencies-server-all = { module = "org.keycloak:keycloak-dependencies-server-all", version.ref = "keycloak" }
+keycloak-server-spi = { module = "org.keycloak:keycloak-server-spi" }
+keycloak-services = { module = "org.keycloak:keycloak-services" }
+
+# Jersey
+jersey-bom = { module = "org.glassfish.jersey:jersey-bom", version.ref = "jersey" }
+jersey-common = { module = "org.glassfish.jersey.core:jersey-common" }
+
+# MockK
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+
+# Nimbus
+nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt" }
+
+# Others
+statium = { module = "eu.europa.ec.eudi:eudi-lib-kmp-statium-jvm", version.ref = "statium" }
+uri-kmp = { module = "com.eygraber:uri-kmp", version.ref = "uri-kmp" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }

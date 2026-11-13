@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 420" role="img" aria-label="Escalera de niveles académicos hacia arriba">
+<defs>
+<linearGradient id="p1" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#0A63A8"/><stop offset="1" stop-color="#3AA6E6"/></linearGradient>
+<linearGradient id="p2" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#0B4F8A"/><stop offset="1" stop-color="#0A63A8"/></linearGradient>
+</defs>
+<g fill="#DDE94B">
+<rect x="6" y="96" width="210" height="11" rx="5.500" opacity=".95"/><rect x="40" y="130" width="170" height="11" rx="5.500" opacity=".8"/>
+<rect x="0" y="164" width="200" height="11" rx="5.500" opacity=".95"/><rect x="60" y="198" width="120" height="11" rx="5.500" opacity=".6"/>
+<rect x="20" y="232" width="150" height="11" rx="5.500" opacity=".8"/>
+</g>
+<g>
+<rect x="190" y="320" width="80" height="80" rx="10" fill="url(#p2)"/>
+<rect x="260" y="270" width="80" height="130" rx="10" fill="url(#p1)"/>
+<rect x="330" y="220" width="80" height="180" rx="10" fill="url(#p2)"/>
+<rect x="400" y="165" width="80" height="235" rx="10" fill="url(#p1)"/>
+<rect x="470" y="105" width="80" height="295" rx="10" fill="url(#p2)"/>
+</g>
+<g fill="#fff" opacity=".9" font-family="system-ui,sans-serif" font-weight="800" font-size="22" text-anchor="middle">
+<text x="230" y="368">1</text><text x="300" y="338">2</text><text x="370" y="308">3</text><text x="440" y="282">4</text><text x="510" y="252">5</text></g>
+<!-- birrete sobre el último escalón -->
+<g transform="translate(510 52)"><path d="M0-22 L44-2 0 18-44-2z" fill="#DDE94B"/><path d="M-26 8v16c0 8 52 8 52 0V8L0 20z" fill="#B7C61A"/><path d="M40-1v26" stroke="#DDE94B" stroke-width="4" stroke-linecap="round"/><circle cx="40" cy="28" r="5" fill="#DDE94B"/></g>
+<circle cx="120" cy="330" r="40" fill="#fff" opacity=".06"/><circle cx="430" cy="60" r="18" fill="#3AA6E6" opacity=".5"/>
+</svg>

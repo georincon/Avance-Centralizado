@@ -1,0 +1,45 @@
+<!--
+  Código propio de este fork (emulador de la Registraduría Nacional del Estado Civil).
+  No es parte del eudi-srv-pid-issuer original de la Comisión Europea.
+-->
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/main.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/registraduria-theme.css}">
+    <link rel="icon" type="image/png" th:href="@{/public/img/registraduria/escudo-favicon.png}">
+    <title>Registraduría (emulador) :: Panel admin</title>
+</head>
+<body>
+<div class="rne-header">
+    <img th:src="@{/public/img/registraduria/logo-blanco.svg}" alt="Escudo Registraduría Nacional del Estado Civil">
+    <div>
+        <h1>Registraduría (emulador)</h1>
+        <p class="rne-subtitle mb-0">Panel administrativo</p>
+    </div>
+</div>
+<main class="container p-4" style="max-width: 420px;">
+    <div class="alert alert-danger" th:if="${error}">
+        Usuario o contraseña incorrectos.
+    </div>
+    <div class="alert alert-success" th:if="${loggedOut}">
+        Sesión cerrada.
+    </div>
+
+    <form method="post" th:action="@{/registraduria/admin/login}">
+        <div class="mb-3">
+            <label for="username" class="form-label">Usuario</label>
+            <input type="text" class="form-control" id="username" name="username" autofocus required>
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Contraseña</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Entrar</button>
+    </form>
+</main>
+</body>
+</html>

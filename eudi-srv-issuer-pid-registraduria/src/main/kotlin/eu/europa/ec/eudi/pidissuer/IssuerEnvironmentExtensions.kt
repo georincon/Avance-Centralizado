@@ -1,0 +1,766 @@
+/*
+ * Copyright (c) 2023-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.pidissuer
+
+import arrow.core.*
+import com.eygraber.uri.Url
+import com.nimbusds.jose.CompressionAlgorithm
+import com.nimbusds.jose.EncryptionMethod
+import com.nimbusds.jose.JWEAlgorithm
+import com.nimbusds.jose.JWSAlgorithm
+import com.nimbusds.jose.jwk.*
+import com.nimbusds.jose.util.Base64
+import eu.europa.ec.eudi.pidissuer.adapter.input.web.security.DPoPConfigurationProperties
+import eu.europa.ec.eudi.pidissuer.adapter.out.IssuerSigningKey
+import eu.europa.ec.eudi.pidissuer.adapter.out.attestation.IssueMdoc
+import eu.europa.ec.eudi.pidissuer.adapter.out.attestation.learningcredential.IssueLearningCredential
+import eu.europa.ec.eudi.pidissuer.adapter.out.attestation.mdl.IssueMobileDrivingLicence
+import eu.europa.ec.eudi.pidissuer.adapter.out.attestation.mdl.MobileDrivingLicence
+import eu.europa.ec.eudi.pidissuer.adapter.out.attestation.mdl.RandomMobileDrivingLicence
+import eu.europa.ec.eudi.pidissuer.adapter.out.attestation.pid.*
+import eu.europa.ec.eudi.pidissuer.adapter.out.registraduria.SyncCedulaToKeycloakGhostUser
+import eu.europa.ec.eudi.pidissuer.port.out.persistence.IsSubjectBlocked
+import eu.europa.ec.eudi.pidissuer.port.out.registraduria.FindCedulaByDocumentNumber
+import eu.europa.ec.eudi.pidissuer.port.out.registraduria.SyncCedulaToKeycloak
+import eu.europa.ec.eudi.pidissuer.adapter.out.format.sdjwtvc.SdJwtVcSerialization
+import eu.europa.ec.eudi.pidissuer.adapter.out.jose.AccessCertificate
+import eu.europa.ec.eudi.pidissuer.adapter.out.jose.supportedEncryptionMethods
+import eu.europa.ec.eudi.pidissuer.adapter.out.jose.supportedJWEAlgorithms
+import eu.europa.ec.eudi.pidissuer.adapter.out.nonce.NonceEncryptionKey
+import eu.europa.ec.eudi.pidissuer.adapter.out.proof.ValidateAttestationProof
+import eu.europa.ec.eudi.pidissuer.adapter.out.proof.ValidateJwtProofWithKeyAttestation
+import eu.europa.ec.eudi.pidissuer.adapter.out.proof.VerifyKeyAttestation
+import eu.europa.ec.eudi.pidissuer.adapter.out.trust.Ignored
+import eu.europa.ec.eudi.pidissuer.adapter.out.trust.usingTrustValidatorService
+import eu.europa.ec.eudi.pidissuer.adapter.out.webclient.HttpProxy
+import eu.europa.ec.eudi.pidissuer.adapter.out.webclient.HttpProxyOption
+import eu.europa.ec.eudi.pidissuer.domain.*
+import eu.europa.ec.eudi.pidissuer.port.out.attestation.GetAttestationAttributes
+import eu.europa.ec.eudi.pidissuer.port.out.nonce.VerifyNonce
+import eu.europa.ec.eudi.pidissuer.port.out.persistence.GenerateNotificationId
+import eu.europa.ec.eudi.pidissuer.port.out.persistence.StoreIssuedCredential
+import eu.europa.ec.eudi.pidissuer.port.out.proof.ValidateProof
+import eu.europa.ec.eudi.pidissuer.port.out.status.AllocateStatus
+import eu.europa.ec.eudi.pidissuer.port.out.status.GetStatusListTokenStatus
+import eu.europa.ec.eudi.pidissuer.port.out.trust.IsTrustedIssuer
+import eu.europa.ec.eudi.sdjwt.HashAlgorithm
+import kotlinx.datetime.TimeZone
+import org.slf4j.LoggerFactory
+import org.springframework.core.env.Environment
+import org.springframework.core.env.getProperty
+import org.springframework.core.env.getRequiredProperty
+import org.springframework.core.io.DefaultResourceLoader
+import org.springframework.core.io.FileSystemResource
+import org.springframework.web.reactive.function.client.WebClient
+import java.security.KeyStore
+import java.security.cert.X509Certificate
+import kotlin.time.Clock
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.seconds
+
+private val extensionLogger = LoggerFactory.getLogger("eu.europa.ec.eudi.pidissuer.IssuerEnvironmentExtensions")
+
+internal fun credentialReusePolicy(
+    env: Environment,
+    prefix: String,
+): CredentialReusePolicy {
+    val enabled = env.getProperty<Boolean>("$prefix.reusePolicy.enabled") ?: false
+    if (!enabled) return CredentialReusePolicy.None
+
+    val type = env.getProperty("$prefix.reusePolicy.type") ?: "ArfAnnex2"
+    return when (type) {
+        "ArfAnnex2" -> {
+            val options = mutableListOf<EudiReusePolicy>()
+            var index = 0
+            while (true) {
+                val detailsStr = env.getPropertyOrEnvVariable("$prefix.reusePolicy.options[$index].details") ?: break
+                val methods = detailsStr.split(",").map { it.trim() }.mapNotNull { EudiReusePolicyType.fromValue(it) }
+                if (methods.isEmpty()) {
+                    index++
+                    continue
+                }
+                methods.mapTo(options) { method ->
+                    when (method) {
+                        EudiReusePolicyType.OnceOnly -> {
+                            val batchSize =
+                                env.getRequiredPropertyOrEnvVariable<Int>("$prefix.reusePolicy.options[$index].batchSize")
+                            val reissueTriggerUnused =
+                                env.getRequiredPropertyOrEnvVariable<Int>(
+                                    "$prefix.reusePolicy.options[$index].reissueTriggerUnused",
+                                )
+                            EudiReusePolicy.OnceOnly(batchSize, reissueTriggerUnused)
+                        }
+
+                        EudiReusePolicyType.LimitedTime -> {
+                            val reissueTriggerLifetimeLeft =
+                                env
+                                    .getRequiredPropertyOrEnvVariable<Long>(
+                                        "$prefix.reusePolicy.options[$index].reissueTriggerLifetimeLeft",
+                                    ).seconds
+                            EudiReusePolicy.LimitedTime(reissueTriggerLifetimeLeft)
+                        }
+
+                        EudiReusePolicyType.RotatingBatch -> {
+                            val batchSize =
+                                env.getRequiredPropertyOrEnvVariable<Int>("$prefix.reusePolicy.options[$index].batchSize")
+                            val reissueTriggerLifetimeLeft =
+                                env
+                                    .getRequiredPropertyOrEnvVariable<Long>(
+                                        "$prefix.reusePolicy.options[$index].reissueTriggerLifetimeLeft",
+                                    ).seconds
+                            EudiReusePolicy.RotatingBatch(batchSize, reissueTriggerLifetimeLeft)
+                        }
+
+                        EudiReusePolicyType.PerRelyingParty -> {
+                            val batchSize =
+                                env.getRequiredPropertyOrEnvVariable<Int>("$prefix.reusePolicy.options[$index].batchSize")
+                            val reissueTriggerUnused =
+                                env.getRequiredPropertyOrEnvVariable<Int>(
+                                    "$prefix.reusePolicy.options[$index].reissueTriggerUnused",
+                                )
+                            val reissueTriggerLifetimeLeft =
+                                env
+                                    .getRequiredPropertyOrEnvVariable<Long>(
+                                        "$prefix.reusePolicy.options[$index].reissueTriggerLifetimeLeft",
+                                    ).seconds
+                            EudiReusePolicy.PerRelyingParty(
+                                batchSize,
+                                reissueTriggerLifetimeLeft,
+                                reissueTriggerUnused,
+                            )
+                        }
+                    }
+                }
+                index++
+            }
+            if (options.isEmpty())
+                CredentialReusePolicy.None
+            else
+                CredentialReusePolicy.EUDI(
+                    id = CredentialReusePolicy.EUDI.ARF_ANNEX_II_ID,
+                    options = options,
+                )
+        }
+
+        else -> {
+            CredentialReusePolicy.None
+        }
+    }
+}
+
+internal fun Environment.credentialRequestEncryption(issuerKeystore: () -> KeyStore): CredentialRequestEncryption {
+    val isSupported = getProperty<Boolean>("issuer.credentialRequestEncryption.supported") ?: false
+    return if (!isSupported) {
+        CredentialRequestEncryption.NotSupported
+    } else {
+        extensionLogger.info("Loading encryption key for Credential Request Encryption from keystore")
+        val keyAlgorithm =
+            getProperty<String>("issuer.credentialRequestEncryption.jwks.algorithm")?.let {
+                JWEAlgorithm.parse(it)
+            }
+                ?: error("Missing or invalid 'issuer.credentialRequestEncryption.jwks.algorithm' property")
+
+        val key =
+            when (
+                val loadedJwk =
+                    issuerKeystore().loadJwk(this, "issuer.credentialRequestEncryption.jwks")
+            ) {
+                is ECKey -> {
+                    require(keyAlgorithm in loadedJwk.supportedJWEAlgorithms) {
+                        "${keyAlgorithm.name} cannot be used with an ECKey"
+                    }
+                    ECKey.Builder(loadedJwk).algorithm(keyAlgorithm).build()
+                }
+
+                is RSAKey -> {
+                    require(keyAlgorithm in loadedJwk.supportedJWEAlgorithms) {
+                        "${keyAlgorithm.name} cannot be used with an RSAKey"
+                    }
+                    RSAKey.Builder(loadedJwk).algorithm(keyAlgorithm).build()
+                }
+
+                else -> {
+                    error("unsupported key type '${loadedJwk.javaClass}'")
+                }
+            }
+
+        val encryptionMethods =
+            readNonEmptySet(
+                "issuer.credentialRequestEncryption.encryptionMethods",
+                EncryptionMethod::parse,
+            )
+        require(key.supportedEncryptionMethods.containsAll(encryptionMethods)) {
+            "Encryption methods: ${encryptionMethods.joinToString { it.name }} cannot be used with the configured encryption key"
+        }
+
+        val parameters =
+            CredentialRequestEncryptionSupportedParameters(
+                encryptionKeys = JWKSet(key),
+                methodsSupported = encryptionMethods,
+                zipAlgorithmsSupported =
+                    readNullableNonEmptySet(
+                        "issuer.credentialRequestEncryption.zipAlgorithmsSupported",
+                    ) { algorithm -> algorithm.takeIf { it.isNotBlank() }?.let { CompressionAlgorithm(it) } },
+            )
+        val isRequired = getProperty<Boolean>("issuer.credentialRequestEncryption.required") ?: false
+        if (!isRequired) {
+            CredentialRequestEncryption.Optional(parameters)
+        } else {
+            CredentialRequestEncryption.Required(parameters)
+        }
+    }
+}
+
+internal fun Environment.credentialResponseEncryption(): CredentialResponseEncryption {
+    val isSupported = getProperty<Boolean>("issuer.credentialResponseEncryption.supported") ?: false
+    return if (!isSupported) {
+        CredentialResponseEncryption.NotSupported
+    } else {
+        val parameters =
+            CredentialResponseEncryptionSupportedParameters(
+                algorithmsSupported =
+                    readNonEmptySet(
+                        "issuer.credentialResponseEncryption.algorithmsSupported",
+                        JWEAlgorithm::parse,
+                    ),
+                methodsSupported =
+                    readNonEmptySet(
+                        "issuer.credentialResponseEncryption.encryptionMethods",
+                        EncryptionMethod::parse,
+                    ),
+                zipAlgorithmsSupported =
+                    readNullableNonEmptySet(
+                        "issuer.credentialResponseEncryption.zipAlgorithmsSupported",
+                    ) { algorithm -> algorithm.takeIf { it.isNotBlank() }?.let { CompressionAlgorithm(it) } },
+            )
+        val isRequired = getProperty<Boolean>("issuer.credentialResponseEncryption.required") ?: false
+        if (!isRequired) {
+            CredentialResponseEncryption.Optional(parameters)
+        } else {
+            CredentialResponseEncryption.Required(parameters)
+        }
+    }
+}
+
+internal fun Environment.readRequiredUrl(
+    key: String,
+    removeTrailingSlash: Boolean = false,
+): HttpsUrl =
+    getRequiredProperty(key)
+        .let { url ->
+            fun String.normalize() =
+                if (removeTrailingSlash) {
+                    this.removeSuffix("/")
+                } else {
+                    this
+                }
+
+            fun String.toHttpsUrl(): HttpsUrl = HttpsUrl.of(this) ?: HttpsUrl.unsafe(this)
+
+            url.normalize().toHttpsUrl()
+        }
+
+internal fun <T> Environment.readNonEmptySet(
+    key: String,
+    f: (String) -> T?,
+): NonEmptySet<T> {
+    val nonEmptySet =
+        getRequiredProperty<MutableSet<String>>(key)
+            .mapNotNull(f)
+            .toNonEmptySetOrNull()
+    return checkNotNull(nonEmptySet) { "Missing or incorrect values values for key `$key`" }
+}
+
+internal fun Environment.getBoolean(s: String): Boolean? = getProperty(s)?.toBooleanStrictOrNull()
+
+internal fun Environment.getBoolean(
+    s: String,
+    default: Boolean,
+): Boolean = getProperty(s)?.toBooleanStrictOrNull() ?: default
+
+internal fun <T> Environment.readNullableNonEmptySet(
+    key: String,
+    f: (String) -> T?,
+): NonEmptySet<T>? =
+    getProperty<MutableSet<String>>(key)
+        ?.mapNotNull(f)
+        ?.toNonEmptySetOrNull()
+
+internal fun Environment.duration(key: String): Duration? = getProperty(key)?.let { Duration.parse(it) }?.takeIf { it.isPositive() }
+
+internal fun HttpsUrl.appendPath(path: String): HttpsUrl =
+    HttpsUrl.unsafe(
+        value
+            .buildUpon()
+            .apply {
+                path
+                    .split("/")
+                    .filterNot { it.isBlank() }
+                    .forEach { segment -> appendPath(segment) }
+            }.build()
+            .toString(),
+    )
+
+/**
+ * Loads a key pair alongside its associated certificate chain as a JWK.
+ *
+ * This method expects to find the following properties in the provided [environment].
+ * - [prefix].alias -> alias of the key pair to load
+ * - [prefix].password -> password of the key pair
+ *
+ * @receiver the [KeyStore] from which to load the [JWK]
+ */
+@Suppress("SameParameterValue")
+internal fun KeyStore.loadJwk(
+    environment: Environment,
+    prefix: String,
+): JWK {
+    fun property(property: String): String =
+        when {
+            prefix.isBlank() -> property
+            prefix.endsWith(".") -> "$prefix$property"
+            else -> "$prefix.$property"
+        }
+
+    fun JWK.withCertificateChain(chain: List<X509Certificate>): JWK {
+        require(this.parsedX509CertChain.isNotEmpty()) { "jwk must have a leaf certificate" }
+        require(chain.isNotEmpty()) { "chain cannot be empty" }
+        require(this.parsedX509CertChain.first() == chain.first()) {
+            "leaf certificate of provided chain does not match leaf certificate of jwk"
+        }
+
+        val encodedChain = chain.map { Base64.encode(it.encoded) }
+        return when (this) {
+            is RSAKey -> RSAKey.Builder(this).x509CertChain(encodedChain).build()
+            is ECKey -> ECKey.Builder(this).x509CertChain(encodedChain).build()
+            is OctetKeyPair -> OctetKeyPair.Builder(this).x509CertChain(encodedChain).build()
+            is OctetSequenceKey -> OctetSequenceKey.Builder(this).x509CertChain(encodedChain).build()
+            else -> error("Unexpected JWK type '${this.keyType.value}'/'${this.javaClass}'")
+        }
+    }
+
+    val keyAlias = environment.getRequiredProperty(property("alias"))
+    val keyPassword = environment.getProperty(property("password"))?.takeIf { it.isNotBlank() }
+
+    val jwk = JWK.load(this, keyAlias, keyPassword?.toCharArray())
+    val chain =
+        getCertificateChain(keyAlias)
+            .orEmpty()
+            .map { certificate -> certificate as X509Certificate }
+            .toList()
+
+    return when {
+        chain.isNotEmpty() -> jwk.withCertificateChain(chain)
+        else -> jwk
+    }
+}
+
+internal fun Environment.getPropertyOrEnvVariable(property: String): String? =
+    getProperty(property) ?: getProperty(toEnvironmentVariable(property))
+
+internal inline fun <reified T : Any> Environment.getRequiredPropertyOrEnvVariable(property: String): T =
+    getProperty<T>(property) ?: getProperty<T>(toEnvironmentVariable(property))
+        ?: throw IllegalStateException("Property $property or environment variable ${toEnvironmentVariable(property)} not found")
+
+internal fun toEnvironmentVariable(property: String): String =
+    property
+        .replace(".", "_")
+        .replace("[", "_")
+        .replace("]", "")
+        .replace("-", "")
+        .uppercase()
+
+internal object IssuerFactory {
+    data class Ctx(
+        val clock: Clock,
+        val timeZone: TimeZone,
+        val env: Environment,
+        val credentialIssuerId: CredentialIssuerId,
+        val validateProof: ValidateProof,
+        val storeIssuedCredential: StoreIssuedCredential,
+        val allocateStatus: AllocateStatus,
+        val generateNotificationId: GenerateNotificationId,
+    )
+
+    context(ctx: Ctx)
+    fun mdl(issuerSigningKey: IssuerSigningKey): IssueMdoc<MobileDrivingLicence> {
+        val validity = ctx.env.duration("issuer.mdl.mso_mdoc.encoder.duration") ?: 31.days
+        val proofsSupportedSigningAlgorithms =
+            ctx.env.readNonEmptySet(
+                "issuer.mdl.proofs.supportedSigningAlgorithms",
+                JWSAlgorithm::parse,
+            )
+        val deviceBinding =
+            DeviceBinding.Required.ts3(
+                proofsSupportedSigningAlgorithms,
+                PreferredKeyStorageStatusPeriod(validity),
+            )
+        val mdlIssuerReusePolicy = credentialReusePolicy(ctx.env, "issuer.mdl")
+        val generateNotificationId =
+            ctx.generateNotificationId.takeIf {
+                ctx.env.getProperty<Boolean>("issuer.mdl.notifications.enabled") ?: true
+            }
+        return IssueMobileDrivingLicence(
+            clock = ctx.clock,
+            getAttestationAttributes = RandomMobileDrivingLicence(),
+            issuerSigningKey = issuerSigningKey,
+            deviceBinding = deviceBinding,
+            credentialReusePolicy = mdlIssuerReusePolicy,
+            validity = validity,
+            validateProof = ctx.validateProof,
+            generateNotificationId = generateNotificationId,
+            storeIssuedCredential = ctx.storeIssuedCredential,
+            allocateStatus = ctx.allocateStatus,
+        )
+    }
+
+    context(ctx: Ctx)
+    fun pidInMdoc(
+        issuerSigningKey: IssuerSigningKey,
+        getAttestationAttributes: GetAttestationAttributes<PidAttributes>,
+    ): IssueMdoc<PidAttributes> {
+        val duration = ctx.env.duration("issuer.pid.mso_mdoc.encoder.duration") ?: 31.days
+        val proofsSupportedSigningAlgorithms =
+            ctx.env.readNonEmptySet(
+                "issuer.pid.mso_mdoc.proofs.supportedSigningAlgorithms",
+                JWSAlgorithm::parse,
+            )
+        val pidMsoMdocReusePolicy = credentialReusePolicy(ctx.env, "issuer.pid.mso_mdoc")
+
+        return IssueMsoMdocPid(
+            clock = ctx.clock,
+            getAttestationAttributes = getAttestationAttributes,
+            issuerSigningKey = issuerSigningKey,
+            deviceBinding =
+                DeviceBinding.Required.ts3(
+                    proofsSupportedSigningAlgorithms,
+                    PreferredKeyStorageStatusPeriod(duration),
+                ),
+            credentialReusePolicy = pidMsoMdocReusePolicy,
+            validity = duration,
+            validateProof = ctx.validateProof,
+            generateNotificationId =
+                ctx.generateNotificationId.takeIf {
+                    ctx.env.getProperty<Boolean>("issuer.pid.mso_mdoc.notifications.enabled") ?: true
+                },
+            storeIssuedCredential = ctx.storeIssuedCredential,
+            allocateStatus = ctx.allocateStatus,
+        )
+    }
+
+    context(ctx: Ctx)
+    fun pidInSdJwtVc(
+        issuerSigningKey: IssuerSigningKey,
+        buildX5u: (SdJwtVcType) -> Url,
+        getAttestationAttributes: GetAttestationAttributes<PidAttributes>,
+    ): IssueSdJwtVcPid {
+        val expiresIn = ctx.env.duration("issuer.pid.sd_jwt_vc.duration") ?: 31.days
+        val notUseBefore = ctx.env.duration("issuer.pid.sd_jwt_vc.notUseBefore")
+        val pidSdJwtVcReusePolicy = credentialReusePolicy(ctx.env, "issuer.pid.sd_jwt_vc")
+
+        val digestsHashAlgorithm =
+            ctx.env.getProperty<HashAlgorithm>("issuer.pid.sd_jwt_vc.digests.hashAlgorithm") ?: HashAlgorithm.SHA_256
+        val proofsSupportedSigningAlgorithms =
+            ctx.env.readNonEmptySet("issuer.pid.sd_jwt_vc.proofs.supportedSigningAlgorithms", JWSAlgorithm::parse)
+
+        return IssueSdJwtVcPid(
+            clock = ctx.clock,
+            getAttestationAttributes = getAttestationAttributes,
+            issuerSigningKey = issuerSigningKey,
+            credentialIssuerId = ctx.credentialIssuerId,
+            digestsHashAlgorithm = digestsHashAlgorithm,
+            deviceBinding =
+                DeviceBinding.Required.ts3(
+                    proofsSupportedSigningAlgorithms,
+                    PreferredKeyStorageStatusPeriod(expiresIn),
+                ),
+            credentialReusePolicy = pidSdJwtVcReusePolicy,
+            validity = expiresIn,
+            validateProof = ctx.validateProof,
+            generateNotificationId =
+                ctx.generateNotificationId.takeIf {
+                    ctx.env.getBoolean("issuer.pid.sd_jwt_vc.notifications.enabled") ?: true
+                },
+            storeIssuedCredential = ctx.storeIssuedCredential,
+            allocateStatus = ctx.allocateStatus,
+            calculateNotUseBefore = notUseBefore?.let { duration -> { iat -> iat + duration } },
+            buildX5u = buildX5u,
+        )
+    }
+
+    context(ctx: Ctx)
+    fun learningCredentialInSdJwtVc(
+        issuerSigningKey: IssuerSigningKey,
+        buildX5u: (SdJwtVcType) -> Url,
+        getPidData: GetAttestationAttributes<PidAttributes>,
+    ): IssueLearningCredential {
+        val proofsSupportedSigningAlgorithms =
+            ctx.env.readNonEmptySet(
+                "issuer.learningCredential.proofs.supportedSigningAlgorithms",
+                JWSAlgorithm::parse,
+            )
+        val learningCredentialReusePolicy =
+            credentialReusePolicy(ctx.env, "issuer.learningCredential")
+        val validity = Duration.parse(ctx.env.getProperty("issuer.learningCredential.validity", "P31D"))
+        val digestHashAlgorithm =
+            ctx.env.getProperty<HashAlgorithm>(
+                "issuer.learningCredential.sdJwtVc.encoder.digests.hashAlgorithm",
+            ) ?: HashAlgorithm.SHA_256
+
+        val notificationsEnabled =
+            ctx.env.getProperty<Boolean>("issuer.learningCredential.notifications.enabled") ?: true
+
+        return IssueLearningCredential(
+            sdJwtVcSerialization = SdJwtVcSerialization.Compact,
+            clock = ctx.clock,
+            getAttestationAttributes =
+                IssueLearningCredential.randomLearningCredentials(
+                    ctx.clock,
+                    getPidData,
+                ),
+            issuerSigningKey = issuerSigningKey,
+            digestsHashAlgorithm = digestHashAlgorithm,
+            deviceBinding =
+                DeviceBinding.Required.ts3(
+                    proofsSupportedSigningAlgorithms,
+                    PreferredKeyStorageStatusPeriod(validity),
+                ),
+            credentialReusePolicy = learningCredentialReusePolicy,
+            validity = validity,
+            validateProof = ctx.validateProof,
+            generateNotificationId = ctx.generateNotificationId.takeIf { notificationsEnabled },
+            storeIssuedCredential = ctx.storeIssuedCredential,
+            buildX5u = buildX5u,
+        )
+    }
+}
+
+/**
+ * Lee `issuer.keycloak.*` y arma el administration client de Keycloak, para
+ * reutilizar tanto desde [getPidDataFromKeyCloak] (lectura) como desde
+ * [syncCedulaToKeycloak] (escritura del usuario fantasma, ver
+ * CONTEXTO-REGISTRADURIA.md sección 5).
+ */
+private fun keycloakConfigurationProperties(env: Environment): KeycloakConfigurationProperties =
+    KeycloakConfigurationProperties(
+        Url
+            .parse(env.getRequiredProperty("issuer.keycloak.server-url")),
+        env.getRequiredProperty("issuer.keycloak.authentication-realm"),
+        env.getRequiredProperty("issuer.keycloak.client-id"),
+        env.getRequiredProperty("issuer.keycloak.username"),
+        env.getRequiredProperty("issuer.keycloak.password"),
+        env.getRequiredProperty("issuer.keycloak.user-realm"),
+    )
+
+private fun KeycloakConfigurationProperties.administrationClient(): AdministrationClient =
+    AdministrationClient(
+        realm = Realm(authenticationRealm),
+        client = Credentials(username = clientId, password = null),
+        admin = Credentials(username = username, password = password),
+    )
+
+internal fun getPidDataFromKeyCloak(
+    env: Environment,
+    webClient: WebClient,
+): GetAttestationAttributes<PidAttributes> {
+    val keycloakProperties = keycloakConfigurationProperties(env)
+    return GetPidDataFromKeyCloak(
+        issuerCountry = env.getRequiredProperty("issuer.pid.issuingCountry").let(::IsoCountry),
+        issuingJurisdiction = env.getProperty("issuer.pid.issuingJurisdiction"),
+        webClient = webClient,
+        keyCloak = keycloakProperties.serverUrl,
+        administrationClient = keycloakProperties.administrationClient(),
+        users = Realm(keycloakProperties.userRealm),
+    )
+}
+
+/**
+ * Alternativa a [getPidDataFromKeyCloak] para el emulador de la Registraduría:
+ * lee los datos del PID de la tabla `cedulas` en vez de Keycloak (ver
+ * CONTEXTO-REGISTRADURIA.md, secciones 4 y 9.3). Cuál de las dos se usa lo
+ * decide `issuer.pid.dataSource` (ver [getPidData]).
+ */
+internal fun getPidDataFromRegistraduria(
+    env: Environment,
+    findCedulaByDocumentNumber: FindCedulaByDocumentNumber,
+    isSubjectBlocked: IsSubjectBlocked,
+): GetAttestationAttributes<PidAttributes> =
+    GetPidDataFromRegistraduria(
+        issuerCountry = env.getRequiredProperty("issuer.pid.issuingCountry").let(::IsoCountry),
+        issuingJurisdiction = env.getProperty("issuer.pid.issuingJurisdiction"),
+        findCedulaByDocumentNumber = findCedulaByDocumentNumber,
+        isSubjectBlocked = isSubjectBlocked,
+    )
+
+/**
+ * Elige la fuente de datos del PID según `issuer.pid.dataSource`
+ * (`keycloak`, por defecto, o `registraduria`).
+ */
+internal fun getPidData(
+    env: Environment,
+    webClient: WebClient,
+    findCedulaByDocumentNumber: FindCedulaByDocumentNumber,
+    isSubjectBlocked: IsSubjectBlocked,
+): GetAttestationAttributes<PidAttributes> =
+    when (env.getProperty("issuer.pid.dataSource", "keycloak")) {
+        "registraduria" -> getPidDataFromRegistraduria(env, findCedulaByDocumentNumber, isSubjectBlocked)
+        else -> getPidDataFromKeyCloak(env, webClient)
+    }
+
+/**
+ * Factory para [SyncCedulaToKeycloakGhostUser] (ver CONTEXTO-REGISTRADURIA.md,
+ * sección 5). Reutiliza las mismas `issuer.keycloak.*` que [getPidDataFromKeyCloak].
+ */
+internal fun syncCedulaToKeycloak(
+    env: Environment,
+    webClient: WebClient,
+): SyncCedulaToKeycloak {
+    val keycloakProperties = keycloakConfigurationProperties(env)
+    return SyncCedulaToKeycloakGhostUser(
+        webClient = webClient,
+        keyCloak = keycloakProperties.serverUrl,
+        administrationClient = keycloakProperties.administrationClient(),
+        users = Realm(keycloakProperties.userRealm),
+    )
+}
+
+internal fun validateProof(
+    credentialIssuerId: CredentialIssuerId,
+    isTrustedIssuer: IsTrustedIssuer,
+    verifyNonce: VerifyNonce,
+    getStatusListTokenStatus: GetStatusListTokenStatus,
+): ValidateProof {
+    val verifyKeyAttestation =
+        VerifyKeyAttestation(
+            isTrustedIssuer = isTrustedIssuer,
+            getStatusListTokenStatus = getStatusListTokenStatus,
+        )
+    val validateJwtProofWithKeyAttestation =
+        ValidateJwtProofWithKeyAttestation(credentialIssuerId, verifyKeyAttestation)
+    val validateAttestationProof = ValidateAttestationProof(verifyKeyAttestation)
+    return ValidateProof(
+        validateJwtProofWithKeyAttestation,
+        validateAttestationProof,
+        verifyNonce,
+    )
+}
+
+internal fun Environment.httpProxy(): HttpProxyOption {
+    val proxy =
+        getProperty("issuer.http.proxy.url")?.let {
+            val url = Url.parse(it)
+            val username = getProperty("issuer.http.proxy.username")
+            val password = getProperty("issuer.http.proxy.password")
+            HttpProxy(url, username, password)
+        }
+    return proxy?.let { HttpProxyOption.Using(it) } ?: HttpProxyOption.None
+}
+
+internal fun Environment.batchCredentialIssuance(): BatchCredentialIssuance {
+    val enabled = getProperty<Boolean>("issuer.credentialEndpoint.batchIssuance.enabled") ?: true
+    return if (enabled) {
+        val batchSize = getProperty<Int>("issuer.credentialEndpoint.batchIssuance.batchSize") ?: 10
+        BatchCredentialIssuance.Supported(batchSize)
+    } else {
+        BatchCredentialIssuance.NotSupported
+    }
+}
+
+fun Environment.dPoPConfigurationProperties() =
+    DPoPConfigurationProperties(
+        nonEmptySetOf(JWSAlgorithm.ES256, JWSAlgorithm.ES384, JWSAlgorithm.ES512),
+        getProperty("issuer.dpop.realm")?.takeIf { it.isNotBlank() },
+        getProperty<Boolean>("issuer.dpop.nonce.enabled") ?: true,
+    )
+
+private const val KEYSTORE_DEFAULT_LOCATION = "/keystore.jks"
+
+internal fun keystore(env: Environment): KeyStore {
+    val keystoreLocation = env.getRequiredProperty("issuer.keystore.file")
+    log.info("Will try to load Keystore from: '{}'", keystoreLocation)
+    val keystoreResource =
+        DefaultResourceLoader()
+            .getResource(keystoreLocation)
+            .some()
+            .filter { it.exists() }
+            .recover {
+                log.warn(
+                    "Could not find Keystore at '{}'. Fallback to '{}'",
+                    keystoreLocation,
+                    KEYSTORE_DEFAULT_LOCATION,
+                )
+                FileSystemResource(KEYSTORE_DEFAULT_LOCATION)
+                    .some()
+                    .filter { it.exists() }
+                    .bind()
+            }.getOrNull()
+    checkNotNull(keystoreResource) { "Could not load Keystore either from '$keystoreLocation' or '$KEYSTORE_DEFAULT_LOCATION'" }
+
+    val keystoreType = env.getProperty("issuer.keystore.type", KeyStore.getDefaultType())
+    val keystorePassword = env.getProperty("issuer.keystore.password")?.takeIf { it.isNotBlank() }
+
+    return keystoreResource.inputStream.use { inputStream ->
+        val keystore = KeyStore.getInstance(keystoreType)
+        keystore.load(inputStream, keystorePassword?.toCharArray())
+        keystore
+    }
+}
+
+fun loadAccessCertificate(
+    env: Environment,
+    issuerKeystore: () -> KeyStore,
+): AccessCertificate {
+    log.info("Loading access certificate for metadata signing from keystore")
+    val key = issuerKeystore().loadJwk(env, "issuer.access-certificate")
+    return AccessCertificate(key)
+}
+
+internal fun loadIssuerSigningKey(
+    env: Environment,
+    issuerKeystore: () -> KeyStore,
+): (String) -> IssuerSigningKey =
+    { prefix ->
+        log.info("Loading signing key and certificate for issuance from keystore for '$prefix'")
+        val signingKey = issuerKeystore().loadJwk(env, prefix)
+        require(signingKey is ECKey) { "Only ECKeys are supported for signing" }
+        IssuerSigningKey(signingKey)
+    }
+
+internal fun loadNonceEncryptionKey(
+    env: Environment,
+    issuerKeystore: () -> KeyStore,
+): NonceEncryptionKey {
+    log.info("Loading Nonce encryption key from keystore")
+    val nonceEncryptionKey = issuerKeystore().loadJwk(env, "issuer.nonce.encryption-key")
+    require(nonceEncryptionKey is ECKey) { "Only ECKey are supported for encryption" }
+
+    return NonceEncryptionKey(nonceEncryptionKey)
+}
+
+internal fun trustValidatorService(
+    env: Environment,
+    webClient: WebClient,
+): IsTrustedIssuer {
+    val trustValidatorServiceUrl = env.getProperty<String>("issuer.trust.service-url")
+    return if (trustValidatorServiceUrl.isNullOrBlank()) {
+        log.warn("Trust Validator Service has not been configured. Trusting all Wallet Providers.")
+        IsTrustedIssuer.Ignored
+    } else {
+        log.info("Using Trust Validator Service '{}'", trustValidatorServiceUrl)
+        IsTrustedIssuer.usingTrustValidatorService(webClient, Url.parse(trustValidatorServiceUrl))
+    }
+}

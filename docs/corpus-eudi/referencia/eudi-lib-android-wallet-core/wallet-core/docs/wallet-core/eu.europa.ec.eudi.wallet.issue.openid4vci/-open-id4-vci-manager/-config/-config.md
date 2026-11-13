@@ -1,0 +1,9 @@
+//[wallet-core](../../../../index.md)/[eu.europa.ec.eudi.wallet.issue.openid4vci](../../index.md)/[OpenId4VciManager](../index.md)/[Config](index.md)/[Config](-config.md)
+
+# Config
+
+[release]\
+
+@[JvmOverloads](https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.jvm/-jvm-overloads/index.html)
+
+constructor(issuerUrl: [String](https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html), clientAuthenticationType: [OpenId4VciManager.ClientAuthenticationType](../-client-authentication-type/index.md), authFlowRedirectionURI: [String](https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html), authorizationHandler: [AuthorizationHandler](../../-authorization-handler/index.md)? = null, dpopConfig: [DPopConfig](../../../eu.europa.ec.eudi.wallet.issue.openid4vci.dpop/-d-pop-config/index.md) = DPopConfig.Default, parUsage: [Int](https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-int/index.html) = IF_SUPPORTED, issuanceMetadataStorage: Storage? = null)

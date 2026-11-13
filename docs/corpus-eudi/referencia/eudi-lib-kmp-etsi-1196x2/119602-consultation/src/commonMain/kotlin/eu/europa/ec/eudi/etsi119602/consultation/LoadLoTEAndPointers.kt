@@ -1,0 +1,307 @@
+/*
+ * Copyright (c) 2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.etsi119602.consultation
+
+import eu.europa.ec.eudi.etsi119602.datamodel.ETSI19602
+import eu.europa.ec.eudi.etsi119602.datamodel.ListOfTrustedEntities
+import eu.europa.ec.eudi.etsi119602.datamodel.ListOfTrustedEntitiesClaims
+import eu.europa.ec.eudi.etsi119602.datamodel.Uri
+import eu.europa.ec.eudi.etsi1196x2.consultation.consultationPlatform
+import kotlinx.atomicfu.AtomicInt
+import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.ProducerScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.takeWhile
+import kotlinx.serialization.json.JsonObject
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Clock
+
+/**
+ * Functional interface for loading a List of Trusted Entities (LoTE).
+ *
+ * @param LOTE the type of the loaded LoTE content
+ *
+ * @see DownloadSingleLoTE
+ * @see LoadSingleLoTEWithFileCache
+ */
+public fun interface LoadLoTE<out LOTE : Any> {
+    public suspend operator fun invoke(uri: Uri): Outcome<LOTE>
+
+    public sealed interface Outcome<out LOTE : Any> {
+        public data class Loaded<out LOTE : Any>(val content: LOTE) : Outcome<LOTE>
+        public data class NotFound(val cause: Throwable?) : Outcome<Nothing>
+    }
+}
+
+/**
+ * A loader that recursively fetches a List of Trusted Entities (LoTE) and its pointers.
+ *
+ * This class handles:
+ * 1. Fetching the primary LoTE from a given URI.
+ * 2. Verifying the JWT signature of the loaded list.
+ * 3. Discovering and recursively loading other LoTEs pointed to by the primary list.
+ * 4. Enforcing constraints such as max depth, max number of lists, and circular references.
+ *
+ * @param constraints limits for the recursive loading process
+ * @param verifyJwtSignature service used to verify the JWT signature of each loaded LoTE
+ * @param loadLoTE the underlying loader used to fetch the content for a specific URI
+ * @param clock the clock used to determine LoTE expiration
+ * @param parseJwt the parser used to extract the payload from the JWT content
+ */
+public class LoadLoTEAndPointers(
+    private val constraints: Constraints,
+    private val verifyJwtSignature: VerifyJwtSignature,
+    private val loadLoTE: LoadLoTE<String>,
+    private val clock: Clock = Clock.System,
+    private val parseJwt: ParseJwt<JsonObject, ListOfTrustedEntitiesClaims> = ParseJwt(),
+) {
+
+    /**
+     * Events emitted by the loader
+     */
+    public sealed interface Event {
+        public data class LoTELoaded(val lote: ListOfTrustedEntities, val sourceUri: Uri, val depth: Int) : Event
+        public sealed interface Problem : Event
+        public data class ResourceNotFound(val uri: Uri, val cause: Throwable?) : Problem
+        public data class InvalidJWTSignature(val uri: Uri, val cause: Throwable?) : Problem
+        public data class FailedToParseJwt(val uri: Uri, val cause: Throwable?) : Problem
+        public data class LoTEExpired(val uri: Uri, val cause: Throwable?) : Problem
+        public data class MaxDepthReached(val uri: Uri, val maxDepth: Int) : Problem
+        public data class MaxListsReached(val uri: Uri, val maxLists: Int) : Problem
+        public data class CircularReferenceDetected(val uri: Uri) : Problem
+        public data class Error(val uri: Uri, val cause: Throwable) : Problem
+    }
+
+    private class State(val visitedUris: MutableSet<Uri>, initialCount: Int = 0) {
+        val downloadsCounter: AtomicInt = atomic(initialCount)
+    }
+
+    private data class Step(val uri: Uri, val depth: Int) {
+        fun childStep(uri: Uri) = Step(uri, depth + 1)
+    }
+
+    public operator fun invoke(uri: Uri): Flow<Event> = channelFlow {
+        val initial = State(mutableSetOf(), 0)
+        val firstStep = Step(uri, depth = 0)
+        processLoTE(initial, firstStep)
+    }
+
+    private suspend fun ProducerScope<Event>.processLoTE(
+        state: State,
+        step: Step,
+    ) = withContext(consultationPlatform().ioDispatcher) {
+        // Check for cancellation
+        currentCoroutineContext().ensureActive()
+
+        // Check constraints
+        if (constraints is Constraints.LoadOtherPointers) {
+            violationInStep(constraints, state, step)?.let {
+                send(it)
+                return@withContext
+            }
+        }
+
+        state.visitedUris.add(step.uri)
+        try {
+            val event = when (val jwt = loadLoTE(step.uri)) {
+                is LoadLoTE.Outcome.Loaded<String> -> {
+                    state.downloadsCounter.incrementAndGet()
+                    verifySignatureAndParseJwt(step, jwt)
+                }
+
+                is LoadLoTE.Outcome.NotFound -> {
+                    resourceNotFoundInStep(step, jwt.cause)
+                }
+            }
+
+            send(event)
+
+            if (event is Event.LoTELoaded && constraints is Constraints.LoadOtherPointers) {
+                handleOtherPointers(constraints, state, step, event)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            send(errorInStep(step, e))
+        } finally {
+            state.visitedUris.remove(step.uri)
+        }
+    }
+
+    private suspend fun ProducerScope<Event>.handleOtherPointers(
+        constraints: Constraints.LoadOtherPointers,
+        state: State,
+        parentStep: Step,
+        event: Event.LoTELoaded,
+    ): Unit = withContext(consultationPlatform().ioDispatcher) {
+        val otherLoTEPointers = event.lote.schemeInformation.pointersToOtherLists
+        if (otherLoTEPointers.isNullOrEmpty()) {
+            return@withContext
+        }
+        supervisorScope {
+            otherLoTEPointers.chunked(constraints.otherLoTEParallelism).forEach { chunk ->
+                val deferredTasks = chunk.map { reference ->
+                    async {
+                        val step = parentStep.childStep(reference.location)
+                        processLoTE(state, step)
+                    }
+                }
+
+                deferredTasks.awaitAll()
+            }
+        }
+    }
+
+    private suspend fun verifySignatureAndParseJwt(step: Step, unverifiedJwt: LoadLoTE.Outcome.Loaded<String>): Event =
+        when (val verification = verifyJwtSignature(unverifiedJwt.content)) {
+            is VerifyJwtSignature.Outcome.Verified -> parseJwtInStep(step, verification)
+            is VerifyJwtSignature.Outcome.NotVerified -> invalidJwtSignatureInStep(step, verification.cause)
+        }
+
+    private fun parseJwtInStep(step: Step, verified: VerifyJwtSignature.Outcome.Verified): Event =
+        when (val result = parseJwt(verified.jwt)) {
+            is ParseJwt.Outcome.Parsed<*, ListOfTrustedEntitiesClaims> -> {
+                val payload = result.payload
+                ensureNotExpiredInStep(step, payload.listOfTrustedEntities)
+            }
+
+            is ParseJwt.Outcome.ParseFailed -> parseFailedInStep(step, result.cause)
+        }
+
+    private fun ensureNotExpiredInStep(step: Step, lote: ListOfTrustedEntities): Event {
+        val now = clock.now()
+        return if (now < lote.schemeInformation.nextUpdate) {
+            loadedInStep(step, lote)
+        } else {
+            expiredInStep(step, IllegalArgumentException("LoTE ${ETSI19602.NEXT_UPDATE} is in the past"))
+        }
+    }
+
+    //
+    // Event factories
+    //
+
+    private fun violationInStep(
+        constraints: Constraints.LoadOtherPointers,
+        state: State,
+        currentStep: Step,
+    ): Event.Problem? {
+        val (_, maxDepth, maxDownloads) = constraints
+        val (sourceUri, depth) = currentStep
+        return when {
+            depth > maxDepth -> Event.MaxDepthReached(sourceUri, maxDepth)
+            state.downloadsCounter.value >= maxDownloads -> Event.MaxListsReached(
+                sourceUri,
+                maxDownloads,
+            )
+
+            sourceUri in state.visitedUris -> Event.CircularReferenceDetected(sourceUri)
+            else -> null
+        }
+    }
+
+    private fun resourceNotFoundInStep(step: Step, cause: Throwable?): Event.ResourceNotFound =
+        Event.ResourceNotFound(step.uri, cause)
+
+    private fun loadedInStep(step: Step, lote: ListOfTrustedEntities): Event.LoTELoaded {
+        val (sourceUri, depth) = step
+        return Event.LoTELoaded(lote, sourceUri, depth)
+    }
+
+    private fun invalidJwtSignatureInStep(step: Step, cause: Throwable?) =
+        Event.InvalidJWTSignature(step.uri, cause)
+
+    private fun parseFailedInStep(step: Step, cause: Throwable?) =
+        Event.FailedToParseJwt(step.uri, cause)
+
+    private fun expiredInStep(step: Step, cause: Throwable?) =
+        Event.LoTEExpired(step.uri, cause)
+
+    private fun errorInStep(step: Step, error: Throwable): Event.Error =
+        Event.Error(step.uri, error)
+
+    public sealed interface Constraints {
+        public data object DoNotLoadOtherPointers : Constraints
+        public data class LoadOtherPointers(
+            val otherLoTEParallelism: Int,
+            val maxDepth: Int,
+            val maxLists: Int,
+        ) : Constraints {
+            init {
+                require(otherLoTEParallelism > 0) { "Parallelism must be greater than 0" }
+                require(maxDepth > 0) { "Max depth must be greater than 0" }
+                require(maxLists > 0) { "Max downloads must be greater than 0" }
+            }
+        }
+    }
+}
+
+public data class LoTELoadResult(
+    val list: LoadLoTEAndPointers.Event.LoTELoaded?,
+    val otherLists: List<LoadLoTEAndPointers.Event.LoTELoaded>,
+    val problems: List<LoadLoTEAndPointers.Event.Problem>,
+) {
+    public companion object {
+
+        public suspend fun collect(
+            eventsFlow: Flow<LoadLoTEAndPointers.Event>,
+            continueOnProblem: ContinueOnProblem = ContinueOnProblem.Never,
+        ): LoTELoadResult {
+            var list: LoadLoTEAndPointers.Event.LoTELoaded? = null
+            val otherLists = mutableListOf<LoadLoTEAndPointers.Event.LoTELoaded>()
+            val problems = mutableListOf<LoadLoTEAndPointers.Event.Problem>()
+            // `shouldContinue` starts true so the event that first triggers a problem is still
+            // processed; `takeWhile` then stops the upstream flow (cancelling any in-flight
+            // pointer downloads) before any further event is delivered, without cancelling the
+            // caller's own coroutine.
+            var shouldContinue = true
+            eventsFlow
+                .takeWhile { shouldContinue }
+                .collect { event ->
+                    when (event) {
+                        is LoadLoTEAndPointers.Event.LoTELoaded ->
+                            if (event.depth == 0) {
+                                check(list == null) { "Multiple LoTEs downloaded with depth 0" }
+                                list = event
+                            } else {
+                                otherLists.add(event)
+                            }
+
+                        is LoadLoTEAndPointers.Event.Problem -> {
+                            problems.add(event)
+                            shouldContinue = continueOnProblem(list != null, problems)
+                        }
+                    }
+                }
+            if (otherLists.isNotEmpty()) {
+                checkNotNull(list) { "Other LoTEs downloaded before main LoTE" }
+            }
+            return LoTELoadResult(list, otherLists.toList(), problems.toList())
+        }
+    }
+}
+
+public fun interface ContinueOnProblem {
+    public operator fun invoke(lotePresent: Boolean, problems: List<LoadLoTEAndPointers.Event.Problem>): Boolean
+
+    public companion object {
+        public val Always: ContinueOnProblem = ContinueOnProblem { _, _ -> true }
+        public val Never: ContinueOnProblem = ContinueOnProblem { _, _ -> false }
+        public val AlwaysIfDownloaded: ContinueOnProblem = ContinueOnProblem { downloaded, _ -> downloaded }
+    }
+}

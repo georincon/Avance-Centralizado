@@ -1,0 +1,235 @@
+/*
+ * Código propio de este fork (emulador de la Registraduría Nacional del Estado Civil).
+ * No es parte del eudi-srv-pid-issuer original de la Comisión Europea.
+ *
+ * Paleta e iconografía tomadas de la imagen corporativa real de
+ * https://www.registraduria.gov.co/ (el sitio en vivo bloquea bots con
+ * Cloudflare, así que se extrajeron de la copia archivada en
+ * web.archive.org/web/2024.../https://www.registraduria.gov.co/):
+ *   - Azul institucional: pwa/manifest.json -> theme_color #002D55
+ *     (variantes vistas en su CSS: #003057, #1b3853, #022848).
+ *   - Acento turquesa: squelettes/css/landing-rneSom2.css (#01cac4, #00fffd, #248196)
+ *     y el anillo del favicon (bandera + aro turquesa).
+ *   - Escudo/sello: squelettes/images/logo_registraduria_azul_fondos_claros.svg
+ *     (versión azul, fondos claros) y assetsNewTrip/fondos_oscuros.svg
+ *     (versión blanca, fondos oscuros) — copiados a
+ *     public/img/registraduria/logo-azul.svg y logo-blanco.svg.
+ *   - Tipografía: el sitio no publica ningún webfont propio (usa
+ *     `system-ui`/sans-serif para el cuerpo); el rótulo "REGISTRADURÍA..."
+ *     del logo es una slab-serif condensada en mayúsculas, pero al venir
+ *     dentro del SVG del escudo no hay un archivo de fuente para reutilizar.
+ *     Para los títulos de este panel se aproxima con una slab-serif del
+ *     sistema (Georgia) en mayúsculas con tracking, sin pretender ser
+ *     pixel-perfect con el original.
+ */
+
+:root {
+    --rne-azul-900: #022848;
+    --rne-azul-800: #002d55;
+    --rne-azul-700: #003057;
+    --rne-azul-600: #1b3853;
+    --rne-turquesa: #01cac4;
+    --rne-turquesa-claro: #bedbf7;
+    --rne-amarillo: #fcd116;
+    --rne-rojo: #ce1126;
+    --rne-blanco: #ffffff;
+    --rne-gris-texto: #313131;
+
+    --rne-font-heading: Georgia, "Times New Roman", serif;
+    --rne-font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+    font-family: var(--rne-font-body);
+    color: var(--rne-gris-texto);
+}
+
+.rne-header {
+    background-color: var(--rne-azul-800);
+    color: var(--rne-blanco);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 4px solid var(--rne-turquesa);
+}
+
+.rne-header img {
+    height: 48px;
+    width: auto;
+}
+
+.rne-header h1,
+.rne-header h2 {
+    font-family: var(--rne-font-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin: 0;
+    color: var(--rne-blanco);
+}
+
+.rne-header .rne-subtitle {
+    color: var(--rne-turquesa-claro);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+main h2,
+main h5 {
+    font-family: var(--rne-font-heading);
+    color: var(--rne-azul-800);
+}
+
+.btn-primary {
+    --bs-btn-bg: var(--rne-azul-800);
+    --bs-btn-border-color: var(--rne-azul-800);
+    --bs-btn-hover-bg: var(--rne-azul-600);
+    --bs-btn-hover-border-color: var(--rne-azul-600);
+    --bs-btn-active-bg: var(--rne-azul-900);
+    --bs-btn-active-border-color: var(--rne-azul-900);
+}
+
+.btn-outline-secondary {
+    --bs-btn-color: var(--rne-azul-700);
+    --bs-btn-border-color: var(--rne-azul-700);
+    --bs-btn-hover-bg: var(--rne-azul-700);
+    --bs-btn-hover-border-color: var(--rne-azul-700);
+}
+
+a {
+    color: var(--rne-azul-700);
+}
+
+table thead {
+    background-color: var(--rne-turquesa-claro);
+}
+
+/* Cuadro de confirmación SÍ / NO (revocar credenciales) */
+.rne-confirm {
+    border: 0;
+    border-radius: .5rem;
+    padding: 1.5rem;
+    max-width: 30rem;
+    box-shadow: 0 .5rem 2rem rgba(0, 0, 0, .35);
+}
+
+.rne-confirm::backdrop {
+    background: rgba(0, 0, 0, .55);
+}
+
+/* Formatos del PID (mDoc / SD-JWT VC): dos tarjetas con casilla, una por línea */
+.rne-formatos {
+    display: grid;
+    gap: .6rem;
+}
+
+.rne-formato {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    margin: 0;
+    padding: .8rem 1rem;
+    border: 1px solid #c4ccd6;
+    border-radius: .5rem;
+    background: var(--rne-blanco);
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s, background-color .15s;
+}
+
+.rne-formato:hover {
+    border-color: var(--rne-azul-700);
+}
+
+.rne-formato input[type="checkbox"] {
+    flex: 0 0 auto;
+    float: none;
+    width: 1.35rem;
+    height: 1.35rem;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--rne-azul-700);
+}
+
+.rne-formato:has(input:checked) {
+    border-color: var(--rne-azul-700);
+    background: #eef4fb;
+    box-shadow: 0 0 0 1px var(--rne-azul-700);
+}
+
+.rne-formato:has(input:focus-visible) {
+    outline: 3px solid var(--rne-turquesa);
+    outline-offset: 2px;
+}
+
+.rne-formato-texto {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+
+.rne-formato-texto strong {
+    font-size: 1.05rem;
+    color: var(--rne-azul-900);
+}
+
+.rne-formato-texto small {
+    color: #5b6672;
+}
+
+/* Barra de navegación del panel de administración (Ciudadanos · Historial de emisiones · Avisos de revocación). */
+.rne-franja {
+    height: 6px;
+    background: linear-gradient(90deg, var(--rne-amarillo) 0 50%, #003087 50% 75%, var(--rne-rojo) 75% 100%);
+}
+
+.rne-nav {
+    background: var(--rne-blanco);
+    border-bottom: 1px solid #dbe4ee;
+    padding: 0 1.5rem;
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.rne-nav a {
+    padding: 0.85rem 1rem;
+    color: var(--rne-azul-800);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.92rem;
+    border-bottom: 3px solid transparent;
+}
+
+.rne-nav a:hover {
+    background: #f3f7fb;
+}
+
+.rne-nav a.activo {
+    border-bottom-color: var(--rne-amarillo);
+    background: #f3f7fb;
+}
+
+.rne-nav .espacio {
+    flex: 1;
+}
+
+/* ---- Aspecto común de las páginas del panel de administración (el mismo del Historial de emisiones) ---- */
+body { background: #eef3f8; }
+main h2.rne-titulo, main h2 { font-family: Georgia, 'Times New Roman', serif; color: #002d55; font-weight: 700; }
+.rne-card { background: #fff; border: 1px solid #dbe4ee; border-radius: 12px; padding: 1rem 1.25rem; box-shadow: 0 1px 3px rgba(0,45,85,.07); margin-bottom: 1rem; }
+.rne-tabla-marco { overflow: hidden; }
+.rne-tabla thead th { background: #002d55; color: #fff; border: 0; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; padding: .7rem .75rem; }
+.rne-tabla td { vertical-align: middle; padding: .6rem .75rem; font-size: .9rem; }
+.rne-tabla tbody tr:nth-child(even) { background: #f7fafd; }
+.rne-tabla tbody tr:hover { background: #e3f6f6; }
+.badge { border-radius: 99px; font-weight: 700; letter-spacing: .02em; padding: .3em .75em; }
+.badge.bg-danger { background-color: #fde3e6 !important; color: #ce1126 !important; }
+.badge.bg-success { background-color: #d9f7f6 !important; color: #00676a !important; }
+.badge.bg-warning { background-color: #fff4c2 !important; color: #7a5f00 !important; }
+.badge.bg-secondary { background-color: #e8edf3 !important; color: #5b6b7c !important; }
+.btn-primary { background: #002d55; border-color: #002d55; }
+.btn-primary:hover { background: #1b3853; border-color: #1b3853; }
+.form-select:focus, .form-control:focus { border-color: #01cac4; box-shadow: 0 0 0 .2rem rgba(1,202,196,.2); }

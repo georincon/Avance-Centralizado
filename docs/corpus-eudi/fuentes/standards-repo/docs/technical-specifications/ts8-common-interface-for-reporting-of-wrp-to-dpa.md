@@ -1,0 +1,230 @@
+<img align="right" height="50" src="https://raw.githubusercontent.com/eu-digital-identity-wallet/eudi-srv-web-issuing-eudiw-py/34015dc3c6f52529a99e673df1d4fa69d50f7ff5/app/static/ic-logo.svg"/><br/>
+
+# Specification of Common Interface for reporting of Relying Parties to Data Protection Authorities
+
+## Abstract
+
+The present document specifies the common protocols and interfaces according to Article 5a (5) (a) (x) of
+[(EU) No 910/2014](http://data.europa.eu/eli/reg/2014/910/2024-10-18) used by a Wallet Unit for reporting a Wallet-Relying Party
+to the competent national Data Protection Authority where an allegedly unlawful or
+suspicious request for data is received.
+
+### [GitHub Discussion](https://github.com/eu-digital-identity-wallet/eudi-doc-standards-and-technical-specifications/discussions/379)
+
+## Licensing and Reuse
+
+© European Union, 2025-2026.
+
+This document is made available under the Creative Commons Attribution 4.0 International licence (CC BY 4.0), unless otherwise stated.
+
+You may reuse this document provided that appropriate credit is given and any changes are indicated.
+
+The full licence text is available at https://creativecommons.org/licenses/by/4.0/ .
+
+## Versioning
+
+| Version | Date | Description |
+|---------|-------|------------|
+| `0.1` | 2025-05-27 | Initial version for first discussions. |
+| `0.2` | 2025-06-12 | Update after first discussions. |
+| `0.9`  | 2025-06-22 | Update after second focus meeting. |
+| `0.10` | 2025-07-16 | Minor editorial update and templates for `subject` and `body` of email. |
+| `0.11` | 2026-01-30 | Editorial update (licensing and reuse clarification) |
+| `1.0` | 2026-08-12 | Final Version. |
+
+## Notational Conventions
+
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+"SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and
+"OPTIONAL" in this document are to be interpreted as described in
+"Key words for use in RFCs to Indicate Requirement Levels" [RFC2119](https://datatracker.ietf.org/doc/html/rfc2119).
+The interpretation should only be applied when the terms appear in
+all capital letters.
+
+## 1. Introduction
+
+The present document specifies the **common protocols and interfaces** according to Article 5a (5) (a) (x) of
+[(EU) No 910/2014](http://data.europa.eu/eli/reg/2014/910/2024-10-18) used by a Wallet Unit for invoking a suitable external application,
+such as a browser or an email client, to **report a Wallet-Relying Party** (WRP) to the competent
+national Data Protection Authority (DPA) where an allegedly unlawful or suspicious request for data is received.
+
+The general approach with respect to the protocols and interfaces specified in the present document are
+based on the result of the related discussions documented in the corresponding [L+M-Discussion-Paper](https://github.com/eu-digital-identity-wallet/eudi-doc-architecture-and-reference-framework/blob/main/docs/discussion-topics/l%2Bm-data-deletion-and-reporting-of-wrp-to-dpa.md).
+
+## 2. Requirements
+
+### 2.1 Legal Requirements
+
+Article 5a (5) of the regulation [(EU) No 910/2014](http://data.europa.eu/eli/reg/2014/910/2024-10-18) requires that
+
+>
+> European Digital Identity Wallets shall, in particular:
+>
+> (a) support common protocols and interfaces:
+>
+> [...]
+>
+> (x) for reporting a relying party to the competent national data protection authority where an allegedly unlawful or suspicious request for data is received.
+
+Article 7 of [(EU) 2024/2982](http://data.europa.eu/eli/reg_impl/2024/2982/oj) stipulates the following:
+
+> 1. Wallet providers shall ensure that wallet units allow wallet users to easily report wallet-relying parties to supervisory authorities established under Article 51 of Regulation (EU) 2016/679.
+>
+> 2. Wallet providers shall implement the protocols and interfaces for reporting wallet-relying parties in compliance with national procedural laws of the Member States.
+>
+> 3. Wallet providers shall ensure that wallet units allow wallet users to substantiate the reports, including by attaching relevant information to identify the wallet-relying parties, and the wallet users’ claims in machine-readable format.
+
+Article 3 of [(EU) 2025/848](http://data.europa.eu/eli/reg_impl/2025/848/oj) (National registers) stipulates the following:
+
+> 1. Member States shall establish and maintain at least one national register of wallet-relying parties with information regarding registered wallet-relying parties established in that Member State.
+>
+> 2. The register shall include at least the information set out in Annex I.
+>
+> [...]
+
+Article 7 of [(EU) 2025/848](http://data.europa.eu/eli/reg_impl/2025/848/oj) (Wallet-Relying Party Access Certificates (WRPAC)) states the following:
+
+> 1. Member States shall authorise at least one certificate authority to issue wallet-relying party access certificates.
+>
+> [...]
+
+ANNEX IV of [(EU) 2025/848](http://data.europa.eu/eli/reg_impl/2025/848/oj) (Requirements for wallet-relying party access certificates referred to in Article 7), which has been amended by ANNEX II of [(EU) 2026/1730](http://data.europa.eu/eli/reg_impl/2026/1730/oj), states the following:
+
+> [...]
+> 
+> 3. The certificate policy and certificate practice statement applicable to the provision of wallet-relying party access certificates shall be syntactically and semantically harmonised across the Union and shall, 
+>as applicable, comply with standard [ETSI TS 119 411-8 V1.1.1 (2025-10)](https://www.etsi.org/deliver/etsi_ts/119400_119499/11941108/01.01.01_60/ts_11941108v010101p.pdf) 
+>
+>     [...]
+> 
+>     (g) the obligation for the providers of wallet-relying party access certificates to allow relevant stakeholders, including wallet-relying parties as regards their own certificates, competent supervisory bodies and data protection authorities, to request the revocation of wallet-relying party access certificates;
+
+Article 8 of [(EU) 2025/848](http://data.europa.eu/eli/reg_impl/2025/848/oj) (Wallet-Relying Party Registration Certificates (WRPRC)), which has been amended by Article 1 (4) of [(EU) 2026/1730](http://data.europa.eu/eli/reg_impl/2026/1730/oj), states the following:
+
+> 1. Member States shall authorise at least one certificate authority to issue wallet-relying party registration certificates. Member States shall ensure that providers of wallet-relying party registration certificates issue those certificates in an automated manner and without undue delay after the registration.
+>
+> [...] 
+
+ANNEX V of [(EU) 2025/848](http://data.europa.eu/eli/reg_impl/2025/848/oj) (Requirements for wallet-relying party registration certificates referred to in Article 8), which has been amended by ANNEX III of [(EU) 2026/1730](http://data.europa.eu/eli/reg_impl/2026/1730/oj), states the following:
+
+> [...]
+>
+> 3. The wallet-relying party registration certificate policy and certificate practice statement applicable to the provisioning of wallet-relying party registration certificates shall be syntactically and semantically harmonised across the Union and 
+> shall comply with [ETSI TS 119 475 V1.2.1 (2026-03)](https://www.etsi.org/deliver/etsi_ts/119400_119499/119475/01.02.01_60/ts_119475v010201p.pdf)
+>
+>     [...]
+> 
+>     (f) the obligation for the provider of wallet-relying party registration certificates to allow relevant stakeholders, including wallet-relying parties as regards their own certificates, competent supervisory bodies and data protection authorities, to request the revocation of wallet-relying party registration certificates;
+
+As specified in [ETSI TS 119 475 V1.2.1 (2026-03)](https://www.etsi.org/deliver/etsi_ts/119400_119499/119475/01.02.01_60/ts_119475v010201p.pdf) (Table 7) the
+attribute `supervisoryAuthority` within the register corresponds to the `supervisory_authority` field in the wallet-relying party registration certificate. 
+As the wallet-relying party registration certificate can be assumed to be present because of the recent amendment
+of Article 8 of [(EU) 2025/848](http://data.europa.eu/eli/reg_impl/2025/848/oj) introduced with Article 1 (4) of [(EU) 2026/1730](http://data.europa.eu/eli/reg_impl/2026/1730/oj), 
+the available contact information of the competent data protection authority can be used for the reporting of 
+misbehaving wallet-relying parties.
+
+### 2.2 High-Level Requirements
+
+The set of high-level requirements after the discussions documented in the [L+M-Discussion-Paper](https://github.com/eu-digital-identity-wallet/eudi-doc-architecture-and-reference-framework/blob/main/docs/discussion-topics/l%2Bm-data-deletion-and-reporting-of-wrp-to-dpa.md) and
+the two focus meeting for the present specification, which added `RPT_DPA_07`, `RPT_DPA_08` and `RPT_DPA_09` are as follows:
+
+
+| **Index**    | **Requirement specification** |
+|--------------|-------------------------------|
+| RPT_DPA_01 | When prompted by the User, a Wallet Unit SHALL use the available contact details of the DPA available in the `supervisory_authority` field of the wallet-relying party registration certificate and SHALL make it easy for the User to send a report of allegedly unlawful or suspicious Relying Party presentation requests to this DPA. |
+| RPT_DPA_02 | The user interface enabling a User to start the process of reporting a Wallet-relying Party to a DPA SHALL be accessible via the log provided by the Wallet Unit. |
+| RPT_DPA_04 | Wallet providers SHALL ensure that wallet units allow wallet users to substantiate the reports, including by attaching relevant information to identify the wallet-relying parties, and the wallet users’ claims in machine-readable format.</br> Note: The log kept by the Wallet Unit is machine-readable and specified in [TS10](https://github.com/eu-digital-identity-wallet/eudi-doc-standards-and-technical-specifications/blob/main/docs/technical-specifications/ts10-data-portability-and-download-(export).md) in order to enable data portability. An excerpt from this log therefore can be used to substantiate the report. |
+| RPT_DPA_05 | A Wallet Unit SHALL log the initiation of a report sent to the DPA in a log file so that it can be presented to the User in the dashboard (as specified in [Topic 19](#a2319-topic-19---user-navigation-requirements-dashboard-logs-for-transparency) and [TS10](https://github.com/eu-digital-identity-wallet/eudi-doc-standards-and-technical-specifications/blob/main/docs/technical-specifications/ts10-data-portability-and-download-(export).md)). |
+| RPT_DPA_06 | The contact information for the DPA in the `supervisoryAuthority` field SHALL include at least one of `infoURI`, `email` or `phone`. |
+| RPT_DPA_07a | In case of `email` the Wallet Unit SHOULD invoke a mail client available on the platform of the User with a `mailto:` link and the text in the `subject` of the mail prepared by the Wallet Unit according to `RPT_DPA_06` SHALL clearly indicate that the purpose of the mail is to report a WRP to the DPA and state that an allegedly unlawful or suspicious request for data has been received. |
+| RPT_DPA_07b | In case of `infoURI` the Wallet Unit SHOULD invoke a browser available on the platform of the User. |
+| RPT_DPA_07c | In case of `phone` the Wallet Unit SHOULD invoke a phone application available on the platform of the User. |
+| RPT_DPA_08 | The text in the `subject` of the mail prepared by the Wallet Unit according to `RPT_DPA_06` SHOULD indicate the identity of the WRP and also an involved intermediary, if applicable, which sent the allegedly unlawful or suspicious request. |
+| RPT_DPA_09 | The text in the `body` of the mail prepared by the Wallet Unit according to `RPT_DPA_06` SHALL contain the necessary information to identify the WRP and also an involved intermediary, if applicable, and allows that the request can be handled by the DPA in an efficient manner. |
+
+Note, that recommended templates for the `subject` and `body` of the mail according to `RPT_DPA_07a`, `RPT_DPA_08` and `RPT_DPA_09`
+are provided in [Section 3.3](#33-recommended-templates-for-the-subject-and-the-body-in-i5) below.
+
+## 3. Specification of Protocols and Interfaces
+
+### 3.1 System Architecture
+
+As agreed upon within the discussions documented in the [L+M-Discussion-Paper](https://github.com/eu-digital-identity-wallet/eudi-doc-architecture-and-reference-framework/blob/main/docs/discussion-topics/l%2Bm-data-deletion-and-reporting-of-wrp-to-dpa.md)
+the general approach is to utilise the already existing interfaces and processes of the
+competent national data protection authorities as much as possible and abstain from the creation of
+additional technical interfaces.
+
+The resulting system architecture is depicted in the following figure:
+
+![Overview](img/ts8-architecture.svg)
+
+### 3.2 Interfaces
+
+As shown in the figure above, there are the following interfaces:
+
+* **(I1)** - is a user-friendly user interface, which allows to access the functionality of the Wallet Unit and which in particular
+  allows to report a WRP from which an allegedly unlawful or suspicious request for data has been
+  received to the competent national DPA, or to another DPA chosen by the User. This
+  functionality shall be immediately accessible when such a request has been received or later based on the
+  information stored in the Transaction Log. Wallet Units shall allow Users to
+  substantiate the reports by attaching relevant information to identify the WRP and the
+  requested claim names in machine-readable format. The technical details of this format will
+  be derived from the normalised format of the transaction log, which will be specified based
+  on the related discussions within the [H-Discussion-Paper](https://github.com/eu-digital-identity-wallet/eudi-doc-architecture-and-reference-framework/blob/main/docs/discussion-topics/h-transaction-logs-kept-by-the-wallet.md).
+
+* **(I2)** - is a platform-specific interface, which allows to invoke a browser on the platform to open a specific
+  URL of the DPA in charge of supervising the WRP, which has submitted an allegedly unlawful
+  or suspicious request.
+
+* **(I3)** - represents a logical interface provided by the web application of the competent
+  national DPA responsible for the supervision of the WRP at the given URL contained in the 
+`supervisory_authority.infoURI` contained in the wallet-relying party registration certificate according to
+  [ETSI TS 119 475 V1.2.1 (2026-03)](https://www.etsi.org/deliver/etsi_ts/119400_119499/119475/01.02.01_60/ts_119475v010201p.pdf) (Table 7).
+
+* **(I4)** - is a platform-specific interface, which allows to invoke a mail client on the
+  platform of the User with a `mailto:` link with the email address `supervisory_authority.email` contained in the wallet-relying party registration certificate according to
+  [ETSI TS 119 475 V1.2.1 (2026-03)](https://www.etsi.org/deliver/etsi_ts/119400_119499/119475/01.02.01_60/ts_119475v010201p.pdf) (Table 7).
+
+* **(I5)** - represents a logical interface given by the mail system of the DPA, which is
+  assumed to exist, if the wallet-relying party registration certificate according to
+[ETSI TS 119 475 V1.2.1 (2026-03)](https://www.etsi.org/deliver/etsi_ts/119400_119499/119475/01.02.01_60/ts_119475v010201p.pdf) (Table 7)
+  contains `supervisory_authority.email`.
+
+* **(I6)** - is a platform-specific interface, which allows to invoke the phone application of the platform in
+  order to call the competent national DPA.
+
+* **(I7)** - is the phone system of the DPA, which SHALL exist, if there is only
+  `supervisory_authority.phone` number included in the wallet-relying party registration certificate.
+
+### 3.3 Recommended templates for the `subject` and the `body` in (I4)
+
+It is RECOMMENDED to use the following template for the `subject` of the email
+prepared in (I4) and mentioned in `RPT_DPA_07a` and `RPT_DPA_08`:
+
+> Reporting an allegedly unlawful or suspicious request received from `commonName`
+
+It is RECOMMENDED to use the following template for the `body` of the email
+prepared in (I5) and mentioned in `RPT_DPA_09`:
+
+> Dear Ladies and Gentlemen, </br>
+> we have received a request from `commonName`, which seems to be </br>
+> suspicous and potentially unlawful. Therefore we kindly ask you to </br>
+> have closer look at the received request provided as attachment of </br>
+> the present mail and consider to take further actions, if deemed appropriate. </br>
+> Thank you very much in advance for your efforts. </br>
+> Best Regards
+
+Here, the parameter `commonName` is the common name from the wallet-relying party access certificate
+according to [EN 319 412-3](https://www.etsi.org/deliver/etsi_en/319400_319499/31941203/01.04.01_60/en_31941203v010401p.pdf) (clause 4.2.1),
+as specified in [ETSI TS 119 475 V1.2.1 (2026-03)](https://www.etsi.org/deliver/etsi_ts/119400_119499/119475/01.02.01_60/ts_119475v010201p.pdf) (Table 1).
+
+### 3.4 Process
+
+The process for reporting a WRP to the competent national DPA where an allegedly unlawful or
+suspicious request for data has been received is completely analogous to the process for
+requesting the deletion of data at a WRP according to [TS7](./ts7-common-interface-for-data-deletion-request.md), 
+where the essential difference is that in this case the contact information of the DPA is extracted
+from the `supervisory_authority` element in the wallet-relying party registration certificate 
+before the corresponding application (i.e. browser, mail client or phone application)
+on the platform of the User is invoked. In addition to the `subject` and the `body` of the pre-filled
+mail, there may also be an attachment with the request from the WRP as specified in `RPT_DPA_04`.  

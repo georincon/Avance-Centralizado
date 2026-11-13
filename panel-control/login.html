@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#163d69"><title>Avance · Ingreso</title><link rel="stylesheet" href="login.css"></head>
+<body>
+<main class="entrada">
+  <section class="acceso" aria-labelledby="t-acceso">
+    <a class="marca" href="/login"><span class="marca-logo">a</span><span class="marca-nombre">avance<span>.</span></span></a>
+    <h1 id="t-acceso">Centro de control</h1>
+    <p class="sub">Ingresa con la clave de acceso del panel para administrar los servicios del ecosistema.</p>
+    <form id="form" autocomplete="off">
+      <label for="clave">Clave de acceso</label>
+      <div class="campo">
+        <input id="clave" name="clave" type="password" required minlength="8" autofocus spellcheck="false" placeholder="Pega aquí el CONTROL_PANEL_TOKEN">
+        <button type="button" id="ver" aria-label="Mostrar u ocultar la clave">Mostrar</button>
+      </div>
+      <p class="error" id="error" role="alert" hidden></p>
+      <button class="entrar" id="entrar" type="submit">Ingresar</button>
+      <p class="ayuda">La clave es el valor de <code>CONTROL_PANEL_TOKEN</code> guardado en <code>panel-control/.env</code>. Solo se guarda en este navegador.</p>
+    </form>
+  </section>
+
+  <aside class="descarga" aria-labelledby="t-app">
+    <div class="etiqueta">APP PARA EL TELÉFONO</div>
+    <h2 id="t-app">Descarga la nueva wallet</h2>
+    <p>No necesitas ingresar para instalarla. Escanea el código con la cámara del teléfono Android o abre el enlace.</p>
+    <div class="qr"><img id="qr" src="/descargas/qr.svg" alt="Código QR para descargar la wallet" width="200" height="200"></div>
+    <a class="boton-apk" id="apk" href="/descargas/wallet.apk">⭳ Descargar APK</a>
+    <p class="enlace"><span>Enlace directo</span><input id="url" readonly aria-label="Enlace de descarga"><button type="button" id="copiar">Copiar</button></p>
+    <dl class="datos"><dt>Versión compilada</dt><dd id="subido">—</dd><dt>Tamaño</dt><dd id="tamano">—</dd><dt>SHA-256</dt><dd id="sha" class="mono">—</dd></dl>
+    <p class="nota">Al instalar, Android pedirá permitir apps de origen desconocido para el navegador desde el que descargas.</p>
+  </aside>
+</main>
+<script src="login.js"></script>
+</body></html>

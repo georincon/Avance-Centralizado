@@ -1,0 +1,54 @@
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+.junie
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Other ###
+application-prod.properties
+
+### Control Code ###
+.claude/
+
+### Secretos de despliegue - no versionar (se generan con docker-compose/scripts/generar-pki-registraduria.sh) ###
+docker-compose/pki-dev/
+docker-compose/*/certs/
+docker-compose/pid-issuer/*.jks
+docker-compose/pid-issuer/*.jks.*
+src/main/resources/*.jks.*
+
+### Herramientas locales ###
+.agents/

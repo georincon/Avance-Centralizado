@@ -1,0 +1,315 @@
+ERSo 2026-004 - VDR de Extensión
+
+
+
+
+ERSo 2026-004 - VDR de Extensión
+  ​Sep 28, 2026       · Preparado por ​@Luis Andres
+
+
+1. Contexto y objetivo
+Este informe documenta la ejecución del ERSo 2026-004 — Despliegue del registro
+verificable de datos (VDR) de extensión, del proyecto Identidad Digital Soberana SSI,
+sobre el repositorio av-app-android-wallet-ui (fork del eudi-app-android-wallet-ui
+de la UE).
+
+El ERSo exige habilitar, de forma opcional y sin afectar el camino base, un registro
+verificable de datos que soporte la publicación de DID Documents, con estas
+capacidades: exponer endpoints de registro, adaptar la forma del registro al método DID
+empleado, registrar/actualizar entradas, y respaldar/recuperar el estado del registro.
+
+Solución construida: el módulo vdr-extension-logic , un servicio standalone
+(Kotlin/JVM, servidor Ktor embebido) que guarda cada DID Document en un repositorio
+Git local — cada registro/actualización es un commit, lo que da trazabilidad y
+respaldo/restauración sin infraestructura adicional — y que, por construcción de módulos
+de Gradle, no tiene ningún camino de dependencia hacia la app ni el APK.
+
+Este documento cubre, en orden: cómo se implementó el proceso, el manual paso a paso
+para ejecutarlo, y la evidencia real de ejecución mapeada a cada uno de los 3 criterios de
+aceptación del ERSo.
+
+
+2. Descripción del proceso implementado
+Se creó vdr-extension-logic como módulo Kotlin/JVM puro (convención
+ project.jvm.library , ya existía en el repo sin uso). A diferencia de los módulos Android
+del proyecto, este tipo de módulo no registra la extensión moduleConfig{} y por lo tanto
+no puede entrar al enum LibraryModule ni a assembly-logic — el único lugar por el que
+un módulo llega a :app .
+
+
+
+
+                                                                                      Page 1 of 7
+ERSo 2026-004 - VDR de Extensión
+
+
+
+
+topología de módulos Gradle · vdr-extension-logic sin conexión al APK
+
+La flecha nunca llega a vdr-extension-logic porque, estructuralmente, no hay ninguna
+línea de código en assembly-logic ni en :app que lo mencione.
+
+
+Cómo se guarda y versiona el registro
+Cada DID Document se guarda como un archivo dentro de un repositorio Git local ( vdr-
+data/registry/ ). Cada operación de registrar o actualizar es un commit: el git log de
+ese repositorio es la trazabilidad que exige el criterio de aceptación #1, sin necesidad de
+una base de datos adicional. El respaldo empaqueta ese mismo repositorio en un git
+bundle ; la restauración reconstruye el repositorio desde un bundle guardado.
+
+
+Capacidades del ERSo y cómo se cubrieron
+
+  Capacidad del proceso                            Implementación
+
+  Exponer endpoints de registro                    Servidor Ktor embebido, rutas bajo /vdr/v1/*
+                                                   (detalle en la sección 3)
+
+  Adaptar la forma del registro al método          Interfaz DidMethodAdapter ; implementación
+  DID                                               DidWebAdapter para did:web
+
+  Registrar y actualizar entradas                  GitBackedRegistry.register() / .update() ,
+                                                   cada uno crea un commit
+
+  Respaldar y recuperar el estado                  BackupService.backup() / .restore() , vía git
+                                                   bundle
+
+
+Activación: property de Gradle vdrExtension.enabled ( gradle.properties ), en false
+por defecto — con ese valor, settings.gradle.kts ni siquiera declara el módulo.
+
+
+
+                                                                                             Page 2 of 7
+ERSo 2026-004 - VDR de Extensión
+
+
+
+
+3. Manual paso a paso de ejecución
+Requisito previo: el módulo está apagado por defecto. Se activa solo para la sesión de
+terminal actual, sin modificar archivos, con el flag -PvdrExtension.enabled=true .
+
+
+3.1 Levantar el servicio (terminal 1)
+
+  cd /home/geovani/Workspace/Wallet/av-app-android-wallet-ui
+  ./gradlew -PvdrExtension.enabled=true :vdr-extension-logic:run
+
+
+Esperar el mensaje Responding at http://0.0.0.0:8089 . Dejar la terminal abierta.
+
+Nota de ruta: Gradle ejecuta el proceso usando la carpeta del propio módulo como
+directorio de trabajo. Los datos quedan en:
+
+  av-app-android-wallet-ui/vdr-extension-logic/vdr-data/registry/
+  av-app-android-wallet-ui/vdr-extension-logic/vdr-data/backups/
+
+
+
+3.2 Probar cada capacidad (terminal 2)
+
+  Paso                 Comando                                        Capacidad que ejercita
+
+  Salud                 curl http://localhost:8089/vdr/v1/health      Servicio expuesto
+
+  Registrar             curl -X POST                                  Registrar entradas
+                       http://localhost:8089/vdr/v1/identifiers -H
+                       "Content-Type: application/json" -d
+                       '{"did":"did:web:ejemplo.org","didDocument":
+                       {"id":"did:web:ejemplo.org","verificationMet
+                       hod":[]}}'
+
+  Resolver              curl                                          Adaptar la forma del
+                       http://localhost:8089/vdr/v1/identifiers/did   registro al método DID
+                       :web:ejemplo.org
+
+  Actualizar            curl -X PUT                                   Actualizar entradas
+                       http://localhost:8089/vdr/v1/identifiers/did
+                       :web:ejemplo.org -H "Content-Type:
+                       application/json" -d '{"didDocument":
+                       {"id":"did:web:ejemplo.org","verificationMet
+                       hod":[],"nota":"version 2"}}'
+
+  Historial             curl                                          Trazabilidad
+                       http://localhost:8089/vdr/v1/identifiers/did
+                       :web:ejemplo.org/history
+
+
+
+
+                                                                                            Page 3 of 7
+ERSo 2026-004 - VDR de Extensión
+
+
+
+
+  Paso                 Comando                                     Capacidad que ejercita
+
+  Backup                curl -X POST                               Respaldar el estado
+                       http://localhost:8089/vdr/v1/backup
+
+  Restore               curl -X POST                               Recuperar el estado
+                       http://localhost:8089/vdr/v1/restore -H
+                       "Content-Type: application/json" -d
+                       '{"backupId":"<el backupId recibido>"}'
+
+
+
+3.3 Apagar
+En la terminal 1: Ctrl+C . Al no pasar de nuevo el flag -PvdrExtension.enabled=true , el
+módulo vuelve a estar completamente fuera del build.
+
+
+
+4. Evidencia de ejecución real
+Ejecutada el 28-09-2026. Incluye pruebas automatizadas ( ./gradlew :vdr-extension-
+logic:test , 11 de 11 exitosas) y la sesión manual real corrida por el equipo con curl .
+
+
+Criterio 1 — Registro, actualización y trazabilidad
+Automatizado: GitBackedRegistryTest (8 pruebas) — registrar, rechazar un registro
+duplicado, actualizar, rechazar una actualización sobre un DID inexistente, e historial con 3
+commits en el orden esperado.
+
+Manual:
+
+
+
+
+                                                                                         Page 4 of 7
+ERSo 2026-004 - VDR de Extensión
+
+
+
+
+  $ curl -X POST http://localhost:8089/vdr/v1/identifiers -d
+  '{"did":"did:web:ejemplo.org","didDocument":
+  {"id":"did:web:ejemplo.org","verificationMethod":[]}}'
+  {"didState":{"state":"finished","did":"did:web:ejemplo.org","didDocument":
+  {"id":"did:web:ejemplo.org","verificationMethod":[]}}}
+
+
+  $ curl http://localhost:8089/vdr/v1/identifiers/did:web:ejemplo.org
+  {"didResolutionMetadata":{"retrieved":"2026-09-
+  28T21:05:36.374048786Z"},"didDocument":
+  {"id":"did:web:ejemplo.org","verificationMethod":[]},"didDocumentMetadata":
+  {}}
+
+  $ curl -X PUT http://localhost:8089/vdr/v1/identifiers/did:web:ejemplo.org -d
+  '{"didDocument":{"id":"did:web:ejemplo.org","verificationMethod":
+  [],"nota":"version 2"}}'
+  {"didState":{"state":"finished","did":"did:web:ejemplo.org","didDocument":
+  {"id":"did:web:ejemplo.org","verificationMethod":[],"nota":"version 2"}}}
+
+  $ curl http://localhost:8089/vdr/v1/identifiers/did:web:ejemplo.org/history
+  [{"commitId":"24a298964777d55aa47730c643eba3fe89c89011","timestamp":"2026-09-
+  28T21:03:22Z","message":"actualizar did:web:ejemplo.org"},
+    {"commitId":"67a4cbf4ef85c11f1931def66004c43f19d4ab2f","timestamp":"2026-09-
+  28T21:03:22Z","message":"registrar did:web:ejemplo.org"}]
+
+
+El historial muestra las 2 operaciones en orden — evidencia directa de trazabilidad.
+
+
+Criterio 2 — Respaldo y recuperación
+Automatizado: BackupRestoreTest (3 pruebas) — respaldar y restaurar deja el registro
+idéntico al momento del backup; restaurar un backup inexistente falla con error claro;
+ list() devuelve los backups creados.
+
+Manual:
+
+  $ curl -X POST http://localhost:8089/vdr/v1/backup
+  {"backupId":"vdr-backup-1790629638002","path":".../vdr-data/backups/vdr-
+  backup-1790629638002.bundle","createdAt":"2026-09-28T21:07:18Z"}
+
+  $ curl -X POST http://localhost:8089/vdr/v1/restore -d '{"backupId":"EL-
+  BACKUP-ID"}'
+  {"error":"backup_not_found","detail":"No existe el backup 'EL-BACKUP-ID'"}
+
+
+  $ curl -X POST http://localhost:8089/vdr/v1/restore -d '{"backupId":"vdr-
+  backup-1790629638002"}'
+  {"status":"restored","backupId":"vdr-backup-1790629638002"}
+
+
+
+
+                                                                                       Page 5 of 7
+ERSo 2026-004 - VDR de Extensión
+
+
+
+
+Se verificó además el archivo restaurado directamente en disco:
+
+  $ cat vdr-extension-logic/vdr-data/registry/web/ejemplo.org/did.json
+  {"id":"did:web:ejemplo.org","verificationMethod":[],"nota":"version 2"}
+
+
+El backup se tomó después de la actualización ("version 2"); al restaurar, el archivo quedó
+exactamente en ese estado — confirma que la restauración reproduce el punto exacto del
+respaldo, ni antes ni después. El intento con un backupId inexistente fue rechazado con
+un error claro en vez de fallar silenciosamente.
+
+
+5. Verificación de regresión (criterio 3)
+Con la configuración del repositorio sin modificar ( vdrExtension.enabled=false , el valor
+por defecto en gradle.properties ):
+
+  $ grep vdrExtension gradle.properties
+  vdrExtension.enabled=false
+
+  $ ./gradlew projects
+  +--- Project ':analytics-logic'
+  +--- Project ':app'
+  +--- Project ':assembly-logic'
+  ... (19 proyectos en total, los mismos de antes de este ERSo)
+  \--- Project ':ui-logic'
+
+
+ vdr-extension-logic no aparece en ningún lado del listado. Es exactamente el mismo
+conjunto de 19 módulos que tenía el proyecto antes de este ERSo — no una lista distinta
+que "también pasa las pruebas", sino la topología de módulos sin ningún cambio posible,
+como se explicó en la sección 2.
+
+
+6. Conclusión
+Los 3 criterios de aceptación del ERSo 2026-004 quedan cubiertos con evidencia
+automatizada y manual real:
+
+
+  #          Criterio                      Estado       Evidencia
+
+  1          Registro y actualización de   ​ Cumplido   Sección 4 — GitBackedRegistryTest
+             entradas operativos, con                   (8/8) + sesión manual con curl
+             trazabilidad
+
+  2          Respaldo y recuperación del   ​ Cumplido   Sección 4 — BackupRestoreTest
+             registro verificados                       (3/3) + sesión manual con curl
+
+
+
+
+                                                                                      Page 6 of 7
+ERSo 2026-004 - VDR de Extensión
+
+
+
+
+  #          Criterio                    Estado         Evidencia
+
+  3          Camino base opera sin el     ​ Cumplido    Sección 5 — ./gradlew projects
+             registro desplegado                        sin cambios frente al estado previo
+
+
+Segun la tabla de actividades del ERSo, quedan los pasos de proceso: aceptar los archivos
+al repositorio central (Rocío Villamizar) y la firma de prueba funcional (Luis González),
+usando este informe como respaldo de evidencia.
+
+
+
+
+                                                                                        Page 7 of 7
+

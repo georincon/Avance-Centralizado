@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perdí mi celular</title>
+<style>
+  :root { --fg:#1b1b1f; --bg:#f6f6f8; --card:#fff; --accent:#0b5cad; --warn:#8a4b00; --warnbg:#fff4e0; --err:#a40000; --ok:#0a6b2d; }
+  @media (prefers-color-scheme: dark) { :root { --fg:#ececf1; --bg:#16161a; --card:#202026; --accent:#6db3ff; --warn:#ffcf8a; --warnbg:#3a2a10; --err:#ff9a9a; --ok:#7de0a0; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui,sans-serif; }
+  main { max-width:34rem; margin:0 auto; padding:1rem; }
+  section { background:var(--card); border-radius:.75rem; padding:1rem 1.25rem; margin-bottom:1rem; }
+  .aviso { background:var(--warnbg); color:var(--warn); }
+  label { display:block; font-weight:600; margin:.75rem 0 .25rem; }
+  input { width:100%; box-sizing:border-box; font-size:1.1rem; padding:.6rem; border:1px solid #888; border-radius:.4rem; background:var(--bg); color:var(--fg); }
+  button { margin-top:1rem; font-size:1rem; padding:.7rem 1.2rem; border:0; border-radius:.4rem; background:var(--accent); color:#fff; cursor:pointer; }
+  @media (prefers-color-scheme: dark) { button { color:#000; } }
+  button:disabled { opacity:.5; cursor:wait; }
+  button:focus-visible, input:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+  #msg { margin-top:1rem; font-weight:600; }
+  .error { color:var(--err); } .ok { color:var(--ok); }
+  [hidden] { display:none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Perdí mi celular</h1>
+
+  <section class="aviso" aria-labelledby="t-aviso">
+    <h2 id="t-aviso">Léelo antes de continuar</h2>
+    <ul>
+      <li>Esta función <strong>revoca tus documentos digitales</strong> (cédula y demás credenciales) y <strong>bloquea la wallet</strong> de tu celular perdido.</li>
+      <li><strong>Es irreversible.</strong> Para volver a usarlos tendrás que pedirlos de nuevo desde la wallet de tu celular nuevo.</li>
+      <li>Te enviaremos un código al contacto (celular o correo) que verificaste al registrarte.</li>
+      <li><strong>Piloto de pruebas:</strong> el código es simulado (no se envía por SMS ni correo reales). No es un canal de seguridad real hasta que se conecte un proveedor.</li>
+    </ul>
+  </section>
+
+  <section id="paso1" aria-labelledby="t-p1">
+    <h2 id="t-p1">Paso 1. Tu documento</h2>
+    <form id="f1">
+      <label for="doc">Número de documento</label>
+      <input id="doc" name="doc" inputmode="numeric" autocomplete="off" required pattern="[0-9 .]{5,14}">
+      <button type="submit">Enviarme un código</button>
+    </form>
+  </section>
+
+  <section id="paso2" aria-labelledby="t-p2" hidden>
+    <h2 id="t-p2">Paso 2. Código de verificación</h2>
+    <form id="f2">
+      <label for="code">Código recibido</label>
+      <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" required pattern="[0-9]{4,8}">
+      <button type="submit">Revocar mis credenciales</button>
+    </form>
+  </section>
+
+  <p id="msg" role="status" aria-live="polite"></p>
+</main>
+<script>
+(function () {
+  var base = location.pathname.replace(/[^\/]*$/, '') + 'api/v1/lost-device/';
+  var msg = document.getElementById('msg');
+  function show(text, cls) { msg.textContent = text; msg.className = cls || ''; }
+  function post(path, body) {
+    return fetch(base + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, status: r.status, body: j }; }); });
+  }
+  function doc() { return document.getElementById('doc').value.replace(/\D/g, ''); }
+  function busy(form, on) { form.querySelector('button').disabled = on; }
+
+  document.getElementById('f1').addEventListener('submit', function (e) {
+    e.preventDefault(); busy(e.target, true); show('Enviando…');
+    post('start', { documentNumber: doc() }).then(function (r) {
+      busy(e.target, false);
+      if (r.status === 202) {
+        document.getElementById('paso2').hidden = false;
+        document.getElementById('code').focus();
+        show((r.body.message || 'Si el documento tiene un contacto verificado, enviamos un código.') +
+          (r.body.devCode ? ' [modo pruebas] código: ' + r.body.devCode : ''));
+      } else if (r.status === 429) show('Demasiadas solicitudes. Intenta de nuevo más tarde.', 'error');
+      else if (r.status === 503) show('Esta función no está disponible por ahora.', 'error');
+      else show('Revisa el número de documento e intenta de nuevo.', 'error');
+    }).catch(function () { busy(e.target, false); show('No pudimos conectar con el servicio.', 'error'); });
+  });
+
+  document.getElementById('f2').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!confirm('Esto revoca tus documentos digitales y bloquea la wallet del celular perdido. No se puede deshacer. ¿Continuar?')) return;
+    busy(e.target, true); show('Procesando…');
+    post('confirm', { documentNumber: doc(), code: document.getElementById('code').value.trim() }).then(function (r) {
+      busy(e.target, false);
+      if (r.ok) { show(r.body.message, 'ok'); document.getElementById('f2').hidden = true; }
+      else if (r.status === 401) show('Código inválido o vencido.', 'error');
+      else if (r.status === 502) show('No pudimos completar la revocación ahora. Pide un código nuevo e intenta de nuevo.', 'error');
+      else show('No fue posible completar la solicitud.', 'error');
+    }).catch(function () { busy(e.target, false); show('No pudimos conectar con el servicio.', 'error'); });
+  });
+})();
+</script>
+</body>
+</html>

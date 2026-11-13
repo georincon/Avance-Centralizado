@@ -1,0 +1,362 @@
+{
+  "co.notaria.declaracion_extraproceso": {
+    "format": "dc+sd-jwt",
+    "scope": "co.notaria.declaracion_extraproceso",
+    "cryptographic_binding_methods_supported": [
+      "jwk"
+    ],
+    "credential_signing_alg_values_supported": [
+      "ES256"
+    ],
+    "proof_types_supported": {
+      "jwt": {
+        "proof_signing_alg_values_supported": [
+          "ES256"
+        ],
+        "key_attestations_required": {
+          "key_storage": [
+            "iso_18045_high"
+          ],
+          "user_authentication": [
+            "iso_18045_high"
+          ],
+          "preferred_key_storage_status_period": 2678400
+        }
+      },
+      "attestation": {
+        "proof_signing_alg_values_supported": [
+          "ES256"
+        ],
+        "key_attestations_required": {
+          "key_storage": [
+            "iso_18045_high"
+          ],
+          "user_authentication": [
+            "iso_18045_high"
+          ],
+          "preferred_key_storage_status_period": 2678400
+        }
+      }
+    },
+    "vct": "urn:co:notaria:declaracion-extraproceso:1",
+    "credential_metadata": {
+      "display": [
+        {
+          "name": "Declaración extraproceso",
+          "locale": "es",
+          "description": "Declaración bajo juramento ante notario (Decreto 1557 de 1989)",
+          "background_color": "#374d95",
+          "text_color": "#FFFFFF",
+          "logo": {
+            "uri": "https://civica-desarrollo.avance.org.co/notaria-issuer/static/notaria/logo.png",
+            "alt_text": "Notaría Avance"
+          },
+          "background_image": {
+            "uri": "https://civica-desarrollo.avance.org.co/notaria-issuer/static/notaria/fondos/notaria-declaracion.jpg"
+          }
+        }
+      ],
+      "credential_reuse_policy": {
+        "id": "arf_annex_ii",
+        "options": [
+          {
+            "details": [
+              "limited_time"
+            ],
+            "reissue_trigger_lifetime_left": 7776000
+          }
+        ]
+      },
+      "claims": [
+        {
+          "path": [
+            "numero"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Número",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "fecha"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Fecha",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "notaria"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Notaría",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "notario"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Notario",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "declarante_nombre"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Declarante",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "declarante_documento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Documento del declarante",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "finalidad"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Con destino a",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "declaracion"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Declaración",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "declarante_tipo_documento"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Tipo de documento del declarante",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "declarante_estado_civil"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Estado civil",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "declarante_domicilio"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Domicilio",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "juramento_prestado"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Juramento",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "testigos"
+          ],
+          "mandatory": false,
+          "value_type": "string",
+          "source": "user",
+          "display": [
+            {
+              "name": "Testigos",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "fecha_hora_comparecencia"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Fecha y hora de la comparecencia",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "medio_comparecencia"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Medio de comparecencia",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "advertencia_legal"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Advertencia legal",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "simulacion"
+          ],
+          "mandatory": true,
+          "value_type": "string",
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Aviso",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "issuing_authority"
+          ],
+          "mandatory": true,
+          "source": "issuer",
+          "display": [
+            {
+              "name": "Autoridad emisora",
+              "locale": "es"
+            }
+          ]
+        },
+        {
+          "path": [
+            "issuing_country"
+          ],
+          "mandatory": true,
+          "source": "issuer",
+          "display": [
+            {
+              "name": "País emisor",
+              "locale": "es"
+            }
+          ]
+        }
+      ]
+    },
+    "issuer_config": {
+      "issuing_authority": "Notaría Avance",
+      "organization_id": "notaria-avance",
+      "validity": 3650,
+      "organization_name": "Notaría Avance",
+      "doctype": "urn:co:notaria:declaracion-extraproceso:1",
+      "emulated_claims": {
+        "numero": "{consecutivo}",
+        "fecha": "{hoy}",
+        "notaria": "Notaría Avance",
+        "notario": "Andrea Restrepo Vélez",
+        "declarante_tipo_documento": "Cédula de ciudadanía",
+        "juramento_prestado": "Sí: declarado bajo la gravedad del juramento",
+        "fecha_hora_comparecencia": "{ahora}",
+        "medio_comparecencia": "Virtual, con verificación biométrica contra la Registraduría (simulada)",
+        "advertencia_legal": "Declaración rendida bajo juramento con fines extraprocesales (Decreto 1557 de 1989). No es escritura pública ni prueba plena de los hechos declarados; la falsedad tiene consecuencias penales.",
+        "simulacion": "Documento emulado por una notaría simulada del ecosistema de pruebas: no tiene validez legal.",
+        "issuing_country": "CO"
+      },
+      "persona_claims": {
+        "declarante_nombre": "nombre_completo",
+        "declarante_documento": "documento"
+      }
+    }
+  }
+}

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    {% include 'partials/cabeza.html' %}
+    <title>Notaría Avance</title>
+</head>
+<body>
+    {% include 'partials/cabecera.html' %}
+    <main class="pagina" role="main">
+        <h1>Documentos notariales en tu billetera digital</h1>
+        <p class="sub">La Notaría Avance emite sus documentos como credenciales verificables (SD-JWT VC, OpenID4VCI) para tu billetera
+            del ecosistema EUDI. Identifícate con tu billetera (PID), elige un trámite y recíbelo en tu teléfono con un código QR y un PIN.</p>
+        <p>
+            <a class="btn" href="{{ url_for('frontend.credentialOffer') }}">Identificarme y pedir un documento</a>
+        </p>
+
+        <div class="titulo-seccion">Documentos que emite esta notaría</div>
+        <div class="docs">
+            {% for d in documentos %}
+            <div class="doc" style="--franja: {{ d.color }}; cursor:default"><div><strong>{{ d.nombre }}</strong><span>{{ d.descripcion }}</span></div></div>
+            {% endfor %}
+        </div>
+
+        <div class="aviso">
+            <strong>Es una simulación.</strong> Los datos que la notaría no puede obtener de ti (tipo de documento, medio de comparecencia,
+            verificación biométrica, consecutivo del protocolo) se emulan. Cada documento lleva su advertencia legal de alcance.
+        </div>
+
+        <div class="titulo-seccion">Para integradores</div>
+        <p>
+            Metadata del emisor: <a href="{{ oidc }}">{{ oidc }}</a><br>
+            Anular un documento: <a href="{{ revocation_url }}">{{ revocation_url }}</a>
+        </p>
+    </main>
+    {% include 'partials/pie.html' %}
+</body>
+</html>

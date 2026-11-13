@@ -1,0 +1,200 @@
+/*
+ * Copyright (c) 2023-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.openid4vci.examples
+
+import com.nimbusds.jose.JOSEObjectType
+import com.nimbusds.jose.JWSAlgorithm
+import com.nimbusds.jose.JWSHeader
+import com.nimbusds.jose.JWSSigner
+import com.nimbusds.jose.crypto.ECDSAVerifier
+import com.nimbusds.jose.crypto.factories.DefaultJWSSignerFactory
+import com.nimbusds.jose.crypto.factories.DefaultJWSVerifierFactory
+import com.nimbusds.jose.jwk.Curve
+import com.nimbusds.jose.jwk.ECKey
+import com.nimbusds.jose.jwk.JWK
+import com.nimbusds.jose.jwk.RSAKey
+import com.nimbusds.jwt.JWTClaimsSet
+import com.nimbusds.jwt.SignedJWT
+import eu.europa.ec.eudi.openid4vci.*
+import eu.europa.ec.eudi.openid4vci.internal.JsonSupport
+import eu.europa.ec.eudi.openid4vci.internal.fromNimbusEcKey
+import eu.europa.ec.eudi.openid4vci.internal.requireIsNotMAC
+import eu.europa.ec.eudi.openid4vci.internal.toJoseAlg
+import io.ktor.client.request.*
+import kotlinx.serialization.json.JsonPrimitive
+import java.net.URI
+import java.security.PublicKey
+import java.time.Clock
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.toJavaDuration
+
+internal val ECKey.jwsAlgorithm: JWSAlgorithm
+    get() = when (curve) {
+        Curve.P_256 -> JWSAlgorithm.ES256
+        Curve.P_384 -> JWSAlgorithm.ES384
+        Curve.P_521 -> JWSAlgorithm.ES512
+        else -> error("Unsupported curve ${curve.name}")
+    }
+
+@Suppress("UNUSED")
+internal fun selfSignedClient(
+    clock: Clock = Clock.systemDefaultZone(),
+    walletInstanceKey: ECKey,
+    clientId: String,
+    duration: Duration = 10.minutes,
+    assertions: (HttpsUrl, PositiveDuration?) -> Unit = { _, _ -> },
+): ClientAuthentication.AttestationBased {
+    val algorithm = walletInstanceKey.jwsAlgorithm
+    val signer = DefaultJWSSignerFactory().createJWSSigner(walletInstanceKey, algorithm)
+    val clientAttestationJWT = run {
+        val now = clock.instant()
+        val exp = now + duration.toJavaDuration()
+        val claims = ClientAttestationJWTClaims(
+            issuer = NonBlankString(clientId),
+            subject = NonBlankString(clientId),
+            expirationTime = exp,
+            confirmation = ConfirmationClaim(jwk = walletInstanceKey.toPublicJWK()),
+            issuedAt = now,
+            notBefore = now,
+            walletName = NonBlankString("SmartWallet-mobile"),
+            walletLink = NonBlankString("https://example.org/wallets/SmartWallet-mobile/info"),
+            status = null,
+            walletVersion = NonBlankString("1.0.1"),
+            walletSolutionCertificationInformation = JsonPrimitive("https://example.org/certification/SmartWalletMobile/1-0-1/"),
+            clientStatus = ClientStatusClaim(
+                status = StatusClaim(
+                    statusList = StatusListTokenClaim(
+                        index = 1337u,
+                        uri = URI.create("https://revocation_url/wia-statuslists/42"),
+                    ),
+                ),
+                expiresAt = now + 90.days.toJavaDuration(),
+            ),
+        )
+        val builder = ClientAttestationJwtBuilder(algorithm, signer, claims)
+        builder.build()
+    }
+    val popJwtSpec = Signer.fromNimbusEcKey(walletInstanceKey, walletInstanceKey.toPublicJWK(), null, null)
+    val provisionClientAttestation = object : ProvisionClientAttestation {
+        override val algorithm: JwsAlgorithm = JwsAlgorithm(clientAttestationJWT.header.algorithm.name)
+        override val popAlgorithm: JwsAlgorithm
+            get() = JwsAlgorithm(popJwtSpec.javaAlgorithm.toJoseAlg().name)
+        override suspend operator fun invoke(
+            authorizationServer: HttpsUrl,
+            preferredClientStatusPeriod: PositiveDuration?,
+        ): ProvisionClientAttestation.Provisioned {
+            assertions(authorizationServer, preferredClientStatusPeriod)
+            return ProvisionClientAttestation.Provisioned(clientAttestationJWT, popJwtSpec)
+        }
+    }
+    return ClientAuthentication.AttestationBased(clientId, provisionClientAttestation)
+}
+
+private class ClientAttestationJwtBuilder(
+    private val algorithm: JWSAlgorithm,
+    private val signer: JWSSigner,
+    private val claims: ClientAttestationJWTClaims,
+) {
+    init {
+        requireIsNotMAC(algorithm)
+    }
+
+    fun build(): ClientAttestationJWT {
+        val header = jwsHeader()
+        val jwtClaimSet = claimsSetFrom(claims)
+        val jwt =
+            SignedJWT(header, jwtClaimSet).apply {
+                sign(signer)
+            }
+
+        return ClientAttestationJWT(jwt.serialize())
+    }
+
+    private fun jwsHeader(): JWSHeader =
+        JWSHeader.Builder(algorithm)
+            .type(JOSEObjectType(AttestationBasedClientAuthenticationSpec.ATTESTATION_JWT_TYPE))
+            .build()
+
+    private fun claimsSetFrom(claims: ClientAttestationJWTClaims): JWTClaimsSet = JWTClaimsSet.parse(JsonSupport.encodeToString(claims))
+
+    companion object {
+        fun ecKey256(
+            claims: ClientAttestationJWTClaims,
+            privateKey: ECKey,
+        ): ClientAttestationJwtBuilder {
+            require(privateKey.curve == Curve.P_256)
+            val algorithm = JWSAlgorithm.ES256
+            val signer = DefaultJWSSignerFactory().createJWSSigner(privateKey, algorithm)
+            return ClientAttestationJwtBuilder(algorithm, signer, claims)
+        }
+    }
+}
+
+internal val JWK.publicKey: PublicKey
+    get() = when (this) {
+        is ECKey -> toECPublicKey()
+        is RSAKey -> toRSAPublicKey()
+        else -> error("Unsupported JWK type")
+    }
+
+internal fun HttpRequestData.verifySelfSignedClientAttestation(walletInstanceKey: ECKey, challenge: Nonce?) {
+    val clientAttestation = run {
+        val jwt = SignedJWT.parse(assertNotNull(headers[AttestationBasedClientAuthenticationSpec.CLIENT_ATTESTATION_HEADER]))
+            .apply {
+                assertTrue(verify(ECDSAVerifier(walletInstanceKey)))
+            }
+        ClientAttestationJWT(jwt.serialize())
+    }
+
+    val clientAttestationPOP = run {
+        val jwt = SignedJWT.parse(assertNotNull(headers[AttestationBasedClientAuthenticationSpec.CLIENT_ATTESTATION_POP_HEADER]))
+            .apply {
+                assertTrue(verify(ECDSAVerifier(walletInstanceKey)))
+                assertTrue(verify(DefaultJWSVerifierFactory().createJWSVerifier(header, clientAttestation.publicKey)))
+            }
+        ClientAttestationPoPJWT(jwt)
+    }
+    assertEquals(clientAttestation.clientId, clientAttestationPOP.clientId)
+    if (null != challenge) {
+        assertEquals(
+            challenge.value,
+            clientAttestationPOP.jwt.jwtClaimsSet.getStringClaim(AttestationBasedClientAuthenticationSpec.CHALLENGE_CLAIM),
+        )
+    } else {
+        assertNull(clientAttestationPOP.jwt.jwtClaimsSet.getStringClaim(AttestationBasedClientAuthenticationSpec.CHALLENGE_CLAIM))
+    }
+}
+
+internal val ClientAttestationJWT.jwt: SignedJWT
+    get() = SignedJWT.parse(value)
+
+internal val ClientAttestationJWT.header: JWSHeader
+    get() = jwt.header
+
+internal val ClientAttestationJWT.claimsSet: ClientAttestationJWTClaims
+    get() = decodeClaimsSet<ClientAttestationJWTClaims>().getOrThrow()
+
+internal val ClientAttestationJWT.clientId: ClientId
+    get() = claimsSet.subject.value
+
+internal val ClientAttestationJWT.publicKey: PublicKey
+    get() = claimsSet.confirmation.jwk.publicKey

@@ -1,0 +1,326 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3960" height="1760" viewBox="0 0 3960 1760" font-family="DejaVu Sans, Arial, sans-serif">
+<defs><marker id="f" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="13" markerHeight="13" orient="auto"><path d="M0 0 L12 6 L0 12 z" fill="#111"/></marker></defs>
+<rect width="3960" height="1760" fill="#fff"/><rect x="14" y="14" width="3932" height="1732" fill="none" stroke="#222" stroke-width="2"/>
+<polyline points="208,790 208,644" fill="none" stroke="#111" stroke-width="2" marker-end="url(#f)"/>
+<polyline points="1050,215 760,215" fill="none" stroke="#111" stroke-width="2" marker-end="url(#f)"/>
+<polyline points="1395,450 1395,347" fill="none" stroke="#111" stroke-width="2" marker-end="url(#f)"/>
+<polyline points="1740,1250 1790,1250 1790,300 1740,300" fill="none" stroke="#111" stroke-width="2" marker-end="url(#f)"/>
+<polyline points="1050,1330 905,1330 905,520 760,520" fill="none" stroke="#111" stroke-width="2" marker-end="url(#f)"/>
+<polyline points="2970,700 2820,700 2820,1130 1840,1130 1840,360 1740,360" fill="none" stroke="#111" stroke-width="2" marker-end="url(#f)"/>
+<polyline points="3660,700 3740,700 3740,180 3660,180" fill="none" stroke="#111" stroke-width="2" marker-end="url(#f)"/>
+<polyline points="1990,235 1740,235" fill="none" stroke="#111" stroke-width="2" marker-end="url(#f)"/>
+<polyline points="1990,150 1840,150 1840,60 450,60 450,110" fill="none" stroke="#111" stroke-width="2" marker-end="url(#f)"/>
+<polyline points="1990,430 1890,430 1890,1380 1740,1380" fill="none" stroke="#111" stroke-width="2" marker-end="url(#f)"/>
+<polyline points="2680,430 2970,430" fill="none" stroke="#111" stroke-width="2" marker-end="url(#f)"/>
+<polyline points="2680,150 2970,150" fill="none" stroke="#111" stroke-width="2" marker-end="url(#f)"/>
+<polyline points="2335,800 2335,644" fill="none" stroke="#111" stroke-width="2" marker-end="url(#f)"/>
+<rect x="214" y="699" width="180" height="25" fill="#fff"/>
+<text x="218" y="717" font-family="Comic Sans MS, DejaVu Sans, cursive" font-style="italic" font-size="19" fill="#1a3b8f" text-anchor="start">contacto_usuario</text>
+<rect x="826" y="188" width="158" height="25" fill="#fff"/>
+<text x="905" y="206" font-family="Comic Sans MS, DejaVu Sans, cursive" font-style="italic" font-size="19" fill="#1a3b8f" text-anchor="middle">wallet_usuario</text>
+<rect x="1401" y="380" width="201" height="25" fill="#fff"/>
+<text x="1405" y="398" font-family="Comic Sans MS, DejaVu Sans, cursive" font-style="italic" font-size="19" fill="#1a3b8f" text-anchor="start">dispositivo_wallet</text>
+<rect x="1796" y="757" width="148" height="25" fill="#fff"/>
+<text x="1800" y="775" font-family="Comic Sans MS, DejaVu Sans, cursive" font-style="italic" font-size="19" fill="#1a3b8f" text-anchor="start">sesion_wallet</text>
+<rect x="911" y="1150" width="158" height="25" fill="#fff"/>
+<text x="915" y="1168" font-family="Comic Sans MS, DejaVu Sans, cursive" font-style="italic" font-size="19" fill="#1a3b8f" text-anchor="start">sesion_usuario</text>
+<rect x="2235" y="1103" width="190" height="25" fill="#fff"/>
+<text x="2330" y="1121" font-family="Comic Sans MS, DejaVu Sans, cursive" font-style="italic" font-size="19" fill="#1a3b8f" text-anchor="middle">credencial_wallet</text>
+<rect x="3746" y="422" width="190" height="25" fill="#fff"/>
+<text x="3750" y="440" font-family="Comic Sans MS, DejaVu Sans, cursive" font-style="italic" font-size="19" fill="#1a3b8f" text-anchor="start">credencial_emisor</text>
+<rect x="1775" y="208" width="180" height="25" fill="#fff"/>
+<text x="1865" y="226" font-family="Comic Sans MS, DejaVu Sans, cursive" font-style="italic" font-size="19" fill="#1a3b8f" text-anchor="middle">actividad_wallet</text>
+<rect x="1050" y="33" width="190" height="25" fill="#fff"/>
+<text x="1145" y="51" font-family="Comic Sans MS, DejaVu Sans, cursive" font-style="italic" font-size="19" fill="#1a3b8f" text-anchor="middle">actividad_usuario</text>
+<rect x="1896" y="1220" width="180" height="25" fill="#fff"/>
+<text x="1900" y="1238" font-family="Comic Sans MS, DejaVu Sans, cursive" font-style="italic" font-size="19" fill="#1a3b8f" text-anchor="start">actividad_sesion</text>
+<rect x="2746" y="403" width="158" height="25" fill="#fff"/>
+<text x="2825" y="421" font-family="Comic Sans MS, DejaVu Sans, cursive" font-style="italic" font-size="19" fill="#1a3b8f" text-anchor="middle">actividad_tipo</text>
+<rect x="2709" y="123" width="233" height="25" fill="#fff"/>
+<text x="2825" y="141" font-family="Comic Sans MS, DejaVu Sans, cursive" font-style="italic" font-size="19" fill="#1a3b8f" text-anchor="middle">actividad_contraparte</text>
+<rect x="2341" y="704" width="201" height="25" fill="#fff"/>
+<text x="2345" y="722" font-family="Comic Sans MS, DejaVu Sans, cursive" font-style="italic" font-size="19" fill="#1a3b8f" text-anchor="start">elemento_actividad</text>
+<rect x="70" y="1380" width="690" height="300" rx="26" fill="#fff" stroke="#111" stroke-width="2"/>
+<text x="415.0" y="1422" font-size="24" font-weight="700" text-anchor="middle">Physical Data Model</text>
+<line x1="70" x2="760" y1="1437" y2="1437" stroke="#111"/>
+<text x="84" y="1465" font-size="21">Model:</text><text x="190" y="1465" font-size="21" font-weight="600">Auditoría de wallets Avance</text>
+<line x1="70" x2="760" y1="1479" y2="1479" stroke="#111"/>
+<text x="84" y="1507" font-size="21">Package:</text><text x="190" y="1507" font-size="21" font-weight="600">auditoria (PostgreSQL)</text>
+<line x1="70" x2="760" y1="1521" y2="1521" stroke="#111"/>
+<text x="84" y="1549" font-size="21">Diagram:</text><text x="190" y="1549" font-size="21" font-weight="600">Modelo de datos de auditoría</text>
+<line x1="70" x2="760" y1="1563" y2="1563" stroke="#111"/>
+<text x="84" y="1591" font-size="21">Author:</text><text x="190" y="1591" font-size="21" font-weight="600">Identidad Digital · Avance</text>
+<line x1="70" x2="760" y1="1605" y2="1605" stroke="#111"/>
+<text x="84" y="1633" font-size="21">Version:</text><text x="190" y="1633" font-size="21" font-weight="600">1.0</text>
+<text x="746" y="1666" font-size="19" text-anchor="end">Date: 10/11/2026</text>
+<rect x="1990" y="110" width="690" height="534" fill="#fff" stroke="#111" stroke-width="2"/>
+<text x="2335.0" y="137" font-size="21" font-weight="700" text-anchor="middle">ACTIVIDAD</text>
+<line x1="1990" x2="2680" y1="146" y2="146" stroke="#111" stroke-width="2"/>
+<text x="2006" y="169" font-size="16" text-decoration="underline">actividad_id</text>
+<text x="2306" y="169" font-size="16">bigint</text>
+<text x="2666" y="169" font-size="16" text-anchor="end" text-decoration="underline">&lt;pk&gt;</text>
+<text x="2006" y="196" font-size="16">evento_id</text>
+<text x="2306" y="196" font-size="16">uuid</text>
+<text x="2006" y="223" font-size="16">wallet_id</text>
+<text x="2306" y="223" font-size="16">uuid</text>
+<text x="2666" y="223" font-size="16" text-anchor="end">&lt;fk5&gt;</text>
+<text x="2006" y="250" font-size="16">usuario_id</text>
+<text x="2306" y="250" font-size="16">uuid</text>
+<text x="2666" y="250" font-size="16" text-anchor="end">&lt;fk4&gt;</text>
+<text x="2006" y="277" font-size="16">sesion_id</text>
+<text x="2306" y="277" font-size="16">uuid</text>
+<text x="2666" y="277" font-size="16" text-anchor="end">&lt;fk2&gt;</text>
+<text x="2006" y="304" font-size="16">tipo_actividad</text>
+<text x="2306" y="304" font-size="16">text</text>
+<text x="2666" y="304" font-size="16" text-anchor="end">&lt;fk3&gt;</text>
+<text x="2006" y="331" font-size="16">contraparte_id</text>
+<text x="2306" y="331" font-size="16">uuid</text>
+<text x="2666" y="331" font-size="16" text-anchor="end">&lt;fk1&gt;</text>
+<text x="2006" y="358" font-size="16">credencial_tipo</text>
+<text x="2306" y="358" font-size="16">text</text>
+<text x="2006" y="385" font-size="16">ocurrido_en</text>
+<text x="2306" y="385" font-size="16">timestamp with time zone</text>
+<text x="2006" y="412" font-size="16">registrado_en</text>
+<text x="2306" y="412" font-size="16">timestamp with time zone</text>
+<text x="2006" y="439" font-size="16">resultado</text>
+<text x="2306" y="439" font-size="16">text</text>
+<text x="2006" y="466" font-size="16">tipo_error</text>
+<text x="2306" y="466" font-size="16">text</text>
+<text x="2006" y="493" font-size="16">codigo_error</text>
+<text x="2306" y="493" font-size="16">text</text>
+<text x="2006" y="520" font-size="16">mensaje_error</text>
+<text x="2306" y="520" font-size="16">text</text>
+<text x="2006" y="547" font-size="16">duracion_ms</text>
+<text x="2306" y="547" font-size="16">integer</text>
+<text x="2006" y="574" font-size="16">canal</text>
+<text x="2306" y="574" font-size="16">text</text>
+<text x="2006" y="601" font-size="16">direccion_ip</text>
+<text x="2306" y="601" font-size="16">inet</text>
+<text x="2006" y="628" font-size="16">detalle</text>
+<text x="2306" y="628" font-size="16">jsonb</text>
+<rect x="1990" y="800" width="690" height="156" fill="#fff" stroke="#111" stroke-width="2"/>
+<text x="2335.0" y="827" font-size="21" font-weight="700" text-anchor="middle">ACTIVIDAD_ELEMENTO</text>
+<line x1="1990" x2="2680" y1="836" y2="836" stroke="#111" stroke-width="2"/>
+<text x="2006" y="859" font-size="16" text-decoration="underline">actividad_id</text>
+<text x="2306" y="859" font-size="16">bigint</text>
+<text x="2666" y="859" font-size="16" text-anchor="end" text-decoration="underline">&lt;pk,fk1&gt;</text>
+<text x="2006" y="886" font-size="16" text-decoration="underline">sentido</text>
+<text x="2306" y="886" font-size="16">text</text>
+<text x="2666" y="886" font-size="16" text-anchor="end" text-decoration="underline">&lt;pk&gt;</text>
+<text x="2006" y="913" font-size="16" text-decoration="underline">tipo_credencial</text>
+<text x="2306" y="913" font-size="16">text</text>
+<text x="2666" y="913" font-size="16" text-anchor="end" text-decoration="underline">&lt;pk&gt;</text>
+<text x="2006" y="940" font-size="16" text-decoration="underline">elemento</text>
+<text x="2306" y="940" font-size="16">text</text>
+<text x="2666" y="940" font-size="16" text-anchor="end" text-decoration="underline">&lt;pk&gt;</text>
+<rect x="2970" y="1010" width="690" height="183" fill="#fff" stroke="#111" stroke-width="2"/>
+<text x="3315.0" y="1037" font-size="21" font-weight="700" text-anchor="middle">CONSULTA_DASHBOARD</text>
+<line x1="2970" x2="3660" y1="1046" y2="1046" stroke="#111" stroke-width="2"/>
+<text x="2986" y="1069" font-size="16" text-decoration="underline">consulta_id</text>
+<text x="3286" y="1069" font-size="16">bigint</text>
+<text x="3646" y="1069" font-size="16" text-anchor="end" text-decoration="underline">&lt;pk&gt;</text>
+<text x="2986" y="1096" font-size="16">consultado_en</text>
+<text x="3286" y="1096" font-size="16">timestamp with time zone</text>
+<text x="2986" y="1123" font-size="16">direccion_ip</text>
+<text x="3286" y="1123" font-size="16">inet</text>
+<text x="2986" y="1150" font-size="16">ruta</text>
+<text x="3286" y="1150" font-size="16">text</text>
+<text x="2986" y="1177" font-size="16">parametros</text>
+<text x="3286" y="1177" font-size="16">jsonb</text>
+<rect x="2970" y="110" width="690" height="183" fill="#fff" stroke="#111" stroke-width="2"/>
+<text x="3315.0" y="137" font-size="21" font-weight="700" text-anchor="middle">CONTRAPARTE</text>
+<line x1="2970" x2="3660" y1="146" y2="146" stroke="#111" stroke-width="2"/>
+<text x="2986" y="169" font-size="16" text-decoration="underline">contraparte_id</text>
+<text x="3286" y="169" font-size="16">uuid</text>
+<text x="3646" y="169" font-size="16" text-anchor="end" text-decoration="underline">&lt;pk&gt;</text>
+<text x="2986" y="196" font-size="16">tipo</text>
+<text x="3286" y="196" font-size="16">text</text>
+<text x="2986" y="223" font-size="16">identificador</text>
+<text x="3286" y="223" font-size="16">text</text>
+<text x="2986" y="250" font-size="16">nombre</text>
+<text x="3286" y="250" font-size="16">text</text>
+<text x="2986" y="277" font-size="16">primera_vez_en</text>
+<text x="3286" y="277" font-size="16">timestamp with time zone</text>
+<rect x="2970" y="640" width="690" height="264" fill="#fff" stroke="#111" stroke-width="2"/>
+<text x="3315.0" y="667" font-size="21" font-weight="700" text-anchor="middle">CREDENCIAL</text>
+<line x1="2970" x2="3660" y1="676" y2="676" stroke="#111" stroke-width="2"/>
+<text x="2986" y="699" font-size="16" text-decoration="underline">credencial_id</text>
+<text x="3286" y="699" font-size="16">uuid</text>
+<text x="3646" y="699" font-size="16" text-anchor="end" text-decoration="underline">&lt;pk&gt;</text>
+<text x="2986" y="726" font-size="16">wallet_id</text>
+<text x="3286" y="726" font-size="16">uuid</text>
+<text x="3646" y="726" font-size="16" text-anchor="end">&lt;fk2&gt;</text>
+<text x="2986" y="753" font-size="16">tipo_credencial</text>
+<text x="3286" y="753" font-size="16">text</text>
+<text x="2986" y="780" font-size="16">nombre</text>
+<text x="3286" y="780" font-size="16">text</text>
+<text x="2986" y="807" font-size="16">emisor_id</text>
+<text x="3286" y="807" font-size="16">uuid</text>
+<text x="3646" y="807" font-size="16" text-anchor="end">&lt;fk1&gt;</text>
+<text x="2986" y="834" font-size="16">estado</text>
+<text x="3286" y="834" font-size="16">text</text>
+<text x="2986" y="861" font-size="16">recibida_en</text>
+<text x="3286" y="861" font-size="16">timestamp with time zone</text>
+<text x="2986" y="888" font-size="16">eliminada_en</text>
+<text x="3286" y="888" font-size="16">timestamp with time zone</text>
+<rect x="1050" y="450" width="690" height="615" fill="#fff" stroke="#111" stroke-width="2"/>
+<text x="1395.0" y="477" font-size="21" font-weight="700" text-anchor="middle">DISPOSITIVO</text>
+<line x1="1050" x2="1740" y1="486" y2="486" stroke="#111" stroke-width="2"/>
+<text x="1066" y="509" font-size="16" text-decoration="underline">wallet_id</text>
+<text x="1366" y="509" font-size="16">uuid</text>
+<text x="1726" y="509" font-size="16" text-anchor="end" text-decoration="underline">&lt;pk,fk1&gt;</text>
+<text x="1066" y="536" font-size="16">identificador_android</text>
+<text x="1366" y="536" font-size="16">text</text>
+<text x="1066" y="563" font-size="16">fabricante</text>
+<text x="1366" y="563" font-size="16">text</text>
+<text x="1066" y="590" font-size="16">marca</text>
+<text x="1366" y="590" font-size="16">text</text>
+<text x="1066" y="617" font-size="16">modelo</text>
+<text x="1366" y="617" font-size="16">text</text>
+<text x="1066" y="644" font-size="16">producto</text>
+<text x="1366" y="644" font-size="16">text</text>
+<text x="1066" y="671" font-size="16">hardware</text>
+<text x="1366" y="671" font-size="16">text</text>
+<text x="1066" y="698" font-size="16">version_android</text>
+<text x="1366" y="698" font-size="16">text</text>
+<text x="1066" y="725" font-size="16">nivel_api</text>
+<text x="1366" y="725" font-size="16">smallint</text>
+<text x="1066" y="752" font-size="16">parche_seguridad</text>
+<text x="1366" y="752" font-size="16">text</text>
+<text x="1066" y="779" font-size="16">version_app</text>
+<text x="1366" y="779" font-size="16">text</text>
+<text x="1066" y="806" font-size="16">codigo_version_app</text>
+<text x="1366" y="806" font-size="16">integer</text>
+<text x="1066" y="833" font-size="16">arquitectura</text>
+<text x="1366" y="833" font-size="16">text</text>
+<text x="1066" y="860" font-size="16">memoria_ram_mb</text>
+<text x="1366" y="860" font-size="16">integer</text>
+<text x="1066" y="887" font-size="16">pantalla</text>
+<text x="1366" y="887" font-size="16">text</text>
+<text x="1066" y="914" font-size="16">idioma</text>
+<text x="1366" y="914" font-size="16">text</text>
+<text x="1066" y="941" font-size="16">zona_horaria</text>
+<text x="1366" y="941" font-size="16">text</text>
+<text x="1066" y="968" font-size="16">biometria_disponible</text>
+<text x="1366" y="968" font-size="16">boolean</text>
+<text x="1066" y="995" font-size="16">bloqueo_pantalla</text>
+<text x="1366" y="995" font-size="16">boolean</text>
+<text x="1066" y="1022" font-size="16">registrado_en</text>
+<text x="1366" y="1022" font-size="16">timestamp with time zone</text>
+<text x="1066" y="1049" font-size="16">actualizado_en</text>
+<text x="1366" y="1049" font-size="16">timestamp with time zone</text>
+<rect x="70" y="790" width="690" height="237" fill="#fff" stroke="#111" stroke-width="2"/>
+<text x="415.0" y="817" font-size="21" font-weight="700" text-anchor="middle">MEDIO_CONTACTO</text>
+<line x1="70" x2="760" y1="826" y2="826" stroke="#111" stroke-width="2"/>
+<text x="86" y="849" font-size="16" text-decoration="underline">contacto_id</text>
+<text x="386" y="849" font-size="16">uuid</text>
+<text x="746" y="849" font-size="16" text-anchor="end" text-decoration="underline">&lt;pk&gt;</text>
+<text x="86" y="876" font-size="16">usuario_id</text>
+<text x="386" y="876" font-size="16">uuid</text>
+<text x="746" y="876" font-size="16" text-anchor="end">&lt;fk1&gt;</text>
+<text x="86" y="903" font-size="16">tipo</text>
+<text x="386" y="903" font-size="16">text</text>
+<text x="86" y="930" font-size="16">valor</text>
+<text x="386" y="930" font-size="16">text</text>
+<text x="86" y="957" font-size="16">verificado</text>
+<text x="386" y="957" font-size="16">boolean</text>
+<text x="86" y="984" font-size="16">principal</text>
+<text x="386" y="984" font-size="16">boolean</text>
+<text x="86" y="1011" font-size="16">registrado_en</text>
+<text x="386" y="1011" font-size="16">timestamp with time zone</text>
+<rect x="1050" y="1200" width="690" height="264" fill="#fff" stroke="#111" stroke-width="2"/>
+<text x="1395.0" y="1227" font-size="21" font-weight="700" text-anchor="middle">SESION</text>
+<line x1="1050" x2="1740" y1="1236" y2="1236" stroke="#111" stroke-width="2"/>
+<text x="1066" y="1259" font-size="16" text-decoration="underline">sesion_id</text>
+<text x="1366" y="1259" font-size="16">uuid</text>
+<text x="1726" y="1259" font-size="16" text-anchor="end" text-decoration="underline">&lt;pk&gt;</text>
+<text x="1066" y="1286" font-size="16">wallet_id</text>
+<text x="1366" y="1286" font-size="16">uuid</text>
+<text x="1726" y="1286" font-size="16" text-anchor="end">&lt;fk2&gt;</text>
+<text x="1066" y="1313" font-size="16">usuario_id</text>
+<text x="1366" y="1313" font-size="16">uuid</text>
+<text x="1726" y="1313" font-size="16" text-anchor="end">&lt;fk1&gt;</text>
+<text x="1066" y="1340" font-size="16">metodo_autenticacion</text>
+<text x="1366" y="1340" font-size="16">text</text>
+<text x="1066" y="1367" font-size="16">inicio_en</text>
+<text x="1366" y="1367" font-size="16">timestamp with time zone</text>
+<text x="1066" y="1394" font-size="16">fin_en</text>
+<text x="1366" y="1394" font-size="16">timestamp with time zone</text>
+<text x="1066" y="1421" font-size="16">motivo_cierre</text>
+<text x="1366" y="1421" font-size="16">text</text>
+<text x="1066" y="1448" font-size="16">direccion_ip</text>
+<text x="1366" y="1448" font-size="16">inet</text>
+<rect x="2970" y="350" width="690" height="183" fill="#fff" stroke="#111" stroke-width="2"/>
+<text x="3315.0" y="377" font-size="21" font-weight="700" text-anchor="middle">TIPO_ACTIVIDAD</text>
+<line x1="2970" x2="3660" y1="386" y2="386" stroke="#111" stroke-width="2"/>
+<text x="2986" y="409" font-size="16" text-decoration="underline">codigo</text>
+<text x="3286" y="409" font-size="16">text</text>
+<text x="3646" y="409" font-size="16" text-anchor="end" text-decoration="underline">&lt;pk&gt;</text>
+<text x="2986" y="436" font-size="16">nombre</text>
+<text x="3286" y="436" font-size="16">text</text>
+<text x="2986" y="463" font-size="16">categoria</text>
+<text x="3286" y="463" font-size="16">text</text>
+<text x="2986" y="490" font-size="16">descripcion</text>
+<text x="3286" y="490" font-size="16">text</text>
+<text x="2986" y="517" font-size="16">icono</text>
+<text x="3286" y="517" font-size="16">text</text>
+<rect x="70" y="110" width="690" height="534" fill="#fff" stroke="#111" stroke-width="2"/>
+<text x="415.0" y="137" font-size="21" font-weight="700" text-anchor="middle">USUARIO</text>
+<line x1="70" x2="760" y1="146" y2="146" stroke="#111" stroke-width="2"/>
+<text x="86" y="169" font-size="16" text-decoration="underline">usuario_id</text>
+<text x="386" y="169" font-size="16">uuid</text>
+<text x="746" y="169" font-size="16" text-anchor="end" text-decoration="underline">&lt;pk&gt;</text>
+<text x="86" y="196" font-size="16">tipo_documento</text>
+<text x="386" y="196" font-size="16">text</text>
+<text x="86" y="223" font-size="16">numero_documento</text>
+<text x="386" y="223" font-size="16">text</text>
+<text x="86" y="250" font-size="16">nombres</text>
+<text x="386" y="250" font-size="16">text</text>
+<text x="86" y="277" font-size="16">apellidos</text>
+<text x="386" y="277" font-size="16">text</text>
+<text x="86" y="304" font-size="16">nombre_completo</text>
+<text x="386" y="304" font-size="16">text</text>
+<text x="86" y="331" font-size="16">fecha_nacimiento</text>
+<text x="386" y="331" font-size="16">date</text>
+<text x="86" y="358" font-size="16">lugar_nacimiento</text>
+<text x="386" y="358" font-size="16">text</text>
+<text x="86" y="385" font-size="16">genero</text>
+<text x="386" y="385" font-size="16">text</text>
+<text x="86" y="412" font-size="16">grupo_sanguineo</text>
+<text x="386" y="412" font-size="16">text</text>
+<text x="86" y="439" font-size="16">estatura_cm</text>
+<text x="386" y="439" font-size="16">smallint</text>
+<text x="86" y="466" font-size="16">fecha_expedicion</text>
+<text x="386" y="466" font-size="16">date</text>
+<text x="86" y="493" font-size="16">lugar_expedicion</text>
+<text x="386" y="493" font-size="16">text</text>
+<text x="86" y="520" font-size="16">estado</text>
+<text x="386" y="520" font-size="16">text</text>
+<text x="86" y="547" font-size="16">validacion_decision</text>
+<text x="386" y="547" font-size="16">text</text>
+<text x="86" y="574" font-size="16">validacion_puntaje_rostro</text>
+<text x="386" y="574" font-size="16">numeric(5,2)</text>
+<text x="86" y="601" font-size="16">creado_en</text>
+<text x="386" y="601" font-size="16">timestamp with time zone</text>
+<text x="86" y="628" font-size="16">actualizado_en</text>
+<text x="386" y="628" font-size="16">timestamp with time zone</text>
+<rect x="1050" y="110" width="690" height="237" fill="#fff" stroke="#111" stroke-width="2"/>
+<text x="1395.0" y="137" font-size="21" font-weight="700" text-anchor="middle">WALLET</text>
+<line x1="1050" x2="1740" y1="146" y2="146" stroke="#111" stroke-width="2"/>
+<text x="1066" y="169" font-size="16" text-decoration="underline">wallet_id</text>
+<text x="1366" y="169" font-size="16">uuid</text>
+<text x="1726" y="169" font-size="16" text-anchor="end" text-decoration="underline">&lt;pk&gt;</text>
+<text x="1066" y="196" font-size="16">usuario_id</text>
+<text x="1366" y="196" font-size="16">uuid</text>
+<text x="1726" y="196" font-size="16" text-anchor="end">&lt;fk1&gt;</text>
+<text x="1066" y="223" font-size="16">estado</text>
+<text x="1366" y="223" font-size="16">text</text>
+<text x="1066" y="250" font-size="16">alta_completa</text>
+<text x="1366" y="250" font-size="16">boolean</text>
+<text x="1066" y="277" font-size="16">primer_registro_en</text>
+<text x="1366" y="277" font-size="16">timestamp with time zone</text>
+<text x="1066" y="304" font-size="16">alta_en</text>
+<text x="1366" y="304" font-size="16">timestamp with time zone</text>
+<text x="1066" y="331" font-size="16">ultima_actividad_en</text>
+<text x="1366" y="331" font-size="16">timestamp with time zone</text>
+</svg>

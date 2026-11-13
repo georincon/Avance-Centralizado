@@ -1,0 +1,93 @@
+<!--
+  Código propio de este fork (emulador de la Registraduría Nacional del Estado Civil).
+  No es parte del eudi-srv-pid-issuer original de la Comisión Europea.
+-->
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/main.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/registraduria-theme.css}">
+    <link rel="icon" type="image/png" th:href="@{/public/img/registraduria/escudo-favicon.png}">
+    <title>Registraduría (emulador) :: Solicitar PID digital</title>
+</head>
+<body>
+<div class="rne-header">
+    <img th:src="@{/public/img/registraduria/logo-blanco.svg}" alt="Escudo Registraduría Nacional del Estado Civil">
+    <div>
+        <h1>Registraduría (emulador)</h1>
+        <p class="rne-subtitle mb-0">Solicitud de cédula de ciudadanía digital (PID)</p>
+    </div>
+</div>
+<main class="container p-4" style="max-width: 480px;">
+    <h2 class="mb-3">Pide tu PID digital</h2>
+    <p class="text-body-secondary">
+        Escribe tu cédula, tus nombres, apellidos y fecha de nacimiento como aparecen en ella, y tómate una selfie: comparamos los datos y la selfie con los de la Registraduría.
+        Si coincide, te generamos un código QR para que lo escanees con tu wallet de identidad digital y recibas tu
+        cédula en formato digital (PID). La selfie no se guarda.
+    </p>
+
+    <div class="alert alert-danger" th:if="${error}" th:text="${error}">Error</div>
+
+    <form method="post" enctype="multipart/form-data" th:action="@{/registraduria/solicitar}">
+        <div class="mb-3">
+            <label for="documentNumber" class="form-label">Número de cédula</label>
+            <input type="text" class="form-control form-control-lg" id="documentNumber" name="documentNumber"
+                   inputmode="numeric" autofocus required>
+        </div>
+        <div class="row g-2 mb-3">
+            <div class="col-12 col-sm-6">
+                <label for="firstNames" class="form-label">Nombres</label>
+                <input type="text" class="form-control" id="firstNames" name="firstNames" autocomplete="off" required>
+            </div>
+            <div class="col-12 col-sm-6">
+                <label for="lastNames" class="form-label">Apellidos</label>
+                <input type="text" class="form-control" id="lastNames" name="lastNames" autocomplete="off" required>
+            </div>
+            <div class="col-12">
+                <label for="birthDate" class="form-label">Fecha de nacimiento</label>
+                <input type="date" class="form-control" id="birthDate" name="birthDate" required>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Selfie</label>
+            <video id="selfie-video" class="w-100 rounded border" autoplay playsinline muted hidden></video>
+            <img id="selfie-preview" class="w-100 rounded border" alt="Tu selfie" hidden>
+            <canvas id="selfie-canvas" hidden></canvas>
+            <div class="d-flex gap-2 mt-2 flex-wrap">
+                <button type="button" class="btn btn-outline-secondary" id="selfie-start">Abrir cámara</button>
+                <button type="button" class="btn btn-outline-primary" id="selfie-shot" hidden>Tomar selfie</button>
+                <button type="button" class="btn btn-outline-secondary" id="selfie-retry" hidden>Repetir</button>
+            </div>
+            <input type="file" class="form-control mt-2" id="selfie-file" name="selfie" accept="image/*" capture="user" required>
+            <div class="form-text">Si tu navegador no abre la cámara, elige una foto de tu rostro de frente y con buena luz.</div>
+        </div>
+        <div class="mb-4" role="group" aria-labelledby="formatos-titulo">
+            <input type="hidden" name="formatsChosen" value="1">
+            <div class="form-label" id="formatos-titulo">
+                Formato de tu cédula digital <span class="text-danger" aria-hidden="true">*</span>
+                <span class="text-body-secondary">(elige uno o los dos)</span>
+            </div>
+            <div class="rne-formatos">
+                <label class="rne-formato" for="fmt-mdoc">
+                    <input type="checkbox" id="fmt-mdoc" name="formats" value="mdoc" th:checked="${mdoc}">
+                    <span class="rne-formato-texto"><strong>mDoc</strong><small>Documento móvil ISO 18013-5</small></span>
+                </label>
+                <label class="rne-formato" for="fmt-sdjwt">
+                    <input type="checkbox" id="fmt-sdjwt" name="formats" value="sdjwt" th:checked="${sdjwt}">
+                    <span class="rne-formato-texto"><strong>SD-JWT VC</strong><small>Divulgación selectiva de datos</small></span>
+                </label>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg w-100">Generar código QR</button>
+    </form>
+
+    <p class="text-body-secondary mt-4" style="font-size: 0.85rem;">
+        Datos de prueba. Esto es un emulador — no envíes tu cédula real si no estás haciendo pruebas autorizadas.
+    </p>
+</main>
+<script type="application/javascript" th:src="@{/public/js/registraduria-solicitar.js}"></script>
+</body>
+</html>

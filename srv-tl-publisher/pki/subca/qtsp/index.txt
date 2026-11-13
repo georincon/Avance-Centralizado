@@ -1,0 +1,8 @@
+V	290125132257Z		1000	unknown	/CN=Estampado cronologico (simulador)/O=Andes SCD (simulador)/C=CO
+R	290125132315Z	261023141618Z,superseded	1001	unknown	/CN=Maria Fernanda Prueba Gomez/2.5.4.5=CC1000000001/C=CO
+V	290125135517Z		1002	unknown	/CN=Probe Libreria Real/2.5.4.5=CC1000000002/C=CO
+R	290125140102Z	261023142658Z,superseded	1003	unknown	/CN=Geovani Gregorio Rincón Navas/2.5.4.5=CC91296304/C=CO
+V	290125141601Z		1004	unknown	/CN=Maria Fernanda Prueba Gomez/2.5.4.5=CC1000000003/C=CO
+V	290125141618Z		1005	unknown	/CN=Maria Fernanda Prueba Gomez/2.5.4.5=CC1000000001/C=CO
+V	290125142658Z		1006	unknown	/CN=Geovani Gregorio Rincón Navas/2.5.4.5=CC91296304/C=CO
+V	290207203638Z		1007	unknown	/CN=Geovani Gregorio Rincón Navas/2.5.4.5=CC91296304/C=CO

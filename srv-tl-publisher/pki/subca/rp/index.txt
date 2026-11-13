@@ -1,0 +1,18 @@
+V	290123224128Z		1000	unknown	/CN=Discoteca Neón/O=Discoteca Neón/C=CO
+V	290124133945Z		1001	unknown	/CN=Banco Cívica/O=Banco Cívica/C=CO
+V	290124151201Z		1002	unknown	/CN=Corporación Avance/O=Corporación Avance/C=CO
+V	290124160300Z		1003	unknown	/CN=EPS Salud Avance/O=EPS Salud Avance/C=CO
+V	290124191351Z		1004	unknown	/CN=Notaría Avance/O=Notaría Avance/C=CO
+V	290124210627Z		1005	unknown	/CN=Admisiones y Becas Avance/O=Admisiones y Becas Avance/C=CO
+V	290124211111Z		1006	unknown	/CN=Admisiones y Becas Avance/O=Admisiones y Becas Avance/C=CO
+V	290124211716Z		1007	unknown	/CN=Instituto Meridiano/O=Instituto Meridiano/C=CO
+V	290124212352Z		1008	unknown	/CN=Edificio Cumbre/O=Edificio Cumbre/C=CO
+V	290124213642Z		1009	unknown	/CN=Páramo Air/O=Páramo Air/C=CO
+V	290125153227Z		100A	unknown	/CN=Servicio de firma electrónica (simulador)/O=Servicio de firma electrónica (simulador)/C=CO
+V	290125203339Z		100B	unknown	/CN=Fondo de Pensiones Horizonte/O=Fondo de Pensiones Horizonte/C=CO
+V	290125211205Z		100C	unknown	/CN=Ministerio de Relaciones Exteriores de Cívica/O=Ministerio de Relaciones Exteriores de Cívica/C=CO
+V	290125211638Z		100D	unknown	/CN=Universidad Industrial de Santander/O=Universidad Industrial de Santander/C=CO
+V	290128125116Z		100E	unknown	/CN=Migración Cívica/O=Migración Cívica/C=CO
+V	290128224142Z		100F	unknown	/CN=Cumbre Gym/O=Cumbre Gym/C=CO
+V	290201194736Z		1010	unknown	/CN=Dirección de Tránsito de Bucaramanga/O=Dirección de Tránsito de Bucaramanga/C=CO
+V	290206211958Z		1011	unknown	/CN=Universidad Industrial de Santander/O=Universidad Industrial de Santander/C=CO

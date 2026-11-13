@@ -1,0 +1,72 @@
+
+Bases de datos (PostgreSQL, host 127.0.0.1)
+
+┌────────────────┬────────┬─────────────────┬─────────────────┬─────────────────┬─────────────────────────────────────────────────┐
+│      Base      │ Puerto │  Base de datos  │     Usuario     │   Contraseña    │                    Qué tiene                    │
+├────────────────┼────────┼─────────────────┼─────────────────┼─────────────────┼─────────────────────────────────────────────────┤
+│ Auditoría      │ 5450   │ auditoria       │ auditoria       │ auditoria       │ Las tablas nuevas de emisores y verificadores,  │
+│                │        │                 │                 │                 │ en el esquema auditoria                         │
+├────────────────┼────────┼─────────────────┼─────────────────┼─────────────────┼─────────────────────────────────────────────────┤
+│ Registraduría  │ 5441   │ pid_issuer      │ pid_issuer      │ pid_issuer      │ issued_credential, cedulas                      │
+├────────────────┼────────┼─────────────────┼─────────────────┼─────────────────┼─────────────────────────────────────────────────┤
+│ Tránsito       │ 5437   │ transito_issuer │ transito_issuer │ transito_issuer │ issued_credential, licencias                    │
+├────────────────┼────────┼─────────────────┼─────────────────┼─────────────────┼─────────────────────────────────────────────────┤
+│ UIS (emisor)   │ 5434   │ uis_issuer      │ uis_issuer      │ uis_issuer      │ academic_credential                             │
+├────────────────┼────────┼─────────────────┼─────────────────┼─────────────────┼─────────────────────────────────────────────────┤
+│ UIS            │ 5433   │ uis_academic    │ uis_academic    │ uis_academic    │ estudiantes y programas                         │
+│ (académica)    │        │                 │                 │                 │                                                 │
+├────────────────┼────────┼─────────────────┼─────────────────┼─────────────────┼─────────────────────────────────────────────────┤
+│ Notaría EUDI   │ 5442   │ notaria_issuer  │ notaria_issuer  │ notaria_issuer  │ notaria_orden_emision, notaria_orden_evento     │
+├────────────────┼────────┼─────────────────┼─────────────────┼─────────────────┼─────────────────────────────────────────────────┤
+│ Onboarding     │ 5436   │ onboarding      │ onboarding      │ onboarding      │ sesiones y capturas                             │
+├────────────────┼────────┼─────────────────┼─────────────────┼─────────────────┼─────────────────────────────────────────────────┤
+│ Wallet         │ 5435   │ spartans        │ spartans        │ spartans        │ challenges                                      │
+│ Provider       │        │                 │                 │                 │                                                 │
+└────────────────┴────────┴─────────────────┴─────────────────┴─────────────────┴─────────────────────────────────────────────────┘
+
+Trusted List Publisher (MySQL): puerto 3307, base trusted_lists, usuario tlp_user, contraseña 59GeHBL45zxlEIdmgkHdzsM9Fa7ueCdK.
+
+Dónde mirar en DBeaver (esquema auditoria):
+- actividad_servicio: cada hecho de emisores y verificadores.
+- servicio: el catálogo de emisores y verificadores.
+- v_actividad_servicio: la vista ya unida, la más cómoda de consultar.
+- actividad_servicio_elemento: los nombres de datos solicitados, recibidos o emitidos.
+- tipo_evento_servicio: el catálogo de eventos.
+- actividad: lo de las wallets.
+
+Hay un usuario de solo lectura, auditoria_consulta, pero no encontré su contraseña documentada y no la puedo leer. Usa auditoria por ahora. Si prefieres el de solo lectura, le fijo una contraseña conocida; es un cambio pequeño, pero lo hago solo si me lo pides.
+
+Los portales Node no tienen base de datos: su historial es el archivo verifiers/<portal>/datos/historial.jsonl, que se consulta en la página de cada portal (abajo).
+
+Páginas de auditoría de los emisores
+
+Base: https://civica-desarrollo.avance.org.co
+
+┌───────────────┬──────────────────────────────────────────────────┬──────────────────────────────────────────┐
+│    Emisor     │                      Enlace                      │                  Acceso                  │
+├───────────────┼──────────────────────────────────────────────────┼──────────────────────────────────────────┤
+│ Registraduría │ /pid-registraduria/registraduria/admin/historial │ login admin / RegAdmin-2026              │
+├───────────────┼──────────────────────────────────────────────────┼──────────────────────────────────────────┤
+│ Tránsito      │ /pid-transito/transito/admin/historial           │ login admin / TraAdmin-2026              │
+├───────────────┼──────────────────────────────────────────────────┼──────────────────────────────────────────┤
+│ UIS           │ /uis-issuer/uis/admin/historial                  │ login admin / UisAdmin-2026              │
+├───────────────┼──────────────────────────────────────────────────┼──────────────────────────────────────────┤
+│ Notaría EUDI  │ /notaria-issuer/api/historial/                   │ sin login, solo por IP de administración │
+└───────────────┴──────────────────────────────────────────────────┴──────────────────────────────────────────┘
+
+Para Registraduría, Tránsito y UIS, entra primero al login de su panel (…/admin/login) y luego abre el enlace de historial.
+
+Páginas de auditoría de los portales
+
+/<portal>/auditoria/, sin login y solo desde IPs de administración. Portales: banco, eps, gym, notaria, aerolinea, cancilleria (emiten y verifican), y discoteca, contratacion, acceso, beca, migracion, pensiones (solo verifican).
+
+Centro de auditoría general
+
+/srv-auditoria/, con la clave IntAdmin-2026. Los menús son Actividad Wallet, Actividad Emisores y Actividad Verificadores.
+
+Las contraseñas de los emisores y la de MySQL te las acabo de mostrar en texto plano; si este chat se comparte, conviene rotarlas.
+
+
+
+
+

@@ -1,0 +1,145 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Revocation API",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "servers": [
+    {
+      "url": "https://issuer.eudiw.dev"
+    }
+  ],
+  "paths": {
+    "/token_status_list/get": {
+      "get": {
+        "summary": "Retrieve Token Status",
+        "operationId": "getTokenStatusList",
+        "description": "Retrieves the status of a token from the revocation list. WARNING: This endpoint is for debug and testing purposes only. Only one of 'id' or 'idx' must be provided.",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "id",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifier of the token. Use 'id' for the identifier list."
+          },
+          {
+            "in": "query",
+            "name": "idx",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Index of the status list. Use 'idx' for the status list."
+          },
+          {
+            "in": "query",
+            "name": "uri",
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "URL-encoded URI parameter.",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response containing token status information.",
+            "content": {
+              "text/plain": {}
+            }
+          }
+        }
+      }
+    },
+    "/token_status_list/set": {
+      "post": {
+        "summary": "Set Token Status",
+        "operationId": "setTokenStatus",
+        "description": "Sets or updates the status of a token in the revocation list. Only one of 'id' or 'idx' must be provided.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "API key for authentication."
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "oneOf": [
+                  { "required": ["id"] },
+                  { "required": ["idx"] }
+                ],
+                "properties": {
+                  "id": { "type": "string", "description": "Identifier of the token. Use 'id' for the identifier list." },
+                  "idx": { "type": "integer", "description": "Index of the status list. Use 'idx' for the status list." },
+                  "status": { "type": "integer", "description": "The new status value for the token." },
+                  "uri": { "type": "string", "description": "URI associated with the token status." }
+                },
+                "required": ["status", "uri"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response indicating the token status has been updated.",
+            "content": {
+              "text/plain": {}
+            }
+          }
+        }
+      }
+    },
+    "/token_status_list/take": {
+      "post": {
+        "summary": "Generate status structure",
+        "operationId": "takeTokenStatus",
+        "description": "Generates a new status structure to be included in a credential as well as a new entry in the attestation status list.",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-API-Key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "API key for authentication."
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "country": { "type": "string", "description": "Country code associated with the document." },
+                  "doctype": { "type": "string", "description": "Document type (e.g., eu.europa.ec.eudi.pid.1, org.iso.18013.5.1.mDL)." },
+                  "expiry_date": { "type": "string", "description": "Expiration date of the document in YYYY-MM-DD format." }
+                },
+                "required": ["country", "doctype", "expiry_date"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response containing revocation status information.",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    }
+  }
+}

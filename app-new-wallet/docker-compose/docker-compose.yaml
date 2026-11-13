@@ -1,0 +1,31 @@
+# New Wallet — servicios propios de la app (solo los que NO son compartidos con el resto del ecosistema).
+#
+# Servicios del ecosistema (NO se duplican aqui, cada uno en su proyecto):
+#   - ../onboarding                  Onboarding de usuario (identity proofing)             (:n/a, via proxy)
+#   - ../eudi-srv-wallet-provider     Wallet Provider unico del ecosistema (Spartans)       (:n/a, via proxy)
+#   - ../eudi-srv-issuer-pid-registraduria   Issuer PID Registraduria + Keycloak                  (:n/a, via proxy)
+#
+# Todo se accede por el proxy unico nw-nginx con el dominio civica-desarrollo.avance.org.co.
+# Este compose solo deja la red compartida 'avance-eudi' disponible para que el proxy (y el
+# resto del ecosistema) alcancen los servicios que aqui se declaren.
+name: newwallet
+
+networks:
+  newwallet:
+    name: newwallet_default
+    external: true
+  avance-eudi:
+    name: avance-eudi
+    external: true
+
+services:
+  # Ancla minima: mantiene la red compartida creada y el proyecto 'newwallet' con estado.
+  # La app Android (new-wallet/app) no es un servicio Docker.
+  network-anchor:
+    image: alpine:3.20
+    container_name: newwallet-anchor
+    command: ["sh", "-c", "while true; do sleep 3600; done"]
+    restart: unless-stopped
+    networks:
+      - newwallet
+      - avance-eudi

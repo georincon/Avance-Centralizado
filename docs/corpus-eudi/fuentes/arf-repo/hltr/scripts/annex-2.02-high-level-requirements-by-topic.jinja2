@@ -1,0 +1,77 @@
+---
+title: "European Digital Identity Wallet"
+subtitle: "Architecture and Reference Framework"
+...
+
+# ANNEX 2.02 - High-Level Requirements by topic <!-- omit from toc -->
+
+## A.2 High-level requirements by topic
+
+### A.2.1 Introduction
+
+#### A.2.1.1 Overview
+
+This annex to the [ARF main document](../../main/index.md)
+includes high-level requirements (HLRs) related to the EUDI Wallet ecosystem.
+The requirements define the responsible actor that should implement each
+requirement. There are no requirements imposed on the Users.
+
+#### A.2.1.2 Key words
+
+This Annex uses the capitalised key words 'SHALL', 'SHOULD' and 'MAY' as
+specified in [RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119), i.e., to
+indicate requirements, recommendations and options specified in this annex.
+
+In addition, 'must' (non-capitalised) is used to indicate an external
+constraint, i.e., a requirement that is not mandated by this document,
+but, for instance, by an external standard or specification. The word
+'can' indicates a capability, whereas other words, such as 'will', and
+'is' or 'are', are intended as statements of fact.
+
+### A.2.2 Structure and order of presentation of the HLRs
+
+Topics presented in [Section A.2.3](#a23-high-level-requirements) are ordered by
+a Topic number.
+
+Each Topic includes a short description, followed by the High-Level
+Requirements (HLRs), identified by a unique identifier. The identifier
+includes a prefix which signifies the context of the HLRs (e.g. ISSU
+for issuance), an underscore and a numerator, e.g. ISSU_10. Each requirement
+is anchorable: link directly to it with `#<identifier>`, e.g. `#ISSU_10`.
+
+### A.2.3 High-Level Requirements
+{% for topic in requirements %}
+
+[](){ #topic-{{ topic }} }
+
+#### A.2.3.{{ loop.index }} {{requirements[topic]['topic']}}
+{% for subsection in requirements[topic] %}
+{% if subsection != "topic" %}
+{% if subsection != "" %}
+
+##### {{ subsection }} <!-- omit from toc -->
+{% endif %}
+
+{% for req in requirements[topic][subsection] %}
+{% set spec = req.Requirement_specification %}
+{% if 'SHALL' in spec %}{% set kw = 'SHALL' %}{% set kwclass = 'kw-shall' %}
+{% elif 'SHOULD' in spec %}{% set kw = 'SHOULD' %}{% set kwclass = 'kw-should' %}
+{% elif 'MAY' in spec %}{% set kw = 'MAY' %}{% set kwclass = 'kw-may' %}
+{% else %}{% set kw = '' %}{% set kwclass = '' %}{% endif %}
+<div class="eudi-hlr" id="{{ req.Index }}" markdown>
+<div class="eudi-hlr__id">{{ req.Index }}{% if kw %}<span class="{{ kwclass }}">{{ kw }}</span>{% endif %}</div>
+<div class="eudi-hlr__body" markdown>
+
+{{ spec }}
+{% if req.Notes %}
+
+*Note: {{ req.Notes }}*
+{% endif %}
+
+</div>
+</div>
+
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% endfor %}

@@ -1,0 +1,6 @@
+opencv-python-headless>=4.10
+numpy
+fastapi
+uvicorn
+python-multipart
+rapidocr-onnxruntime

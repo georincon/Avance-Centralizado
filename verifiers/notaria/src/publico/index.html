@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{NOTARIA}}</title>
+<link rel="icon" href="{{BASE}}/publico/logo.png">
+<style>
+  /* Nunito Sans, alojada aquí: la página no llama a Google Fonts. */
+  @font-face { font-family: 'Nunito Sans'; font-weight: 400 800; font-display: swap; src: url('{{BASE}}/publico/fuentes/nunito-sans-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: 'Nunito Sans'; font-weight: 400 800; font-display: swap; src: url('{{BASE}}/publico/fuentes/nunito-sans-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+  :root {
+    /* Identidad corporativa SIGNO! / Corporación Avance: índigo, azul oscuro, azul de enlace y dorado. */
+    --tinta: #1b2540; --suave: #566078; --borde: #cdd6ea; --fondo: #eeeeee; --papel: #ffffff;
+    --vino: #2d447c; --vino-osc: #098dde; --oro: #ecc366; --azul-medio: #374d95; --noche: #1d3073; --enlace: #098dde;
+    --ok: #1e7a4c; --ok-suave: #e8f5ee; --mal: #b42318; --mal-suave: #fef3f2;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Nunito Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--tinta); background: var(--fondo); }
+  header { background: #fff; position: relative; box-shadow: 0 1px 0 rgba(0,0,0,.08); }
+  .barra { max-width: 1120px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .marca { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+  .marca img { width: auto; height: 58px; }
+  .marca strong { font-size: 1.2rem; display: block; color: var(--vino); font-weight: 800; letter-spacing: .005em; line-height: 1.15; }
+  .marca small { color: var(--suave); font-size: .78rem; }
+  nav.menu { display: flex; gap: 22px; margin-left: auto; flex-wrap: wrap; }
+  nav.menu a { color: var(--enlace); text-decoration: none; font-weight: 600; font-size: .95rem; padding: 6px 0; border-bottom: 2px solid transparent; }
+  nav.menu a:hover, nav.menu a.activo { color: var(--vino); border-bottom-color: var(--oro); }
+  .persona { display: flex; align-items: center; gap: 10px; font-size: .88rem; color: var(--tinta); }
+  .persona img, .persona .ini { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: var(--oro); color: var(--noche); display: grid; place-items: center; font-weight: 800; }
+  main { max-width: 1120px; margin: 0 auto; padding: 28px 20px 48px; }
+  h1 { font-weight: 800; color: var(--vino); font-size: 1.9rem; margin: 0 0 10px; }
+  h2 { font-weight: 700; color: var(--vino); font-size: 1.35rem; margin: 0 0 12px; }
+  p.lead { color: var(--suave); font-size: 1.05rem; line-height: 1.55; margin: 0 0 22px; max-width: 680px; }
+  .seccion { font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--azul-medio); font-weight: 700; margin: 0 0 12px; }
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+  .tarjeta { background: var(--papel); border: 1px solid var(--borde); border-radius: 6px; padding: 18px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 1px 3px rgba(0,51,99,.06); }
+  .tarjeta h3 { margin: 0; font-weight: 700; color: var(--vino); font-size: 1.1rem; }
+  .tarjeta p { margin: 0; color: var(--suave); font-size: .93rem; line-height: 1.5; flex: 1; }
+  .tarjeta .franja { height: 6px; border-radius: 0; margin: -18px -18px 6px; }
+  button, .boton { font: inherit; border: 0; border-radius: 999px; padding: 11px 24px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .primario { background: var(--vino); color: #fff; } .primario:hover { background: var(--vino-osc); }
+  .secundario { background: #fff; color: var(--vino); border: 2px solid var(--vino); } .secundario:hover { background: var(--vino); color: #fff; }
+  .claro { background: #fff; color: var(--vino); border: 1px solid var(--vino); padding: 7px 12px; }
+  .peligro { background: #fff; color: var(--mal); border: 1px solid #f1b8b2; }
+  button:disabled { opacity: .55; cursor: default; }
+  .enlaces { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+  .volver { background: none; color: var(--vino); padding: 0; margin-bottom: 14px; }
+  form { display: flex; flex-direction: column; gap: 14px; background: var(--papel); border: 1px solid var(--borde); border-radius: 14px; padding: 20px; }
+  label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: .93rem; }
+  label small { font-weight: 400; color: var(--suave); }
+  input, textarea, select { font: inherit; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 10px; background: #fff; color: var(--tinta); width: 100%; }
+  textarea { min-height: 130px; resize: vertical; }
+  .otorgante { display: flex; gap: 12px; align-items: center; background: var(--fondo); border-radius: 10px; padding: 12px; font-size: .92rem; }
+  .otorgante img { width: 48px; height: 60px; object-fit: cover; border-radius: 6px; }
+  .aviso { border-radius: 10px; padding: 12px 14px; font-size: .93rem; line-height: 1.45; }
+  .aviso.error { background: var(--mal-suave); color: var(--mal); border: 1px solid #fecdca; }
+  .aviso.ok { background: var(--ok-suave); color: var(--ok); border: 1px solid #b7e1c8; }
+  .aviso.info { background: #fff8e8; color: #7a5a14; border: 1px solid #ecd9a8; }
+  .entrega { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: center; background: var(--papel); border: 1px solid var(--borde); border-radius: 14px; padding: 22px; }
+  .entrega img.qr { width: 240px; height: 240px; border: 1px solid var(--borde); border-radius: 12px; }
+  .pin { font-family: ui-monospace, monospace; font-size: 2.4rem; letter-spacing: 10px; font-weight: 700; color: var(--vino); }
+  table { width: 100%; border-collapse: collapse; font-size: .93rem; }
+  th, td { text-align: left; padding: 9px 6px; border-bottom: 1px solid var(--borde); vertical-align: top; }
+  th { color: var(--suave); font-weight: 600; width: 38%; }
+  td { word-break: break-word; }
+  .etiqueta { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: .78rem; font-weight: 700; }
+  .etiqueta.vigente { background: var(--ok-suave); color: var(--ok); } .etiqueta.anulado { background: var(--mal-suave); color: var(--mal); }
+  .lista { display: flex; flex-direction: column; gap: 10px; }
+  .fila { background: var(--papel); border: 1px solid var(--borde); border-radius: 12px; padding: 14px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .fila .que { flex: 1; min-width: 200px; }
+  .fila .que strong { display: block; }
+  .fila .que span { color: var(--suave); font-size: .86rem; }
+  .sello { display: flex; gap: 14px; align-items: center; padding: 16px; border-radius: 12px; margin-bottom: 14px; }
+  .sello .icono { font-size: 2rem; }
+  .velo { position: fixed; inset: 0; background: rgba(0,32,66,.6); display: none; align-items: center; justify-content: center; padding: 16px; }
+  .velo.abierto { display: flex; }
+  .ventana { background: #fff; border-radius: 16px; width: 100%; max-width: 420px; padding: 24px; text-align: center; position: relative; }
+  .ventana h3 { font-weight: 700; color: var(--vino); margin: 0 0 6px; }
+  .ventana p { color: var(--suave); margin: 0 0 14px; font-size: .93rem; }
+  .ventana .qr { width: 232px; height: 232px; margin: 0 auto 12px; display: grid; place-items: center; border: 1px solid var(--borde); border-radius: 12px; }
+  .ventana .qr img { width: 220px; height: 220px; }
+  .cerrar { position: absolute; top: 10px; right: 10px; background: none; color: var(--suave); font-size: 1.2rem; padding: 6px 10px; }
+  .estado { display: flex; gap: 8px; align-items: center; justify-content: center; font-size: .9rem; color: var(--suave); min-height: 22px; }
+  .estado.error { color: var(--mal); }
+  .girando { width: 16px; height: 16px; border: 2px solid var(--borde); border-top-color: var(--vino); border-radius: 50%; animation: g .8s linear infinite; }
+  @keyframes g { to { transform: rotate(360deg); } }
+
+  /* --- Portada ------------------------------------------------------------------------------ */
+  #portada { background: var(--azul-medio); color: #fff; }
+  #portada:empty { display: none; }
+  #portada .interior { max-width: 1120px; margin: 0 auto; padding: 46px 20px 28px; display: grid; grid-template-columns: 1fr 1.05fr; gap: 24px; align-items: center; }
+  #portada h1 { color: #fff; font-size: 2.45rem; line-height: 1.22; margin: 0 0 22px; font-weight: 700; }
+  #portada p { margin: 0 0 26px; max-width: 470px; line-height: 1.7; font-size: 1.08rem; color: #eef1fb; }
+  #portada .acciones { display: flex; gap: 12px; flex-wrap: wrap; }
+  .boton-oro { background: var(--oro); color: var(--noche); } .boton-oro:hover { background: #f4d98f; }
+  .boton-borde { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,.75); } .boton-borde:hover { background: rgba(255,255,255,.14); }
+  #portada .ilustracion { width: 100%; max-width: 560px; justify-self: center; }
+  #portada .presencia { text-align: center; padding: 6px 20px 30px; font-size: .98rem; color: #eef1fb; }
+  #portada .presencia b { text-decoration: underline; }
+  /* --- Bloque gris: descubre ---------------------------------------------------------------- */
+  #descubre { background: var(--fondo); }
+  #descubre .interior { max-width: 1120px; margin: 0 auto; padding: 44px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center; }
+  #descubre h2 { font-size: 2rem; line-height: 1.25; margin: 0 0 14px; font-weight: 700; color: var(--tinta); }
+  #descubre p { margin: 0; font-size: 1.05rem; line-height: 1.7; color: var(--tinta); max-width: 470px; }
+  #descubre .nube { position: relative; height: 350px; }
+  #descubre .nube svg { position: absolute; left: 50%; top: 50%; width: 300px; transform: translate(-50%, -50%); }
+  .pildora { position: absolute; background: var(--noche); color: #fff; border-radius: 8px; padding: 6px 15px; font-size: .95rem; box-shadow: 0 2px 6px rgba(0,16,60,.25); white-space: nowrap; }
+  /* --- Tarjetas de trámites ------------------------------------------------------------------ */
+  .titulo-seccion { text-align: center; margin: 48px 0 26px; }
+  .titulo-seccion .marca-tit { font-size: 1.7rem; font-weight: 800; color: var(--vino); display: inline-flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .titulo-seccion .marca-tit img { width: 34px; height: 34px; border-radius: 8px; }
+  .titulo-seccion h2 { font-size: 1.75rem; margin: 0; font-weight: 700; color: var(--tinta); }
+  .servicios { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 20px; }
+  .servicio { background: #fff; border: 1.5px solid var(--vino); border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; transition: transform .18s, box-shadow .18s; }
+  .servicio:hover { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(45,68,124,.2); }
+  .servicio .cabeza { background: var(--vino); color: #fff; display: flex; gap: 12px; align-items: center; justify-content: center; padding: 22px 16px; min-height: 78px; text-align: center; }
+  .servicio .cabeza h3 { margin: 0; font-size: 1.02rem; font-weight: 700; color: #fff; }
+  .servicio .cabeza svg { flex: none; width: 28px; height: 28px; fill: none; stroke: var(--oro); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .servicio .cuerpo { padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+  .servicio p { margin: 0; color: var(--tinta); font-size: .94rem; line-height: 1.65; flex: 1; }
+  .servicio button { align-self: flex-start; }
+  /* --- Pasos -------------------------------------------------------------------------------- */
+  .pasos { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 22px; margin-bottom: 8px; }
+  .paso { text-align: center; padding: 0 8px; position: relative; }
+  .paso .numero { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 14px; display: grid; place-items: center; background: var(--azul-medio); color: #fff; font-weight: 800; font-size: 1.25rem; box-shadow: 0 0 0 6px #dfe5f6; position: relative; z-index: 1; }
+  .paso h4 { margin: 0 0 6px; color: var(--vino); font-size: 1rem; }
+  .paso p { margin: 0; color: var(--suave); font-size: .9rem; line-height: 1.5; }
+  @media (min-width: 900px) { .paso:not(:last-child)::after { content: ''; position: absolute; top: 28px; left: calc(50% + 40px); right: calc(-50% + 40px); border-top: 2px dashed #a6b4dc; } }
+  /* --- Llamada y pie ------------------------------------------------------------------------ */
+  .llamada { margin-top: 48px; border-radius: 18px; padding: 26px 28px; background: #fff; border: 1.5px solid var(--vino); display: flex; gap: 22px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  .llamada h3 { margin: 0 0 4px; color: var(--vino); font-size: 1.15rem; }
+  .llamada p { margin: 0; color: var(--suave); font-size: .95rem; max-width: 520px; line-height: 1.55; }
+  .llamada .acciones { display: flex; gap: 10px; flex-wrap: wrap; }
+  footer { background: var(--vino); color: #fff; margin-top: 56px; font-size: .98rem; }
+  footer .cols { max-width: 1120px; margin: 0 auto; padding: 44px 20px 30px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 30px; align-items: center; }
+  footer p { margin: 0 0 10px; line-height: 1.7; text-align: justify; }
+  footer .corp { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+  footer .corp .linea { display: flex; align-items: center; gap: 14px; }
+  footer .corp img { width: 54px; height: 56px; }
+  footer .corp .capsula { background: #fff; border-radius: 14px; padding: 8px 14px; display: inline-flex; }
+  footer .corp .capsula img.signo-pie { width: auto; height: 60px; }
+  footer .corp .gestion { font-size: 1.05rem; font-weight: 700; }
+  footer .corp strong { display: block; font-size: 1.5rem; font-weight: 800; font-style: italic; letter-spacing: .01em; line-height: 1.1; }
+  footer .corp span { font-size: .86rem; font-style: italic; opacity: .9; }
+  footer .aviso-legal { max-width: 1120px; margin: 0 auto; padding: 14px 20px 26px; border-top: 1px solid rgba(255,255,255,.2); font-size: .8rem; color: #c9d3ee; }
+  @media (max-width: 800px) { #portada .interior, #descubre .interior, footer .cols { grid-template-columns: 1fr; } #portada h1 { font-size: 1.9rem; } #descubre .nube { height: 360px; } nav.menu { margin-left: 0; width: 100%; gap: 16px; } }
+  .movil { display: none; }
+  @media (max-width: 680px) {
+    h1 { font-size: 1.6rem; }
+    .entrega { grid-template-columns: 1fr; text-align: center; }
+    .entrega img.qr { margin: 0 auto; }
+    .persona .nombre { display: none; }
+    th { width: 42%; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="barra">
+    <a class="marca" href="#inicio"><img class="signo" src="{{BASE}}/publico/signo.png" alt="SIGNO!"><span><strong>{{NOTARIA}}</strong><small>{{NOTARIO}} · Notario · Gestión notarial SIGNO!</small></span></a>
+    <nav class="menu" id="menu">
+      <a href="#inicio" data-r="inicio">Inicio</a>
+      <a href="#inicio" data-r="tramites">Trámites</a>
+      <a href="#mis-tramites" data-r="mis-tramites">Mis trámites</a>
+      <a href="#verificar" data-r="verificar">Verificar documento</a>
+      <a href="{{BASE}}/auditoria/" id="enlHistorial" hidden>Historial</a>
+    </nav>
+    <div class="persona" id="persona" hidden></div>
+  </div>
+</header>
+
+<section id="portada"></section>
+<section id="descubre"></section>
+<main id="vista"></main>
+<footer>
+  <div class="cols">
+    <div>
+      <p>Los trámites de esta notaría se hacen en línea y quedan en tu wallet: te identificas con tu documento digital, firmas el trámite y recibes el documento notarial listo para presentar.</p>
+      <p>Quien lo reciba puede comprobar en el momento que es auténtico y que sigue vigente. Solo se usan los datos que el trámite necesita.</p>
+    </div>
+    <div class="corp">
+      <div class="linea"><span class="capsula"><img class="signo-pie" src="{{BASE}}/publico/signo.png" alt="SIGNO!"></span><span class="gestion">Gestión notarial</span></div>
+      <div class="linea"><img src="{{BASE}}/publico/avance.png" alt=""><div><strong>CORPORACIÓN AVANCE</strong><span>Creatividad y tecnología al servicio del hombre…</span></div></div>
+    </div>
+  </div>
+  <div class="aviso-legal">Notaría de ejemplo para probar el ecosistema EUDI Wallet. No es una notaría real y sus documentos no tienen validez legal.</div>
+</footer>
+
+<div class="velo" id="velo" role="dialog" aria-modal="true">
+  <div class="ventana">
+    <button class="cerrar" id="cerrar" aria-label="Cerrar">✕</button>
+    <h3 id="v-titulo"></h3>
+    <p id="v-sub"></p>
+    <div class="qr escritorio" id="v-qr"><div class="girando"></div></div>
+    <a class="boton primario movil" id="v-abrir" href="#" style="width:100%;margin-bottom:12px">Abrir mi wallet</a>
+    <div class="estado" id="v-estado"></div>
+  </div>
+</div>
+
+<script>
+const BASE = '{{BASE}}'
+const MOVIL = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+const $ = (id) => document.getElementById(id)
+if (MOVIL) { document.querySelectorAll('.movil').forEach((e) => (e.style.display = 'flex')); document.querySelectorAll('.escritorio').forEach((e) => (e.style.display = 'none')) }
+
+// Construir nodos sin HTML: todo lo que viene de documentos o de la wallet va como texto.
+function el(etiqueta, props = {}, ...hijos) {
+  const n = document.createElement(etiqueta)
+  for (const [k, v] of Object.entries(props)) {
+    if (k === 'class') n.className = v
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v)
+    else if (k === 'style') n.style.cssText = v
+    else if (v !== undefined && v !== null && v !== false) n.setAttribute(k, v === true ? '' : v)
+  }
+  for (const h of hijos.flat()) if (h !== null && h !== undefined && h !== false) n.append(h instanceof Node ? h : String(h))
+  return n
+}
+const api = async (ruta, opciones = {}) => {
+  const r = await fetch(BASE + ruta, { ...opciones, headers: { 'content-type': 'application/json' }, body: opciones.body && JSON.stringify(opciones.body) })
+  const cuerpo = await r.json().catch(() => ({}))
+  if (!r.ok) throw new Error(cuerpo.error || cuerpo.motivo || `Error ${r.status}`)
+  return cuerpo
+}
+const fecha = (f) => (f ? new Date(f).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }) : '—')
+
+const TRAMITES = {
+  declaracion: {
+    nombre: 'Declaración extraproceso', color: '#003363',
+    descripcion: 'Declara bajo juramento un hecho (convivencia, dependencia económica, que no tienes ingresos…) para presentarlo ante una entidad.',
+  },
+  poder: {
+    nombre: 'Poder especial', color: '#0146a0',
+    descripcion: 'Autoriza a otra persona para que actúe en tu nombre en un asunto concreto. Puedes revocarlo cuando quieras.',
+  },
+  reconocimiento: {
+    nombre: 'Reconocimiento de documento', color: '#0c71c3',
+    descripcion: 'Reconoce ante notario la firma y el contenido de un documento privado (contrato, carta). Queda la huella del archivo, no el archivo.',
+  },
+  autenticacion: {
+    nombre: 'Autenticación de firma', color: '#4a3f9e',
+    descripcion: 'El notario da testimonio de que la firma de un documento es la tuya. No equivale a un reconocimiento ni le da más fuerza al documento.',
+  },
+  fe_vida: {
+    nombre: 'Fe de vida', color: '#1a6f8f',
+    descripcion: 'Constancia de que estás con vida, para presentarla ante un fondo de pensiones u otra entidad. Vale 30 días.',
+  },
+  copia_escritura: {
+    nombre: 'Constancia de copia de escritura', color: '#5a4a2a',
+    descripcion: 'Constancia de que tu copia coincide con la escritura del protocolo. Es una constancia, no la escritura. Queda la huella del archivo.',
+  },
+  registro_civil: {
+    nombre: 'Registro civil de nacimiento', color: '#2f6b4f',
+    descripcion: 'Inscribe el nacimiento de tu hijo o hija. El registro queda en tu wallet y sirve, por ejemplo, para afiliarlo como beneficiario en la EPS.',
+  },
+  convivencia: {
+    nombre: 'Declaración de convivencia', color: '#7a3b4f',
+    descripcion: 'Declaras bajo juramento que convives con tu compañero(a) permanente. La EPS la acepta para afiliarlo(a) como beneficiario(a). Vale 90 días.',
+  },
+  permiso_menor: {
+    nombre: 'Permiso de salida de menor', color: '#2d447c',
+    descripcion: 'Autoriza que un menor a tu cargo viaje fuera del país, con o sin acompañante. Vale hasta la fecha de regreso.',
+  },
+}
+
+let persona = null
+async function cargarPersona() {
+  try { persona = await api('/api/yo') } catch { persona = null }
+  const caja = $('persona')
+  caja.replaceChildren()
+  caja.hidden = !persona
+  if (!persona) return
+  const avatar = persona.foto ? el('img', { src: persona.foto, alt: '' }) : el('span', { class: 'ini' }, persona.nombres[0])
+  caja.append(el('span', { class: 'nombre' }, `${persona.nombres} ${persona.apellidos}`), avatar,
+    el('button', { class: 'claro', onclick: async () => { await api('/api/salir', { method: 'POST' }); persona = null; await cargarPersona(); location.hash = 'inicio' } }, 'Salir'))
+}
+
+// --- Ventana para la wallet (QR en el computador, botón en el teléfono) ----------------------
+let sondeo
+function cerrarVentana() { clearTimeout(sondeo); $('velo').classList.remove('abierto') }
+$('cerrar').onclick = cerrarVentana
+function estadoVentana(texto, tipo) {
+  $('v-estado').className = 'estado' + (tipo === 'error' ? ' error' : '')
+  $('v-estado').replaceChildren(...(tipo === 'esperando' ? [el('div', { class: 'girando' })] : []), texto)
+}
+/** Pide algo a la wallet por el verifier de la notaría. Resuelve con el resultado o null. */
+function pedirALaWallet({ proposito, tipo, titulo, sub, pendiente }) {
+  return new Promise(async (resolver) => {
+    $('v-titulo').textContent = titulo
+    $('v-sub').textContent = MOVIL ? `${sub} Abre tu wallet, revisa y acepta: volverás aquí.` : `${sub} Escanea el código con la wallet de tu teléfono.`
+    $('v-qr').replaceChildren(el('div', { class: 'girando' }))
+    estadoVentana('Preparando la solicitud…', 'esperando')
+    $('velo').classList.add('abierto')
+    try {
+      const s = await api('/api/solicitud', { method: 'POST', body: { proposito, tipo, dispositivo: MOVIL ? 'mismo' : 'otro' } })
+      $('v-qr').replaceChildren(el('img', { src: s.qr, alt: 'Código QR para tu wallet' }))
+      $('v-abrir').href = s.enlace
+      // En el teléfono la wallet vuelve a /notaria/volver: se recuerda a dónde seguir.
+      if (pendiente) sessionStorage.setItem('notaria:seguir', pendiente)
+      estadoVentana('Esperando tu wallet…', 'esperando')
+      if (MOVIL) return
+      const preguntar = async () => {
+        try {
+          const r = await api(`/api/solicitud/${s.id}`)
+          if (r.estado === 'listo') { cerrarVentana(); return resolver({ ...r, id: s.id }) }
+          if (r.estado === 'rechazada') return estadoVentana(r.motivo, 'error')
+        } catch { /* reintentar */ }
+        sondeo = setTimeout(preguntar, 2000)
+      }
+      preguntar()
+    } catch (e) {
+      estadoVentana(e.message, 'error')
+    }
+  })
+}
+async function identificarse(seguir) {
+  const r = await pedirALaWallet({ proposito: 'identificacion', titulo: 'Identifícate con tu wallet', sub: 'La notaría te pedirá tu documento de identidad (PID).', pendiente: seguir })
+  if (r) { await cargarPersona(); location.hash = seguir }
+}
+
+// --- Vistas ------------------------------------------------------------------------------------
+const vista = $('vista')
+const volver = () => el('button', { class: 'volver', onclick: () => (location.hash = 'inicio') }, '← Volver al inicio')
+
+// Ilustraciones SVG propias y constantes (sin datos de nadie): por eso se pueden poner con innerHTML.
+const svg = (marcado) => { const t = document.createElement('template'); t.innerHTML = marcado.trim(); return t.content.firstChild }
+const ICONOS = {
+  declaracion: '<path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4"/><path d="M10 12h6M10 16h6"/>',
+  poder: '<circle cx="8" cy="15" r="3.6"/><path d="M10.6 12.4 19 4M16 7l3 3M13.5 9.5l2 2"/>',
+  reconocimiento: '<path d="M12 3a4 4 0 0 0-2 7.5V13H6v3h12v-3h-4v-2.5A4 4 0 0 0 12 3z"/><path d="M5 20h14"/>',
+  fe_vida: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="M7 12h3l1.5-3 2 5 1.5-2H17"/>',
+  autenticacion: '<path d="M4 20h16"/><path d="M5 16c2-5 3 2 5-2s3-3 4-1"/><path d="M15 9l4-4 2 2-4 4-3 1z"/>',
+  copia_escritura: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/>',
+  registro_civil: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4-7 8-7s7 2 8 7"/>',
+  convivencia: '<path d="M12 21s-7-4.600-9-9.200C1.800 8.200 3.900 5 7 5c2 0 3.400 1.100 5 3 1.600-1.900 3-3 5-3 3.100 0 5.200 3.200 4 6.800C19 16.400 12 21 12 21z"/>',
+  permiso_menor: '<path d="M3 11l18-8-7 18-3-7z"/><path d="M11 14l10-11"/>',
+  verificar: '<path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+}
+const icono = (clave) => `<svg viewBox="0 0 24 24">${ICONOS[clave]}</svg>`
+// Personajes planos: cabeza, pelo, camisa azul, corbata. (x, escala, pelo, piel, con corbata)
+const persona_svg = (x, y, esc, pelo, extra = '') => `<g transform="translate(${x} ${y}) scale(${esc})">
+  <rect x="-26" y="196" width="22" height="62" rx="6" fill="#15161c"/><rect x="4" y="196" width="22" height="62" rx="6" fill="#15161c"/>
+  <rect x="-30" y="250" width="28" height="12" rx="6" fill="#15161c"/><rect x="2" y="250" width="28" height="12" rx="6" fill="#15161c"/>
+  <path d="M-48 205V112c0-26 20-40 48-40s48 14 48 40v93z" fill="#1f5fb3"/>
+  <path d="M-12 76 0 100l12-24z" fill="#fff"/>
+  <path d="M-6 98h12l5 66-11 12-11-12z" fill="#f4e04d"/>
+  <rect x="-9" y="52" width="18" height="26" fill="#e9c9a0"/>
+  <ellipse cx="0" cy="26" rx="34" ry="38" fill="#f1d8b3"/>
+  ${pelo}
+  <g><circle cx="-14" cy="24" r="8" fill="#fff"/><circle cx="14" cy="24" r="8" fill="#fff"/><circle cx="-13" cy="25" r="3.6" fill="#15161c"/><circle cx="15" cy="25" r="3.6" fill="#15161c"/>
+  <path d="M-8 46q8 7 16 0" fill="none" stroke="#8a5a3a" stroke-width="2.4" stroke-linecap="round"/></g>
+  ${extra}</g>`
+const PELO_OSCURO = '<path d="M-37 22C-40-10-18-24 0-24s40 14 37 46c-4-18-16-26-37-26S-33 4-37 22z" fill="#15161c"/>'
+const PELO_ROJO = '<path d="M-40 28C-46-14-20-30 2-30s42 16 38 58c0 30 6 52 14 70-26 6-44-6-52-30C-6 0-28-6-40 28z" fill="#9a1f2c"/><path d="M-37 20C-34-6-14-14 2-14s34 10 35 34c-12-16-24-20-39-20S-30 4-37 20z" fill="#9a1f2c"/>'
+const GAFAS = '<g fill="rgba(180,220,210,.55)" stroke="#5a5a5a" stroke-width="2.5"><circle cx="-14" cy="24" r="11"/><circle cx="14" cy="24" r="11"/></g><path d="M-3 24h6" stroke="#5a5a5a" stroke-width="2.5"/>'
+const LAZO = '<path d="M-22 -22l-16-10v22z M-22 -22l-6 16z" fill="#2ea3f2"/>'
+const TABLETA = '<g transform="translate(-34 130) rotate(-4)"><rect width="52" height="64" rx="4" fill="#dfe3ee" stroke="#9aa3b8" stroke-width="3"/></g>'
+const baldosa = (x, y, giro, trazo) => `<g transform="translate(${x} ${y}) rotate(${giro})"><rect x="-36" y="-36" width="72" height="72" rx="6" fill="#ecc366"/><g fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">${trazo}</g></g>`
+const PLATAFORMA = '<g fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="2"><path d="M150 392l70-34 70 34-70 34zM260 400l80-38 80 38-80 38z"/><path d="M110 380l-20 12M470 388l24 12" /></g><g fill="#fff"><circle cx="150" cy="392" r="5"/><circle cx="420" cy="400" r="5"/><circle cx="290" cy="392" r="4"/><circle cx="340" cy="362" r="4"/></g>'
+const HUELLA = '<path d="M-14 6c0-10 6-18 14-18s14 8 14 18M-8 8c0-6 3-11 8-11s8 5 8 11M-2 10c0-3 1-5 2-5s2 2 2 5M-20 2c0-16 9-26 20-26s20 10 20 26"/>'
+const DOC = '<path d="M-14 -20h20l10 10v30h-30z M6 -20v10h10 M-8 -4h18M-8 4h18M-8 12h12"/>'
+const FIRMA = '<circle cx="-4" cy="-8" r="8"/><path d="M-18 18c2-12 8-16 14-16s10 3 14 8M2 14l16-14 6 6-14 14-8 2z"/>'
+const HEROE = `<svg class="ilustracion" viewBox="0 0 560 460" role="img" aria-label="Equipo notarial digital con documentos y huella">
+  ${baldosa(120, 130, -22, HUELLA)}${baldosa(500, 120, 18, FIRMA)}${baldosa(110, 330, 14, DOC)}
+  ${PLATAFORMA}
+  ${persona_svg(215, 90, 1.4, PELO_OSCURO)}
+  ${persona_svg(335, 70, 1.5, PELO_OSCURO, TABLETA)}
+  ${persona_svg(440, 112, 1.34, PELO_ROJO, GAFAS + LAZO)}
+</svg>`
+const DUO = `<svg viewBox="0 0 300 300" aria-hidden="true"><rect x="40" y="165" width="240" height="120" rx="12" fill="#d8efc9" opacity=".7"/>
+  ${persona_svg(105, 22, .8, PELO_ROJO, GAFAS + LAZO)}${persona_svg(190, 8, .88, PELO_OSCURO)}
+  <g><rect x="62" y="205" width="92" height="56" rx="5" fill="#b9c0cf" stroke="#7c8499" stroke-width="3"/><rect x="170" y="200" width="100" height="62" rx="5" fill="#b9c0cf" stroke="#7c8499" stroke-width="3"/></g></svg>`
+const PILDORAS = [['Declaraciones', '2%', '3%'], ['Reconocimientos', '60%', '1%'], ['Poderes', '0%', '40%'], ['Fe de vida', '74%', '26%'],
+  ['Verificación', '72%', '52%'], ['Autenticación de firma', '0%', '86%'], ['Permisos de menor', '70%', '80%'], ['Wallet', '30%', '97%']]
+const PASOS = [
+  ['Identifícate', 'Presentas tu documento de identidad desde la wallet.'],
+  ['Haz el trámite', 'Llenas el formulario y lo firmas en línea.'],
+  ['Recíbelo', 'La notaría te entrega el documento en tu wallet con un PIN.'],
+  ['Preséntalo', 'Lo muestras a quien lo pida, y se verifica en el momento.'],
+]
+const portadaEl = $('portada')
+const descubreEl = $('descubre')
+
+function vistaInicio(error) {
+  const irTramites = () => document.getElementById('tramites')?.scrollIntoView({ behavior: 'smooth' })
+  portadaEl.replaceChildren(el('div', { class: 'interior' },
+    el('div', {},
+      el('h1', {}, 'Trámites notariales en línea con tu wallet'),
+      el('p', {}, 'Te identificas con tu documento digital, haces el trámite sin filas y recibes el documento firmado en tu teléfono. Cualquiera puede comprobar que es auténtico y sigue vigente.'),
+      el('div', { class: 'acciones' },
+        el('button', { class: 'boton-oro', onclick: irTramites }, 'Hacer un trámite'),
+        el('button', { class: 'boton-borde', onclick: () => (location.hash = 'verificar') }, 'Verificar un documento'))),
+    svg(HEROE)),
+    el('div', { class: 'presencia' }, 'Notaría de ejemplo del ecosistema ', el('b', {}, 'EUDI Wallet'), ' · trámites con ', el('b', {}, 'identidad digital verificable')))
+  descubreEl.replaceChildren(el('div', { class: 'interior' },
+    el('div', {}, el('h2', {}, 'Descubre una notaría moderna y eficiente'),
+      el('p', {}, 'Simplifica tus trámites con tecnología confiable: sin papeles, con identidad verificada y documentos que cualquiera puede comprobar en segundos. ', el('i', {}, 'Tu tiempo es lo que realmente importa.'))),
+    el('div', { class: 'nube' }, svg(DUO), ...PILDORAS.map(([t, x, y]) => el('span', { class: 'pildora', style: `left:${x};top:${y}` }, t)))))
+  const tarjetas = Object.entries(TRAMITES).map(([tipo, t]) => el('div', { class: 'servicio' },
+    el('div', { class: 'cabeza' }, svg(icono(tipo)), el('h3', {}, t.nombre)),
+    el('div', { class: 'cuerpo' }, el('p', {}, t.descripcion),
+      el('button', { class: 'primario', onclick: () => (persona ? (location.hash = `tramite/${tipo}`) : identificarse(`tramite/${tipo}`)) }, 'Hacer el trámite'))))
+  tarjetas.push(el('div', { class: 'servicio' },
+    el('div', { class: 'cabeza' }, svg(icono('verificar')), el('h3', {}, 'Verificar un documento')),
+    el('div', { class: 'cuerpo' }, el('p', {}, 'Comprueba que un documento de esta notaría es auténtico y sigue vigente. Pídeselo a la wallet de quien te lo muestra.'),
+      el('button', { class: 'secundario', onclick: () => (location.hash = 'verificar') }, 'Verificar'))))
+  vista.replaceChildren(
+    error ? el('div', { class: 'aviso error', style: 'margin:16px 0' }, error) : '',
+    el('div', { class: 'titulo-seccion', id: 'tramites' }, el('div', { class: 'marca-tit' }, el('img', { src: `${BASE}/publico/logo.png`, alt: '' }), 'Trámites'), el('h2', {}, 'Todo lo que puedes hacer con tu wallet')),
+    el('div', { class: 'servicios' }, ...tarjetas),
+    el('div', { class: 'titulo-seccion' }, el('h2', {}, 'Cómo funciona')),
+    el('div', { class: 'pasos' }, ...PASOS.map(([t, x], i) => el('div', { class: 'paso' }, el('div', { class: 'numero' }, i + 1), el('h4', {}, t), el('p', {}, x)))),
+    el('div', { class: 'llamada' },
+      el('div', {}, el('h3', {}, 'Ya tienes un documento notarial'), el('p', {}, 'Consulta tus trámites o comprueba la autenticidad de un documento que te hayan presentado.')),
+      el('div', { class: 'acciones' },
+        el('button', { class: 'primario', onclick: () => (persona ? (location.hash = 'mis-tramites') : identificarse('mis-tramites')) }, 'Mis trámites'))),
+  )
+}
+
+function campo(etiqueta, ayuda, control) { return el('label', {}, etiqueta, ayuda ? el('small', {}, ayuda) : '', control) }
+
+function vistaTramite(tipo) {
+  const t = TRAMITES[tipo]
+  if (!t) return vistaInicio()
+  if (!persona) return identificarse(`tramite/${tipo}`)
+  const error = el('div', { class: 'aviso error', hidden: true })
+  const otorgante = el('div', { class: 'otorgante' },
+    persona.foto ? el('img', { src: persona.foto, alt: '' }) : '',
+    el('div', {}, el('strong', {}, `${persona.nombres} ${persona.apellidos}`), el('br'), `Documento ${persona.documento} · verificado con tu wallet`))
+  const campos = {}
+  let cuerpo
+  const casilla = (texto) => { const c = el('input', { type: 'checkbox', required: true }); campos.confirmo = c; return el('label', { style: 'flex-direction:row;align-items:flex-start;gap:10px;font-weight:600' }, c, texto) }
+  const seleccion = (nombre, opciones) => el('select', { required: true }, el('option', { value: '' }, 'Elige…'), ...opciones.map((o) => el('option', { value: o }, o)))
+  const hoy = new Date().toISOString().slice(0, 10)
+  const conArchivo = tipo === 'reconocimiento' || tipo === 'autenticacion' || tipo === 'copia_escritura'
+  if (tipo === 'declaracion') {
+    cuerpo = [
+      campo('Con destino a', 'La entidad o persona ante quien la presentarás.', campos.finalidad = el('input', { required: true, maxlength: 120, placeholder: 'Caja de compensación, EPS, empleador…' })),
+      campo('Declaro bajo la gravedad del juramento que…', 'Escribe los hechos con claridad. Mentir en una declaración juramentada es un delito (falso testimonio).',
+        campos.declaracion = el('textarea', { required: true, minlength: 20, maxlength: 2000, placeholder: 'convivo en unión marital de hecho con … desde el año …' })),
+    ]
+  } else if (tipo === 'poder') {
+    cuerpo = [
+      campo('Nombre completo del apoderado', null, campos.apoderado_nombre = el('input', { required: true, maxlength: 120 })),
+      campo('Documento del apoderado', 'Solo números.', campos.apoderado_documento = el('input', { required: true, inputmode: 'numeric', pattern: '\\d{5,12}' })),
+      campo('Facultades', 'Qué puede hacer en tu nombre, de forma concreta.', campos.facultades = el('textarea', { required: true, minlength: 10, maxlength: 1500, placeholder: 'Para que en mi nombre y representación adelante ante … ' })),
+      campo('Vigente hasta (opcional)', 'Si no pones fecha, dura hasta que lo revoques.', campos.vigente_hasta = el('input', { type: 'date' })),
+    ]
+  } else if (tipo === 'fe_vida') {
+    cuerpo = [
+      campo('Con destino a (opcional)', 'Por ejemplo, tu fondo de pensiones. Si lo dejas vacío, sirve para quien lo requiera.', campos.entidad_destino = el('input', { maxlength: 120, placeholder: 'Colpensiones, fondo de pensiones, aseguradora…' })),
+      el('div', { class: 'aviso info' }, 'El notario deja constancia del medio con el que te identificaste: tu documento de identidad digital, presentado con tu wallet. La constancia vale 30 días.'),
+      casilla('Compadezco personalmente y declaro que estoy con vida.'),
+    ]
+  } else if (tipo === 'registro_civil') {
+    cuerpo = [
+      campo('Declaras como', null, campos.calidad = seleccion('calidad', ['Padre', 'Madre'])),
+      campo('Nombre completo del hijo o hija', null, campos.inscrito_nombre = el('input', { required: true, maxlength: 120 })),
+      el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:12px' },
+        campo('Fecha de nacimiento', null, campos.fecha_nacimiento = el('input', { type: 'date', required: true, max: hoy })),
+        campo('Sexo', null, campos.sexo = seleccion('sexo', ['Femenino', 'Masculino']))),
+      campo('Lugar de nacimiento', 'Municipio y departamento.', campos.lugar_nacimiento = el('input', { required: true, maxlength: 100, placeholder: 'Bucaramanga, Santander' })),
+      campo('Otro progenitor (opcional)', 'Nombre completo, si lo declaras.', campos.otro_progenitor = el('input', { maxlength: 120 })),
+      el('div', { class: 'aviso info' }, 'El serial del registro lo asigna el sistema al inscribirlo. Es una simulación: no reemplaza el registro civil de la Registraduría.'),
+      casilla('Declaro bajo la gravedad del juramento que estos datos son ciertos.'),
+    ]
+  } else if (tipo === 'convivencia') {
+    cuerpo = [
+      campo('Nombre completo de tu compañero(a)', null, campos.companero_nombre = el('input', { required: true, maxlength: 120 })),
+      campo('Documento del compañero(a)', 'Solo números.', campos.companero_documento = el('input', { required: true, inputmode: 'numeric', pattern: '\\d{5,12}' })),
+      campo('Conviven desde', null, campos.convivencia_desde = el('input', { type: 'date', required: true, max: hoy })),
+      el('div', { class: 'aviso info' }, 'Sirve, por ejemplo, para afiliar a tu compañero(a) como beneficiario(a) en tu EPS. La constancia vale 90 días.'),
+      casilla('Declaro bajo la gravedad del juramento que convivo con esta persona y que los datos son ciertos.'),
+    ]
+  } else if (tipo === 'permiso_menor') {
+    cuerpo = [
+      campo('En calidad de', null, campos.calidad = seleccion('calidad', ['Padre', 'Madre', 'Representante legal'])),
+      campo('Nombre completo del menor', null, campos.menor_nombre = el('input', { required: true, maxlength: 120 })),
+      el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:12px' },
+        campo('Documento del menor', null, campos.menor_tipo_documento = seleccion('tipo', ['Registro civil', 'Tarjeta de identidad'])),
+        campo('Número', 'Solo números.', campos.menor_documento = el('input', { required: true, inputmode: 'numeric', pattern: '\\d{5,12}' }))),
+      campo('Destino', 'País o ciudad.', campos.destino = el('input', { required: true, maxlength: 80, placeholder: 'España, Madrid' })),
+      el('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:12px' },
+        campo('Fecha de salida', null, campos.fecha_salida = el('input', { type: 'date', required: true, min: hoy })),
+        campo('Fecha de regreso', 'El permiso vale hasta ese día.', campos.fecha_regreso = el('input', { type: 'date', required: true, min: hoy }))),
+      campo('Viaja con (opcional)', 'Nombre completo de quien lo acompaña. Si viaja solo, déjalo vacío.', campos.acompanante = el('input', { maxlength: 120 })),
+      campo('Otro progenitor', null, campos.otro_progenitor = seleccion('otro', ['Autoriza el otro progenitor', 'Único titular de la patria potestad'])),
+      casilla('Declaro bajo la gravedad del juramento que estos datos son ciertos y que tengo facultad para otorgar este permiso.'),
+    ]
+  } else {
+    const info = el('small', {}, 'El archivo no sale de tu dispositivo: aquí se calcula su huella SHA-256 y solo eso queda en el documento notarial.')
+    const archivo = el('input', { type: 'file', required: true, accept: '.pdf,application/pdf,image/*,.doc,.docx' })
+    archivo.onchange = async () => {
+      const f = archivo.files[0]
+      if (!f) return
+      const huella = [...new Uint8Array(await crypto.subtle.digest('SHA-256', await f.arrayBuffer()))].map((b) => b.toString(16).padStart(2, '0')).join('')
+      campos.documento = { documento_nombre: f.name, documento_sha256: huella, documento_bytes: f.size }
+      info.textContent = `Huella SHA-256: ${huella}`
+    }
+    cuerpo = []
+    if (tipo === 'copia_escritura') cuerpo.push(
+      campo('Escritura pública n.º', 'Solo números.', campos.escritura_numero = el('input', { required: true, inputmode: 'numeric', pattern: '\\d{1,6}' })),
+      campo('Fecha de la escritura', null, campos.escritura_fecha = el('input', { type: 'date', required: true, max: hoy })),
+      campo('Notaría de origen', 'Donde se otorgó la escritura.', campos.notaria_origen = el('input', { required: true, maxlength: 120, placeholder: 'Notaría Tercera de Bucaramanga' })))
+    cuerpo.push(el('label', {}, tipo === 'autenticacion' ? 'Documento que firmas' : tipo === 'copia_escritura' ? 'Copia de la escritura' : 'Documento que reconoces', info, archivo))
+    if (tipo === 'copia_escritura') cuerpo.push(el('div', { class: 'aviso info' }, 'Es una constancia sobre tu copia, no la escritura pública: la escritura digital no está habilitada (Sentencia C-159 de 2021).'), casilla('Entiendo que esto es una constancia y no reemplaza la escritura.'))
+    if (tipo === 'autenticacion') cuerpo.push(el('div', { class: 'aviso info' }, 'Es una autenticación, no un reconocimiento: el notario da fe de que la firma es tuya, pero el documento no gana mayor fuerza (Decreto-Ley 960 de 1970, art. 77).'), casilla('Pongo mi firma en este documento en este acto.'))
+  }
+  const ROL = { declaracion: 'Declarante', poder: 'Poderdante', reconocimiento: 'Firmante', autenticacion: 'Firmante', fe_vida: 'Titular', copia_escritura: 'Solicitante', registro_civil: 'Declarante', convivencia: 'Declarante', permiso_menor: 'Otorgante' }
+  const enviar = el('button', { class: 'primario', type: 'submit' }, 'Firmar y otorgar')
+  const form = el('form', {
+    onsubmit: async (e) => {
+      e.preventDefault()
+      error.hidden = true
+      enviar.disabled = true
+      const valores = Object.fromEntries(Object.entries(campos).filter(([k]) => k !== 'documento').map(([k, c]) => [k, c.type === 'checkbox' ? c.checked : c.value]))
+      const datos = conArchivo ? { ...(campos.documento ?? {}), ...valores } : valores
+      try {
+        const r = await api('/api/tramites', { method: 'POST', body: { tipo, datos } })
+        vistaEntrega(r.tramite, r.oferta)
+      } catch (err) { error.textContent = err.message; error.hidden = false; enviar.disabled = false }
+    },
+  }, el('div', {}, el('div', { style: 'font-weight:600;margin-bottom:8px' }, ROL[tipo]), otorgante),
+  ...cuerpo, error,
+  el('div', { class: 'aviso info' }, 'Al firmar otorgas este acto ante el notario. Quedará en el protocolo de la notaría con un número y podrás recibirlo en tu wallet.'),
+  enviar)
+  vista.replaceChildren(volver(), el('h1', {}, t.nombre), el('p', { class: 'lead' }, t.descripcion), form)
+}
+
+function vistaEntrega(tramite, oferta) {
+  const t = TRAMITES[tramite.tipo]
+  vista.replaceChildren(
+    volver(),
+    el('div', { class: 'aviso ok', style: 'margin-bottom:16px' }, `${t.nombre} n.º ${tramite.numero} otorgado el ${fecha(tramite.fecha)}.`),
+    el('h1', {}, 'Recíbelo en tu wallet'),
+    el('div', { class: 'entrega' },
+      MOVIL ? el('a', { class: 'boton primario', href: oferta.enlace }, 'Recibir en mi wallet') : el('img', { class: 'qr', src: oferta.qr, alt: 'Código QR con la oferta del documento' }),
+      el('div', {},
+        el('p', { style: 'margin:0 0 6px' }, MOVIL ? 'Toca el botón y, cuando tu wallet lo pida, escribe este PIN:' : 'Escanea el código con tu wallet y, cuando lo pida, escribe este PIN:'),
+        el('div', { class: 'pin' }, oferta.pin),
+        el('p', { style: 'color:var(--suave);font-size:.88rem' }, `La oferta vale 15 minutos y sirve una vez. Si se vence, la pides de nuevo en «Mis trámites».`))),
+    el('div', { class: 'enlaces' }, el('button', { class: 'secundario', onclick: () => (location.hash = 'mis-tramites') }, 'Ir a mis trámites')),
+  )
+}
+
+async function vistaMisTramites() {
+  if (!persona) return identificarse('mis-tramites')
+  vista.replaceChildren(volver(), el('h1', {}, 'Mis trámites'), el('div', { class: 'estado' }, el('div', { class: 'girando' })))
+  const lista = await api('/api/tramites').catch(() => [])
+  const filas = lista.map((tr) => {
+    const t = TRAMITES[tr.tipo]
+    const acciones = el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' })
+    const enWallet = (tr.entregas ?? 0) > 0
+    const pedir = async (reexpedir) => {
+      if (reexpedir && !confirm('¿Reexpedir este documento? La copia que tienes en tu wallet dejará de valer y recibirás una nueva.')) return
+      try {
+        const r = await api(`/api/tramites/${tr.numero}/oferta`, { method: 'POST', body: reexpedir ? { reexpedir: true } : {} })
+        vistaEntrega(tr, r.oferta)
+      } catch (e) { alert(e.message) }
+    }
+    if (tr.estado === 'vigente') {
+      acciones.append(
+        enWallet
+          ? el('button', { class: 'secundario', title: 'Si perdiste el documento: la copia anterior se revoca', onclick: () => pedir(true) }, 'Reexpedir (lo perdí)')
+          : el('button', { class: 'secundario', onclick: () => pedir(false) }, 'Recibir en mi wallet'),
+        el('button', { class: 'peligro', onclick: (e) => confirmarAnulacion(tr, e.target) }, tr.tipo === 'poder' ? 'Revocar' : 'Anular'))
+    }
+    const d = tr.datos
+    const detalle = {
+      poder: `Apoderado: ${d.apoderado_nombre}`, declaracion: `Con destino a: ${d.finalidad}`,
+      reconocimiento: `Documento: ${d.documento_nombre}`, autenticacion: `Documento: ${d.documento_nombre}`,
+      fe_vida: `Con destino a: ${d.entidad_destino ?? 'quien lo requiera'}`,
+      copia_escritura: `Escritura n.º ${d.escritura_numero} · ${d.notaria_origen}`, convivencia: `Compañero(a): ${d.companero_nombre}`, registro_civil: `Hijo(a): ${d.inscrito_nombre} · nacido(a) el ${d.fecha_nacimiento}`,
+      permiso_menor: `Menor: ${d.menor_nombre} · destino ${d.destino} · del ${d.fecha_salida} al ${d.fecha_regreso}`,
+    }[tr.tipo] ?? ''
+    return el('div', { class: 'fila' },
+      el('div', { class: 'que' }, el('strong', {}, `${t.nombre} n.º ${tr.numero}`), el('span', {}, `${fecha(tr.fecha)} · ${detalle}`),
+        tr.anulado ? el('span', { style: 'display:block' }, `Anulado el ${fecha(tr.anulado.fecha)}: ${tr.anulado.motivo}`) : ''),
+      el('span', { class: `etiqueta ${tr.estado}` }, tr.estado !== 'vigente' ? 'Anulado' : enWallet ? 'En tu wallet' : 'Emitido, falta recibirlo'), acciones)
+  })
+  vista.replaceChildren(volver(), el('h1', {}, 'Mis trámites'),
+    filas.length ? el('div', { class: 'lista' }, filas) : el('p', { class: 'lead' }, 'Todavía no has hecho trámites en esta notaría.'))
+}
+
+function confirmarAnulacion(tr, boton) {
+  const motivo = el('input', { placeholder: 'Motivo (opcional)', maxlength: 300 })
+  const caja = el('div', { class: 'aviso error', style: 'width:100%;display:flex;flex-direction:column;gap:8px' },
+    `¿${tr.tipo === 'poder' ? 'Revocar el poder' : 'Anular el documento'} n.º ${tr.numero}? Dejará de valer en todas las wallets: quien lo verifique verá que fue anulado.`,
+    motivo, el('div', { style: 'display:flex;gap:8px' },
+      el('button', { class: 'peligro', onclick: async () => { await api(`/api/tramites/${tr.numero}/anular`, { method: 'POST', body: { motivo: motivo.value } }); vistaMisTramites() } }, 'Sí, anular'),
+      el('button', { class: 'secundario', onclick: () => caja.remove() }, 'Cancelar')))
+  boton.closest('.fila').append(caja)
+}
+
+function vistaVerificar(resultado) {
+  const tipo = el('select', {}, ...Object.entries(TRAMITES).map(([k, t]) => el('option', { value: k }, t.nombre)))
+  const salida = el('div')
+  const boton = el('button', { class: 'primario', onclick: async () => {
+    sessionStorage.setItem('notaria:verificando', tipo.value)
+    const r = await pedirALaWallet({ proposito: 'verificacion', tipo: tipo.value, titulo: 'Presenta el documento', sub: `Se le pedirá a la wallet el ${TRAMITES[tipo.value].nombre.toLowerCase()}.` })
+    if (r) mostrarResultado(r)
+  } }, 'Pedir el documento a la wallet')
+  function mostrarResultado(r) {
+    if (r.estado !== 'listo') { salida.replaceChildren(el('div', { class: 'aviso error' }, r.motivo)); return }
+    const d = r.documento
+    const comparar = el('div')
+    if (d.sha256) {
+      const archivo = el('input', { type: 'file' })
+      const res = el('div')
+      archivo.onchange = async () => {
+        const f = archivo.files[0]
+        const h = [...new Uint8Array(await crypto.subtle.digest('SHA-256', await f.arrayBuffer()))].map((b) => b.toString(16).padStart(2, '0')).join('')
+        res.replaceChildren(el('div', { class: `aviso ${h === d.sha256 ? 'ok' : 'error'}`, style: 'margin-top:8px' },
+          h === d.sha256 ? `«${f.name}» es exactamente el documento que se presentó ante notario.` : `«${f.name}» NO es el documento que se presentó ante notario: su huella es distinta.`))
+      }
+      comparar.append(el('label', { style: 'margin-top:14px' }, '¿Tienes el archivo? Compruébalo contra la huella', el('small', {}, 'Se calcula en tu navegador; el archivo no se envía.'), archivo), res)
+    }
+    salida.replaceChildren(
+      el('div', { class: 'sello', style: 'background:var(--ok-suave);color:var(--ok)' }, el('span', { class: 'icono' }, '✔'),
+        el('div', {}, el('strong', {}, `${d.nombre} auténtico y vigente`), el('br'),
+          `Firmado por ${d.de_esta_notaria ? 'esta notaría' : d.emisor}. Lo comprobó el verifier: firma, emisor en la lista de confianza, estado y que lo presentó su titular.`)),
+      el('table', {}, el('tbody', {}, ...Object.entries(d.datos).map(([k, v]) => el('tr', {}, el('th', {}, k), el('td', {}, String(v)))),
+        el('tr', {}, el('th', {}, 'Emitido'), el('td', {}, fecha(d.emitido))))),
+      comparar)
+  }
+  vista.replaceChildren(volver(), el('h1', {}, 'Verificar un documento notarial'),
+    el('p', { class: 'lead' }, 'Pídele a quien te muestra un documento de esta notaría que lo presente desde su wallet. Verás sus datos y si sigue vigente (un poder revocado o una declaración anulada no pasan).'),
+    el('form', { onsubmit: (e) => e.preventDefault() }, campo('Documento', null, tipo), boton), el('div', { style: 'margin-top:18px' }, salida))
+  if (resultado) {
+    tipo.value = sessionStorage.getItem('notaria:verificando') ?? tipo.value
+    api(`/api/solicitud/${resultado}`).then(mostrarResultado).catch((e) => mostrarResultado({ motivo: e.message }))
+  }
+}
+
+// --- Navegación por #ruta -------------------------------------------------------------------------
+async function ruta() {
+  cerrarVentana()
+  portadaEl.replaceChildren()
+  descubreEl.replaceChildren()
+  const h = decodeURIComponent(location.hash.slice(1))
+  const activo = h === 'mis-tramites' ? 'mis-tramites' : h.startsWith('verificado=') || h === 'verificar' ? 'verificar' : 'inicio'
+  document.querySelectorAll('#menu a').forEach((a) => a.classList.toggle('activo', a.dataset.r === activo))
+  if (h.startsWith('error=')) return vistaInicio(h.slice(6))
+  if (h === 'identificado') { // vuelta de la wallet en el teléfono tras identificarse
+    await cargarPersona()
+    location.replace(`#${sessionStorage.getItem('notaria:seguir') || 'inicio'}`)
+    return
+  }
+  if (h.startsWith('verificado=')) return vistaVerificar(h.slice(11))
+  if (h.startsWith('tramite/')) return vistaTramite(h.slice(8))
+  if (h === 'mis-tramites') return vistaMisTramites()
+  if (h === 'verificar') return vistaVerificar()
+  vistaInicio()
+}
+document.querySelector('#menu a[data-r="tramites"]').addEventListener('click', (e) => {
+  e.preventDefault()
+  if (location.hash.slice(1) && location.hash !== '#inicio') location.hash = 'inicio'
+  setTimeout(() => document.getElementById('tramites')?.scrollIntoView({ behavior: 'smooth' }), 50)
+})
+window.addEventListener('hashchange', ruta)
+cargarPersona().then(ruta)
+</script>
+<script>
+/* Enlace «Historial»: oculto salvo en redes de administración (el proxy responde 403 fuera de ellas). */
+try {
+  fetch('{{BASE}}/auditoria/api/ping', { cache: 'no-store' }).then((r) => {
+    if (r.status === 200 || r.status === 204) { const e = document.getElementById('enlHistorial'); if (e) { e.hidden = false; e.style.display = '' } }
+  }).catch(() => {})
+} catch (e) {}
+</script>
+</body>
+</html>

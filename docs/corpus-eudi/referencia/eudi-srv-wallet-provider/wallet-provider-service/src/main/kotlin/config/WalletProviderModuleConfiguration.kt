@@ -1,0 +1,242 @@
+/*
+ * Copyright (c) 2025-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.walletprovider.config
+
+import arrow.core.Ior
+import arrow.core.NonEmptyList
+import arrow.core.right
+import at.asitplus.attestation.IosAttestationConfiguration
+import at.asitplus.attestation.Makoto
+import at.asitplus.attestation.NoopAttestationService
+import at.asitplus.attestation.android.AndroidAttestationConfiguration
+import at.asitplus.signum.indispensable.pki.X509Certificate
+import eu.europa.ec.eudi.walletprovider.adapter.jose.SignJwt
+import eu.europa.ec.eudi.walletprovider.adapter.persistence.RunInTransaction
+import eu.europa.ec.eudi.walletprovider.adapter.persistence.challenge.ChallengeRepository
+import eu.europa.ec.eudi.walletprovider.adapter.persistence.forUpdateOption
+import eu.europa.ec.eudi.walletprovider.adapter.platformkeyattestation.ValidatePlatformKeyAttestation
+import eu.europa.ec.eudi.walletprovider.adapter.tokenstatuslist.AllocateStatusListToken
+import eu.europa.ec.eudi.walletprovider.adapter.tokenstatuslist.ApiKey
+import eu.europa.ec.eudi.walletprovider.config.IosKeyAttestationConfiguration.ApplicationConfiguration.IosEnvironment
+import eu.europa.ec.eudi.walletprovider.domain.JwsSigner
+import eu.europa.ec.eudi.walletprovider.domain.JwtType
+import eu.europa.ec.eudi.walletprovider.domain.specification.AttestationBasedClientAuthentication
+import eu.europa.ec.eudi.walletprovider.domain.specification.OpenId4VCI
+import eu.europa.ec.eudi.walletprovider.domain.time.Clock
+import eu.europa.ec.eudi.walletprovider.domain.time.toKotlinClock
+import eu.europa.ec.eudi.walletprovider.port.input.challenge.GenerateChallengeLive
+import eu.europa.ec.eudi.walletprovider.port.input.keyattestation.IssueKeyAttestation
+import eu.europa.ec.eudi.walletprovider.port.input.walletinstanceattestation.IssueWalletInstanceAttestation
+import eu.europa.ec.eudi.walletprovider.port.output.challenge.ValidateChallenge
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.http.*
+import io.ktor.http.CacheControl.*
+import io.ktor.http.content.*
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.application.*
+import io.ktor.server.plugins.cachingheaders.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.forwardedheaders.*
+import io.ktor.server.plugins.swagger.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import kotlinx.serialization.json.Json
+import org.jetbrains.exposed.v1.core.vendors.*
+import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
+import org.slf4j.LoggerFactory
+import at.asitplus.attestation.AttestationService as MakotoAttestationService
+
+private val logger = LoggerFactory.getLogger("WalletProviderModule")
+
+fun Application.configureWalletProviderModule(
+    config: WalletProviderConfiguration,
+    clock: Clock,
+    json: Json,
+    database: R2dbcDatabase,
+    signer: JwsSigner,
+    certificateChain: NonEmptyList<X509Certificate>,
+    httpClient: HttpClient,
+) {
+    logger.info("Configuring Wallet Provider Application using: {}", config)
+
+    configureServerPlugins(json, config.swaggerUi)
+
+    val challengeRepository = ChallengeRepository(database.forUpdateOption)
+    val runInTransaction = RunInTransaction(database)
+
+    val generateChallenge =
+        GenerateChallengeLive(
+            clock = clock,
+            length = config.challenge.length,
+            validity = config.challenge.validity,
+            runInTransaction = runInTransaction,
+            challengeRepository = challengeRepository,
+        )
+
+    val validateChallenge =
+        if (null != config.platformKeyAttestationValidation) {
+            ValidateChallenge(runInTransaction, challengeRepository)
+        } else {
+            logger.warn("Challenge Validation is currently disabled")
+            ValidateChallenge { _, _ -> Unit.right() }
+        }
+
+    val makotoAttestationService = createMakotoAttestationService(config, clock)
+    val validatePlatformKeyAttestation = ValidatePlatformKeyAttestation(makotoAttestationService)
+
+    val allocateStatusListToken =
+        AllocateStatusListToken(
+            clock,
+            httpClient,
+            config.tokenStatusListService.serviceUrl,
+            ApiKey(config.tokenStatusListService.apiKey.value),
+            country = config.tokenStatusListService.country,
+            walletInstantAttestationStatusList = config.tokenStatusListService.walletInstanceAttestationStatusList,
+            keyAttestationStatusList = config.tokenStatusListService.keyAttestationStatusList,
+        )
+
+    val issueWalletInstanceAttestation =
+        IssueWalletInstanceAttestation(
+            clock,
+            validateChallenge,
+            validatePlatformKeyAttestation,
+            config.walletInstanceAttestation.validity,
+            issuer = config.issuer.publicUrl,
+            clientId = config.clientId,
+            walletName = config.walletInstanceAttestation.walletName,
+            config.walletInstanceAttestation.walletLink,
+            walletVersion = config.walletInstanceAttestation.walletVersion,
+            config.walletInstanceAttestation.walletSolutionCertificationInformation,
+            config.walletInstanceAttestation.clientStatusValidity,
+            allocateStatusListToken,
+            SignJwt(
+                signer,
+                certificateChain,
+                JwtType(AttestationBasedClientAuthentication.CLIENT_ATTESTATION_JWT_TYPE),
+            ),
+        )
+
+    val issueKeyAttestation =
+        IssueKeyAttestation(
+            clock,
+            validateChallenge,
+            validatePlatformKeyAttestation,
+            config.keyAttestation.validity,
+            allocateStatusListToken,
+            config.keyAttestation.certification,
+            SignJwt(
+                signer,
+                certificateChain,
+                JwtType(OpenId4VCI.KEY_ATTESTATION_JWT_TYPE),
+            ),
+            config.keyAttestation.keyStorageStatusValidity,
+        )
+
+    configureChallengeRoutes(generateChallenge)
+    configureWalletInstanceAttestationRoutes(issueWalletInstanceAttestation)
+    configureKeyAttestationRoutes(issueKeyAttestation)
+    configureMetadataRoutes(config.issuer.publicUrl, config.issuer.name, signer, certificateChain)
+}
+
+private fun Application.configureServerPlugins(
+    json: Json,
+    swaggerUiConfiguration: SwaggerUiConfiguration,
+) {
+    install(ContentNegotiation) {
+        json(json)
+    }
+
+    install(CachingHeaders) {
+        options { _, _ ->
+            CachingOptions(NoStore(Visibility.Private))
+        }
+    }
+
+    install(XForwardedHeaders)
+    install(ForwardedHeaders)
+
+    routing {
+        swaggerUI(path = swaggerUiConfiguration.path.value, swaggerFile = "openapi/openapi.json")
+        get("/") {
+            call.respondRedirect(swaggerUiConfiguration.path.value)
+        }
+    }
+}
+
+private fun createMakotoAttestationService(
+    config: WalletProviderConfiguration,
+    clock: Clock,
+): MakotoAttestationService {
+    if (null == config.platformKeyAttestationValidation) {
+        logger.warn("Platform Key Attestation Validation is currently disabled")
+        return NoopAttestationService
+    }
+
+    val androidAttestation =
+        config.platformKeyAttestationValidation.android?.let {
+            AndroidAttestationConfiguration(
+                applications =
+                    it.applications.map { application ->
+                        AndroidAttestationConfiguration.AppData
+                            .Builder(
+                                packageName = application.packageName.value,
+                                signerFingerprints = application.signingCertificateDigests,
+                            ).build()
+                    },
+                requireStrongBox = it.strongBoxRequired,
+                allowBootloaderUnlock = it.unlockedBootloaderAllowed,
+                requireRollbackResistance = it.rollbackResistanceRequired,
+                ignoreLeafValidity = it.leafCertificateValidityIgnored,
+                verificationSecondsOffset = it.verificationSkew.inWholeSeconds,
+                attestationStatementValiditySeconds = it.attestationStatementValiditySkew.value.inWholeSeconds,
+                disableHardwareAttestation = !it.hardwareAttestationEnabled,
+                enableSoftwareAttestation = it.softwareAttestationEnabled,
+                supremeParser = it.supremeParserEnabled,
+            )
+        }
+
+    val iosAttestation =
+        config.platformKeyAttestationValidation.ios?.let {
+            IosAttestationConfiguration(
+                applications =
+                    it.applications.map { application ->
+                        IosAttestationConfiguration.AppData
+                            .Builder(
+                                teamIdentifier = application.team.value,
+                                bundleIdentifier = application.bundle.value,
+                            ).sandbox(IosEnvironment.Sandbox == application.environment)
+                            .build()
+                    },
+                attestationStatementValiditySeconds = it.attestationStatementValiditySkew.value.inWholeSeconds,
+            )
+        }
+
+    return Ior
+        .fromNullables(androidAttestation, iosAttestation)
+        ?.fold(
+            fa = { Makoto(it, clock.toKotlinClock(), config.platformKeyAttestationValidation.verificationTimeSkew) },
+            fb = { Makoto(it, clock.toKotlinClock(), config.platformKeyAttestationValidation.verificationTimeSkew) },
+            fab = { androidAttestation, iosAttestation ->
+                Makoto(
+                    androidAttestation,
+                    iosAttestation,
+                    clock.toKotlinClock(),
+                    config.platformKeyAttestationValidation.verificationTimeSkew,
+                )
+            },
+        ) ?: error("At this point either androidAttestation or iosAttestation must have been configured")
+}

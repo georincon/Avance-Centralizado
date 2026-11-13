@@ -1,0 +1,582 @@
+/*
+ * Copyright (c) 2025 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eu.europa.ec.eudi.wallet.transfer.openId4vp.dcql
+
+import eu.europa.ec.eudi.iso18013.transfer.readerauth.ReaderTrustStore
+import eu.europa.ec.eudi.iso18013.transfer.response.ReaderAuthPolicy
+import eu.europa.ec.eudi.iso18013.transfer.response.Request
+import eu.europa.ec.eudi.iso18013.transfer.response.RequestProcessor
+import eu.europa.ec.eudi.openid4vp.Format
+import eu.europa.ec.eudi.openid4vp.ResolutionError
+import eu.europa.ec.eudi.openid4vp.ResolvedRequestObject
+import eu.europa.ec.eudi.openid4vp.TransactionData
+import eu.europa.ec.eudi.openid4vp.dcql.CredentialQuery
+import eu.europa.ec.eudi.openid4vp.dcql.DCQL
+import eu.europa.ec.eudi.openid4vp.dcql.QueryId
+import eu.europa.ec.eudi.openid4vp.dcql.metaMsoMdoc
+import eu.europa.ec.eudi.openid4vp.dcql.metaSdJwtVc
+import eu.europa.ec.eudi.openid4vp.legalName
+import eu.europa.ec.eudi.wallet.document.DocumentManager
+import eu.europa.ec.eudi.wallet.document.IssuedDocument
+import eu.europa.ec.eudi.wallet.document.format.DocumentFormat
+import eu.europa.ec.eudi.wallet.document.format.MsoMdocFormat
+import eu.europa.ec.eudi.wallet.document.format.SdJwtVcFormat
+import eu.europa.ec.eudi.wallet.internal.d
+import eu.europa.ec.eudi.wallet.internal.e
+import eu.europa.ec.eudi.wallet.internal.generateJarmNonce
+import eu.europa.ec.eudi.wallet.internal.toRequesterAndTrust
+import eu.europa.ec.eudi.wallet.logging.Logger
+import eu.europa.ec.eudi.wallet.registration.relyingparty.ResolvedWrpRegistration
+import eu.europa.ec.eudi.wallet.registration.RegistrationCertificateResult
+import eu.europa.ec.eudi.wallet.registration.relyingparty.extractRegistrationCertificate
+import eu.europa.ec.eudi.wallet.registration.relyingparty.DefaultWrpRegistrationValidator
+import eu.europa.ec.eudi.wallet.registration.relyingparty.toRequestedAttestations
+import eu.europa.ec.eudi.wallet.transfer.openId4vp.OpenId4VpReaderTrust
+import eu.europa.ec.eudi.wallet.transfer.openId4vp.OpenId4VpReaderTrustImpl
+import eu.europa.ec.eudi.wallet.transfer.openId4vp.OpenId4VpRequest
+import eu.europa.ec.eudi.wallet.transfer.openId4vp.OpenId4VpRequestException
+import eu.europa.ec.eudi.wallet.transfer.openId4vp.TransactionDataType
+import eu.europa.ec.eudi.wallet.transfer.openId4vp.ReaderTrustResult
+import java.security.cert.X509Certificate
+import kotlinx.io.bytestring.ByteString
+import kotlinx.io.bytestring.decodeToString
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import org.multipaz.claim.Claim
+import org.multipaz.claim.JsonClaim
+import org.multipaz.claim.findMatchingClaim
+import org.multipaz.openid.dcql.DcqlCredentialQuery
+import org.multipaz.presentment.CredentialMatchSourceOpenID4VP
+import org.multipaz.presentment.CredentialQueryResult
+import org.multipaz.presentment.TransactionData as ParsedTransactionData
+import org.multipaz.presentment.CredentialPresentmentSetOptionMemberMatch
+import org.multipaz.request.JsonRequestedClaim
+import org.multipaz.request.Requester
+import org.multipaz.request.RequestedClaim
+import org.multipaz.sdjwt.SdJwt
+import org.multipaz.sdjwt.credential.SdJwtVcCredential
+
+/**
+ * Processes OpenID4VP requests that use DCQL (Digital Credentials Query Language).
+ *
+ * For each [CredentialQuery] the processor:
+ *  - finds candidate [IssuedDocument]s matching the requested format and type;
+ *  - resolves the claims to disclose per the query's `claims` and `claim_sets` rules
+ *    (DCQL §6.4.1 first-match semantics over `claim_sets`);
+ *  - hands the resulting matches to [CredentialSetsMatcher] which applies
+ *    `credential_sets` rules and produces the [CredentialQueryResult] tree consumed
+ *    by [ProcessedDcqlRequest] for the presentation step.
+ *
+ * @property documentManager Provides access to documents stored in the wallet.
+ * @property openid4VpX509CertificateTrust Verifies trust in the reader's certificate.
+ * @property transactionDataTypes The transaction data types the wallet accepts, each with the
+ *   parser that reads its transaction data. This must carry
+ *   [eu.europa.ec.eudi.wallet.transfer.openId4vp.OpenId4VpConfig.transactionDataTypes]; left empty,
+ *   every request that contains transaction data is rejected with `invalid_transaction_data`,
+ *   whatever the configuration declares.
+ */
+class DcqlRequestProcessor(
+    private val documentManager: DocumentManager,
+    var openid4VpX509CertificateTrust: OpenId4VpReaderTrust,
+    private val readerAuthPolicy: ReaderAuthPolicy,
+    private var logger: Logger? = null,
+    private val transactionDataTypes: List<TransactionDataType> = emptyList()
+) : RequestProcessor {
+
+    private val credentialSetsMatcher = CredentialSetsMatcher()
+
+    /**
+     * Validator for the relying party registration certificate. Set internally when the registration
+     * policy is enforced; when null, the registration certificate is neither validated nor surfaced.
+     */
+    internal var wrpRegistrationValidator: DefaultWrpRegistrationValidator? = null
+
+    /**
+     * Receives the registration certificate evaluation the OpenID4VP library policy produced while
+     * resolving the request.
+     */
+    internal var resolvedRegistration: ResolvedWrpRegistration? = null
+
+    override suspend fun process(request: Request): RequestProcessor.ProcessedRequest {
+        return try {
+            require(request is OpenId4VpRequest) { "Request must be an OpenId4VpRequest" }
+
+            val dcql = request.resolvedRequestObject.query
+            val credentials = dcql.credentials
+            val credentialSets = dcql.credentialSets
+
+            // OpenID4VP: transaction data requires an SD-JWT VC with Cryptographic Holder Binding,
+            // so a request is rejected when a Credential it references does not require it.
+            val transactionData = request.resolvedRequestObject.transactionData.orEmpty()
+            val referenced = transactionData.flatMap { it.credentialIds }.toSet()
+            val unbound = credentials.value.filter { query ->
+                query.id in referenced && !query.requireCryptographicHolderBindingOrDefault
+            }
+            if (unbound.isNotEmpty()) {
+                return invalidTransactionData(
+                    "Transaction data references Credentials that do not require cryptographic " +
+                            "holder binding: " + unbound.joinToString { it.id.value }
+                )
+            }
+
+            val parsedTransactionData = try {
+                transactionData.map { it to it.parse() }
+            } catch (e: Throwable) {
+                logger?.e(TAG, "Transaction data rejected", e)
+                return invalidTransactionData(e)
+            }
+
+            // Resolve trust verdict and build the Requester / TrustMetadata for the Success
+            // payload. The legalName goes into TrustMetadata.displayName when the cert chain
+            // validated against the configured ReaderTrustStore.
+            val legalName = request.resolvedRequestObject.client.legalName()
+            val clientId = request.resolvedRequestObject.client.id.clientId
+            val trustResult = openid4VpX509CertificateTrust.result
+            val (requester, trustMetadata) = when (trustResult) {
+                is ReaderTrustResult.Processed -> trustResult.toRequesterAndTrust(
+                    clientId = clientId,
+                    legalName = legalName
+                )
+
+                ReaderTrustResult.Pending -> Requester(requesterIdentities = emptyList()) to null
+            }
+
+            // Resolve the relying party's registration information for this request.
+            val accessChain = (trustResult as? ReaderTrustResult.Processed)?.chain.orEmpty()
+            val wrpRegistration = resolveWrpRegistration(
+                resolvedRequestObject = request.resolvedRequestObject,
+                dcql = dcql,
+                accessChain = accessChain,
+            )
+
+            // Find candidate matches for each credential query.
+            val candidatesByQueryId: Map<QueryId, List<CredentialPresentmentSetOptionMemberMatch>> =
+                credentials.value.associate { query ->
+                    query.id to findMatchesForQuery(query)
+                }
+
+            // Assign each transaction data to the Credentials that will carry its hash.
+            val matchesByQueryId = try {
+                candidatesByQueryId.withTransactionData(parsedTransactionData)
+            } catch (e: Throwable) {
+                logger?.e(TAG, "Transaction data cannot be presented", e)
+                return invalidTransactionData(e)
+            }
+
+            // Each query's `multiple` flag, forwarded to [ProcessedDcqlRequest]
+            val multipleByQueryId: Map<QueryId, Boolean> = credentials.value
+                .associate { query -> query.id to query.multipleOrDefault }
+
+            // Apply credential_sets rules to produce the presentment tree.
+            val sets = credentialSetsMatcher.toCredentialPresentmentSets(
+                credentials = credentials,
+                credentialSets = credentialSets,
+                matchesByQueryId = matchesByQueryId,
+            )
+
+            ProcessedDcqlRequest(
+                resolvedRequestObject = request.resolvedRequestObject,
+                documentManager = documentManager,
+                presentmentData = CredentialQueryResult(sets),
+                requester = requester,
+                trustMetadata = trustMetadata,
+                msoMdocNonce = generateJarmNonce(),
+                readerAuthPolicy = readerAuthPolicy,
+                multipleByQueryId = multipleByQueryId,
+                wrpRegistration = wrpRegistration
+            )
+        } catch (e: Throwable) {
+            logger?.e(TAG, "DCQL process failed", e)
+            RequestProcessor.ProcessedRequest.Failure(e)
+        }
+    }
+
+    /**
+     * Resolves and validates the relying party's registration certificate for the request, as
+     * required by ETSI TS 119 472-2 clause 4.4 (WRP-VALIDATION-01). The certificate is optional — it
+     * is included only when the relying party has one (OIDFVP-HAIP-COMMON-REQ-RO-13 is conditional);
+     * when it is absent or fails validation the result is a [RegistrationCertificateResult.Failed] with a
+     * [RegistrationFailureReason], so the user can be warned (WRP-VALIDATION-02).
+     *
+     * Returns null when registration is not enforced, that is when no verifier is configured (the
+     * registration policy is [eu.europa.ec.eudi.wallet.registration.relyingparty.WrpRegistrationPolicy.Disabled]
+     * or no ETSI trust source is available); in that case the registration is neither validated nor
+     * surfaced.
+     */
+    private suspend fun resolveWrpRegistration(
+        resolvedRequestObject: ResolvedRequestObject,
+        dcql: DCQL,
+        accessChain: List<X509Certificate>,
+    ): RegistrationCertificateResult? {
+        val validator = wrpRegistrationValidator ?: return null
+        val certificate = resolvedRequestObject.verifierInfo.extractRegistrationCertificate()
+        val requestedAttestations = dcql.toRequestedAttestations()
+        resolvedRegistration
+            ?.take(certificate, accessChain.firstOrNull(), requestedAttestations)
+            ?.let { return it }
+        return validator.validateAttestations(
+            registrationCertificate = certificate,
+            readerAccessChain = accessChain,
+            requested = requestedAttestations,
+        ) as? RegistrationCertificateResult
+    }
+
+    /**
+     * Produces candidate [CredentialPresentmentSetOptionMemberMatch]es for a single
+     * [CredentialQuery]. A document is included only when its credential satisfies the
+     * verifier's claim requirements, with [resolveClaimsToDisclose] applying
+     * `claim_sets` first-match semantics (DCQL §6.4.1).
+     */
+    private suspend fun findMatchesForQuery(
+        query: CredentialQuery
+    ): List<CredentialPresentmentSetOptionMemberMatch> {
+        val dcqlQuery: DcqlCredentialQuery = query.toDcqlCredentialQuery()
+        val candidates: List<IssuedDocument> = candidateDocumentsForQuery(query)
+
+        return candidates.mapNotNull { issuedDoc ->
+            val secureCred = issuedDoc.findCredential() ?: return@mapNotNull null
+
+            // When the verifier requires a cryptographic holder binding proof, an
+            // SD-JWT credential without a `cnf` claim cannot satisfy the request —
+            // it has no key to sign the KB-JWT with. Skip such credentials so they
+            // do not appear in the consent UI. mdoc credentials are not filtered;
+            // they always carry a device key.
+            if (query.requireCryptographicHolderBindingOrDefault) {
+                when (query.format) {
+                    Format.SdJwtVc -> {
+                        if ((secureCred as? SdJwtVcCredential)?.hasCnfClaim() != true) {
+                            return@mapNotNull null
+                        }
+                    }
+                }
+            }
+
+            val credClaims: List<Claim> = runCatching {
+                secureCred.getClaims(documentTypeRepository = null)
+            }.getOrElse { return@mapNotNull null }
+
+            // Resolve which subset of the verifier's `claims` this credential must
+            // disclose, honouring `claim_sets` first-match semantics (§6.4.1).
+            val matchedClaims: Map<RequestedClaim, Claim> =
+                resolveClaimsToDisclose(dcqlQuery, credClaims) ?: return@mapNotNull null
+
+            CredentialPresentmentSetOptionMemberMatch(
+                credential = secureCred,
+                claims = matchedClaims,
+                source = CredentialMatchSourceOpenID4VP(credentialQuery = dcqlQuery),
+                transactionData = emptyList(),
+            )
+        }
+    }
+
+    /**
+     * Returns a failure that is reported to the verifier as `invalid_transaction_data`.
+     */
+    private fun invalidTransactionData(cause: Throwable): RequestProcessor.ProcessedRequest.Failure =
+        RequestProcessor.ProcessedRequest.Failure(
+            OpenId4VpRequestException(ResolutionError.InvalidTransactionData(cause))
+        )
+
+    private fun invalidTransactionData(message: String): RequestProcessor.ProcessedRequest.Failure =
+        invalidTransactionData(IllegalArgumentException(message))
+
+    /**
+     * Reads this transaction data with the parser of its type. The hash the wallet sends is
+     * calculated over the transaction data as it was received, so the parsed result keeps those
+     * bytes.
+     *
+     * @throws IllegalArgumentException when the type is not accepted or the transaction data does
+     * not conform to it
+     */
+    private fun TransactionData.parse(): ParsedTransactionData<*> {
+        val accepted = transactionDataTypes.firstOrNull { it.value == type.value }
+        requireNotNull(accepted) { "Transaction data type '${type.value}' is not accepted" }
+        return accepted.parser.parseJson(ByteString(value.toByteArray(Charsets.US_ASCII)))
+    }
+
+    /**
+     * Returns the matches with each transaction data assigned to the Credentials that will carry
+     * its hash.
+     *
+     * OpenID4VP requires the hash of a transaction data to be sent with only one of the Credentials
+     * it references, so a transaction data is assigned to the first Credential Query that has a
+     * match able to authorize it, and then to every match of that query. The matches of the chosen
+     * query that cannot authorize it are dropped, so they are not offered to the user.
+     *
+     * @throws IllegalArgumentException when no referenced Credential can authorize a transaction
+     * data
+     */
+    private suspend fun Map<QueryId, List<CredentialPresentmentSetOptionMemberMatch>>.withTransactionData(
+        transactionData: List<Pair<TransactionData, ParsedTransactionData<*>>>
+    ): Map<QueryId, List<CredentialPresentmentSetOptionMemberMatch>> {
+        if (transactionData.isEmpty()) return this
+
+        val matches = toMutableMap()
+        val assigned = mutableMapOf<QueryId, MutableList<ParsedTransactionData<*>>>()
+
+        for ((requested, parsed) in transactionData) {
+            var chosen: QueryId? = null
+            for (queryId in requested.credentialIds) {
+                val able = matches[queryId].orEmpty().filter { parsed.isApplicable(it.credential) }
+                if (able.isNotEmpty()) {
+                    matches[queryId] = able
+                    chosen = queryId
+                    break
+                }
+            }
+            requireNotNull(chosen) {
+                "Transaction data '${requested.type.value}' references no Credential the wallet " +
+                        "can present: " + requested.credentialIds.joinToString { it.value }
+            }
+            assigned.getOrPut(chosen) { mutableListOf() }.add(parsed)
+        }
+
+        return matches.mapValues { (queryId, queryMatches) ->
+            assigned[queryId]
+                ?.let { data -> queryMatches.map { it.copy(transactionData = data) } }
+                ?: queryMatches
+        }
+    }
+
+    /**
+     * Returns `true` when the issuer-signed JWT carries a `cnf` claim — the
+     * prerequisite for producing a Key Binding JWT at presentation time. Returns
+     * `false` when the issuer-signed JWT cannot be parsed.
+     */
+    private suspend fun SdJwtVcCredential.hasCnfClaim(): Boolean {
+        return runCatching {
+            SdJwt.fromCompactSerialization(this.issuerProvidedData.decodeToString())
+                .kbKey != null
+        }.getOrElse { false }
+    }
+
+    /**
+     * Returns the claims a credential must disclose for [dcqlQuery], or `null` when
+     * the credential cannot satisfy the query.
+     *
+     *  - With `claim_sets` (DCQL §6.4.1): iterate sets **in order** and return the first
+     *    whose every referenced claim resolves against the credential. The returned map
+     *    contains exactly that set's claims — nothing more.
+     *
+     *  - Without `claim_sets`: require every entry of `claims` to resolve. The returned
+     *    map contains all of them.
+     *
+     * Per-claim resolution is delegated to [matchClaim].
+     */
+    private fun resolveClaimsToDisclose(
+        dcqlQuery: DcqlCredentialQuery,
+        credClaims: List<Claim>,
+    ): Map<RequestedClaim, Claim>? {
+        if (dcqlQuery.claimSets.isEmpty()) {
+            // No alternatives — every claim must be present.
+            val all = mutableMapOf<RequestedClaim, Claim>()
+            for (req in dcqlQuery.claims) {
+                val matched = matchClaim(req, credClaims) ?: return null
+                all[req] = matched
+            }
+            return all
+        }
+
+        // First-match over claim_sets. A set is satisfied iff every claimId it references
+        // resolves to a [RequestedClaim] that has a value in this credential. The id →
+        // claim lookup is rebuilt locally because [DcqlCredentialQuery.claimIdToClaim] is
+        // not visible from this module; [DcqlQueryAdapter] populates the same map under
+        // the hood.
+        val claimIdLookup: Map<String, RequestedClaim> = dcqlQuery.claims
+            .mapNotNull { rc -> rc.id?.let { id -> id to rc } }
+            .toMap()
+
+        for (claimSet in dcqlQuery.claimSets) {
+            val resolved = mutableMapOf<RequestedClaim, Claim>()
+            var satisfied = true
+            for (claimId in claimSet.claimIdentifiers) {
+                val requested = claimIdLookup[claimId]
+                if (requested == null) {
+                    satisfied = false
+                    break
+                }
+                val matched = matchClaim(requested, credClaims)
+                if (matched == null) {
+                    satisfied = false
+                    break
+                }
+                resolved[requested] = matched
+            }
+            if (satisfied) return resolved
+        }
+        return null
+    }
+
+    /**
+     * Resolves a single [RequestedClaim] against the credential's claims.
+     *
+     * The primary path delegates to [Claim.findMatchingClaim], which covers top-level
+     * paths, nested object paths and explicit array-index paths. Falls back to
+     * [matchClaimViaSpecCorrectNullWildcard] when the primary path returns `null` for
+     * an SD-JWT VC request that combines a `null` wildcard in the claim path with a
+     * `values` filter — that combination requires per-element evaluation of the
+     * wildcard per OpenID4VP §7.1.
+     */
+    private fun matchClaim(req: RequestedClaim, credClaims: List<Claim>): Claim? {
+        // Skip the credential when the requested array index is out of bounds
+        val matchedClaim = try {
+            credClaims.findMatchingClaim(req)
+        } catch (_: IndexOutOfBoundsException) {
+            null
+        }
+        if (matchedClaim != null) return matchedClaim
+        return matchClaimViaSpecCorrectNullWildcard(req, credClaims)
+    }
+
+    /**
+     * Resolves a [JsonRequestedClaim] whose path contains a `null` wildcard and whose
+     * request carries a `values` filter, per OpenID4VP §7.1 element-by-element semantics.
+     *
+     * Returns the credential's top-level claim (the one whose `claimPath[0]` matches the
+     * request's `claimPath[0]`) when at least one resolved value passes the values
+     * filter; otherwise `null`. Downstream code consumes only the request's path for
+     * disclosure-path generation — the matched [Claim] value itself is not used — so
+     * returning the root claim is sufficient to signal "satisfied".
+     */
+    private fun matchClaimViaSpecCorrectNullWildcard(
+        req: RequestedClaim,
+        credClaims: List<Claim>,
+    ): Claim? {
+        if (req !is JsonRequestedClaim) return null
+        val values = req.values ?: return null
+        val hasNullWildcard = req.claimPath.any { it is JsonNull }
+        if (!hasNullWildcard) return null
+
+        val topName = (req.claimPath.firstOrNull() as? JsonPrimitive)
+            ?.takeIf { it.isString }
+            ?.content
+            ?: return null
+        val rootClaim = credClaims.filterIsInstance<JsonClaim>().firstOrNull { cc ->
+            (cc.claimPath.firstOrNull() as? JsonPrimitive)
+                ?.takeIf { it.isString }
+                ?.content == topName
+        } ?: return null
+
+        // Spec §7.1: a null wildcard expands the array into its elements; the result is a
+        // set of values. Spec §6.4.1: claim is satisfied when at least one resulting value
+        // matches any element of the `values` array.
+        val resolved = descendClaimPath(rootClaim.value, req.claimPath.drop(1))
+        return if (resolved.any { values.contains(it) }) rootClaim else null
+    }
+
+    /**
+     * Walks a SD-JWT VC claim path per OpenID4VP §7.1 semantics, returning the **set** of
+     * resolved values (each `null` element in the path expands into an iteration over
+     * every element of the current array).
+     *
+     *  - String element → object key lookup (descends into array's objects when the
+     *    current node is an array).
+     *  - Integer element → array index access.
+     *  - `null` element → "evaluate all elements" (the wildcard).
+     *
+     * Returns an empty list when the path cannot be resolved against the structure (e.g.
+     * indexing a non-array, descending into a primitive). Empty list ↔ no match.
+     */
+    private fun descendClaimPath(
+        start: JsonElement,
+        remainingPath: List<JsonElement>,
+    ): List<JsonElement> {
+        if (remainingPath.isEmpty()) return listOf(start)
+        val head = remainingPath.first()
+        val tail = remainingPath.drop(1)
+        return when {
+            head is JsonNull -> {
+                if (start is JsonArray) start.flatMap { descendClaimPath(it, tail) }
+                else emptyList()
+            }
+            head is JsonPrimitive && head.isString -> when (start) {
+                is JsonObject -> start[head.content]
+                    ?.let { descendClaimPath(it, tail) }
+                    ?: emptyList()
+                else -> emptyList()
+            }
+            head is JsonPrimitive && !head.isString -> {
+                val index = head.content.toIntOrNull() ?: return emptyList()
+                if (start is JsonArray && index in start.indices) {
+                    descendClaimPath(start[index], tail)
+                } else emptyList()
+            }
+            else -> emptyList()
+        }
+    }
+
+    /**
+     * Resolves the wallet's candidate [IssuedDocument]s for a [CredentialQuery]:
+     *  - `mso_mdoc`: documents whose [MsoMdocFormat.docType] equals the query's
+     *    `doctype_value`;
+     *  - `dc+sd-jwt`: documents whose [SdJwtVcFormat.vct] is in the query's `vct_values`
+     *    (exact match).
+     *
+     * Throws on unsupported formats.
+     */
+    private suspend fun candidateDocumentsForQuery(query: CredentialQuery): List<IssuedDocument> {
+        return when (query.format) {
+            Format.MsoMdoc -> {
+                val docType = requireNotNull(query.metaMsoMdoc?.doctypeValue?.value) {
+                    "DocType is missing for query with id ${query.id}"
+                }
+                findDocumentsByFormat(MsoMdocFormat(docType))
+            }
+            Format.SdJwtVc -> {
+                val vctValues = query.metaSdJwtVc?.vctValues.orEmpty()
+                require(vctValues.isNotEmpty()) {
+                    "VctValues are missing or is empty for query with id ${query.id}"
+                }
+                vctValues.flatMap { findDocumentsByFormat(SdJwtVcFormat(it)) }
+            }
+            else -> throw IllegalArgumentException("Not supported format ${query.format.value}")
+        }
+    }
+
+    private suspend fun findDocumentsByFormat(format: DocumentFormat): List<IssuedDocument> {
+        return documentManager.getDocuments()
+            .filter { it.format == format }
+            .filterIsInstance<IssuedDocument>()
+            .filter { it.findCredential() != null }
+    }
+
+    companion object {
+        private const val TAG = "DcqlRequestProcessor"
+
+        operator fun invoke(
+            documentManager: DocumentManager,
+            readerTrustStore: ReaderTrustStore?,
+            readerAuthPolicy: ReaderAuthPolicy,
+            logger: Logger? = null,
+            transactionDataTypes: List<TransactionDataType> = emptyList()
+        ): DcqlRequestProcessor {
+            val openId4VpReaderTrust = OpenId4VpReaderTrustImpl(
+                readerTrustStore = readerTrustStore
+            )
+            return DcqlRequestProcessor(
+                documentManager = documentManager,
+                openid4VpX509CertificateTrust = openId4VpReaderTrust,
+                readerAuthPolicy = readerAuthPolicy,
+                logger = logger,
+                transactionDataTypes = transactionDataTypes
+            )
+        }
+    }
+}

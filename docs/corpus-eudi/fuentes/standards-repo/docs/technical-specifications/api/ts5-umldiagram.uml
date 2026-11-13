@@ -1,0 +1,137 @@
+classDiagram
+  class WalletRelyingParty {
+    + tradeName: string [0..1]
+    + isPSB: boolean
+    + supervisoryAuthority: SupervisoryAuthority
+    + registryURI: string
+    + services: WalletRelyingPartyService [1..*]
+  }
+
+  class WalletRelyingPartyService {
+    + serviceTradeName string [1..1]
+    + serviceIdentifier string [0..1]
+    + supportURI string
+    + email string
+    + phone string
+    + srvDescription MultiLangString [1..*]
+    + intendedUses IntendedUse[0..*]
+    + entitlements string [0..*]
+    + subEntitlements string [0..*]
+    + providesAttestations ProvidedAttestation [0..*]
+    + usesIntermediaries WalletRelyingPartyService [0..*]
+    + isIntermediary boolean
+    + servedWRPServices string [0..*]
+  }
+  
+  class Provider {
+    +Policy policy [1..*]
+    +string providerType
+    +string x5c [0..*]
+  }
+  class Policy {
+    + policyURI: string
+    + type: string
+  }
+
+  class IntendedUse {
+    + purpose: MultiLangString [1..*]
+    + privacyPolicy: Policy [1..*]
+    + intendedUseIdentifier : string
+    + createdAt: string
+    + revokedAt: string
+    + credentials: Credential [1..*]
+  }
+
+  class ProvidedAttestation {
+    + format: string
+    + type: string
+  }
+
+  class Credential {
+    + format: string
+    + meta: MetaType
+    + claims: Claim [1..*]
+  }
+
+  class Claim {
+    + path: "non-empty array of strings, nulls and non-negative integers"
+  }
+
+  class LegalEntity {
+    + identifier: Identifier [1..*]
+    + legalPerson: LegalPerson [0..1]
+    + naturalPerson: NaturalPerson [0..1]
+    + postalAddress: string [0..*]
+    + country: string
+    + email: string [0..*]
+    + phone: string [0..*]
+    + infoURI: string [0..*]
+  }
+
+  class Identifier {
+    + identifier: string
+    + type: string
+  }
+
+  class LegalPerson {
+    + establishedByLaw: Law [0..*]
+    + legalName: string [1..*]
+  }
+
+  class Law {
+    + legislativeIdentifier: string
+    + legalBasis: string [0..*]
+  }
+
+  class MultiLangString {
+    + lang: string
+    + content: string
+  }
+
+  class MetaType {
+     <<abstract>>
+  }
+
+  class DcSdJwtMeta {
+    + List~String~ vct_values
+  }
+
+  class MsoMdocMeta {
+    + String doctype_value
+  }
+
+  class SupervisoryAuthority {
+    + country: string
+    + name: string
+    + email: string [0..*]
+    + phone: string [0..*]
+    + formURI: string [0..*]
+  }
+
+  class NaturalPerson {
+    + familyName: string
+    + givenName: string
+    + dateOfBirth: string [0..1]
+    + placeOfBirth: string [0..1]
+  }
+  end
+  WalletRelyingParty --|> Provider : inherits
+  Provider --|> LegalEntity : inherits
+  WalletRelyingParty -- SupervisoryAuthority : supervised by
+  WalletRelyingParty -- WalletRelyingPartyService : has at least one
+  WalletRelyingPartyService -- ProvidedAttestation : may provide
+  WalletRelyingPartyService -- WalletRelyingPartyService : may use intermediary
+  WalletRelyingPartyService -- IntendedUse : contains
+  WalletRelyingPartyService -- MultiLangString : srvDescription
+  IntendedUse -- MultiLangString : purpose
+  IntendedUse -- Policy : has
+  IntendedUse -- Credential : contains
+  Credential -- Claim : contains
+  Credential -- MetaType : contains
+  LegalEntity -- Identifier : identified by
+  LegalEntity -- LegalPerson : may be
+  LegalEntity -- NaturalPerson : may be
+  LegalPerson -- Law : may be authentic source established by
+  Provider -- Policy : has
+  MetaType <|-- DcSdJwtMeta : inheritance
+  MetaType <|-- MsoMdocMeta : inheritance

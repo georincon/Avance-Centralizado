@@ -1,0 +1,83 @@
+# Una instancia de verifier: el endpoint oficial (eudi-srv-verifier-endpoint) y su UI
+# (eudi-web-verifier), sin modificar, detrás de un gateway haproxy que se une a la red
+# compartida "avance-eudi" con el alias PREFIJO. El proxy único (srv-nw-nginx) enruta
+# /verifier-<nombre> a ese alias.
+#
+#   https://DOMINIO/PREFIJO/                   UI (elegir datos, QR, resultado)
+#   https://DOMINIO/PREFIJO/ui/…               API del verifier (la usa la UI)
+#   https://DOMINIO/PREFIJO/wallet/…           lo que llama la wallet (request.jwt, direct_post)
+#   https://DOMINIO/PREFIJO/utilities/…        validaciones sueltas
+#
+# Se usa con ./compose.sh <nombre> (pone el proyecto y el .env de la instancia).
+# El material criptográfico, generado.env y confianza.env los crea levantar.sh.
+#
+# REDES. Solo el haproxy se une a avance-eudi. Si verifier-api entrara también, su nombre de
+# servicio chocaría entre instancias en esa red compartida y el haproxy podría hablar con el
+# verifier equivocado. Por eso verifier-api llega al trust-validator y a las listas por la URL
+# pública del dominio (confianza.env), como ya hace avance-verifier-api.
+name: verifier-${INSTANCIA}
+
+services:
+  # No se llama como el PREFIJO: en la red avance-eudi ese nombre es el gateway.
+  verifier-api:
+    image: ghcr.io/eu-digital-identity-wallet/eudi-srv-verifier-endpoint:${VERIFIER_ENDPOINT_VERSION}
+    pull_policy: missing
+    restart: unless-stopped
+    env_file:
+      # client_id y certificado de registro (scripts/generar-claves.sh)
+      - instancias/${INSTANCIA}/secretos/generado.env
+      # trust-validator y clases de documentos (tl-publisher, /tl-api/v1/integracion/verifier.env)
+      - instancias/${INSTANCIA}/confianza.env
+    environment:
+      # Netty se queda corto con el límite por defecto de memoria directa.
+      JAVA_TOOL_OPTIONS: -XX:MaxDirectMemorySize=256m -Xmx512m
+      # Sirve en la raíz (el gateway quita el prefijo); hacia fuera, todas las URLs
+      # (request_uri, response_uri) salen de aquí.
+      VERIFIER_PUBLICURL: https://${DOMINIO}/${PREFIJO}
+      VERIFIER_ACCESS_CERTIFICATE_KEYSTORE: file:///certs/verifier.p12
+      VERIFIER_ACCESS_CERTIFICATE_KEYSTORE_TYPE: pkcs12
+      VERIFIER_ACCESS_CERTIFICATE_KEYSTORE_PASSWORD: ${KEYSTORE_PASSWORD}
+      VERIFIER_ACCESS_CERTIFICATE_ALIAS: verifier
+      VERIFIER_ACCESS_CERTIFICATE_PASSWORD: ${KEYSTORE_PASSWORD}
+      VERIFIER_ACCESS_CERTIFICATE_SIGNING_ALGORITHM: ES256
+      # direct_post.jwt (respuesta cifrada): lo exige el perfil HAIP.
+      VERIFIER_DEFAULTHTTPRESPONSEMODE: DirectPostJwt
+      VERIFIER_AUTHORIZATIONREQUESTURI: haip-vp://
+      VERIFIER_PRESENTATIONS_CLEANUP_MAXAGE: ${CONSERVAR_PRESENTACIONES:-P10D}
+      VERIFIER_MAXAGE: ${VIGENCIA_SOLICITUD:-PT6400M}
+      VERIFIER_INTENDEDUSES_0_ID: "1"
+      VERIFIER_INTENDEDUSES_0_DESCRIPTION: ${VERIFIER_PROPOSITO}
+      # La API /ui/* solo la llama la UI, que está en el mismo origen.
+      CORS_ORIGINS: https://${DOMINIO}
+      CORS_ORIGINPATTERNS: https://${DOMINIO}
+    volumes:
+      - ./instancias/${INSTANCIA}/secretos/verifier.p12:/certs/verifier.p12:ro
+
+  verifier-web:
+    image: ghcr.io/eu-digital-identity-wallet/eudi-web-verifier:${VERIFIER_UI_VERSION}
+    pull_policy: missing
+    restart: unless-stopped
+    environment:
+      # La UI llama a ${HOST_API}/ui/… y vive en /PREFIJO/ (config/ui/nginx.conf.template).
+      HOST_API: https://${DOMINIO}/${PREFIJO}
+      PREFIJO: ${PREFIJO}
+    volumes:
+      - ./config/ui/nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
+
+  haproxy:
+    image: haproxy:2.8.3
+    restart: unless-stopped
+    depends_on: [verifier-api, verifier-web]
+    environment:
+      PREFIJO: ${PREFIJO}
+    volumes:
+      - ./config/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      default:
+      avance-eudi:
+        aliases: ["${PREFIJO}"]
+
+networks:
+  avance-eudi:
+    name: avance-eudi
+    external: true

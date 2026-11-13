@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{CANCILLERIA}} · Pasaportes</title>
+<link rel="icon" href="{{BASE}}/publico/logo.png">
+<style>
+  :root { --azul: #0b2f5b; --azul-2: #164c8a; --oro: #c9a227; --vino: #7a1f2b; --gris: #f3f4f6; --linea: #d9dde3; --tinta: #1d2733; --suave: #5b6675; --ok: #146c3a; --ok-f: #e6f4ea; --mal: #b3261e; --mal-f: #fdecea; }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: var(--tinta); background: #fff; font: 16px/1.55 "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; }
+  .contenedor { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  .tricolor { height: 6px; background: linear-gradient(90deg, #fcd116 0 50%, #003893 50% 75%, #ce1126 75%); }
+  header { background: #fff; border-bottom: 1px solid var(--linea); }
+  .cab { display: flex; align-items: center; gap: 14px; padding: 12px 0; flex-wrap: wrap; }
+  .cab img { width: 48px; height: 48px; } .cab strong { display: block; color: var(--azul); font-size: 1.15rem; line-height: 1.1; } .cab small { color: var(--suave); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; }
+  nav { margin-left: auto; display: flex; gap: 4px; flex-wrap: wrap; } nav a { padding: 9px 14px; border-radius: 6px; font-weight: 600; color: var(--azul); text-decoration: none; } nav a:hover, nav a.activo { background: var(--gris); } nav a.activo { box-shadow: inset 0 -3px 0 var(--oro); }
+  #persona { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--linea); font-size: .9rem; } #persona img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
+  .heroe { background: linear-gradient(115deg, var(--azul) 0%, var(--azul-2) 100%); color: #fff; position: relative; overflow: hidden; }
+  .heroe::after { content: ""; position: absolute; right: -60px; top: -60px; width: 300px; height: 300px; border-radius: 50%; border: 36px solid rgba(201,162,39,.35); }
+  .heroe .contenedor { position: relative; z-index: 1; padding: 46px 24px 50px; display: grid; grid-template-columns: 1.2fr .8fr; gap: 28px; align-items: center; } @media (max-width: 800px) { .heroe .contenedor { grid-template-columns: 1fr; } }
+  .heroe h1 { font-size: clamp(1.8rem, 4vw, 2.6rem); line-height: 1.12; margin: 0 0 12px; } .heroe p { color: #d3def0; margin: 0 0 20px; max-width: 54ch; }
+  .libreta { background: var(--vino); border: 2px solid var(--oro); border-radius: 12px; padding: 22px; text-align: center; color: #f3e3a7; box-shadow: 0 14px 34px rgba(0,0,0,.35); } .libreta b { display: block; letter-spacing: .25em; font-size: .85rem; } .libreta .esc { font-size: 3rem; margin: 6px 0; } .libreta small { letter-spacing: .3em; }
+  button, .boton { font: inherit; cursor: pointer; border: 0; border-radius: 6px; font-weight: 700; padding: 11px 20px; text-decoration: none; display: inline-block; } button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--oro); outline-offset: 2px; }
+  .primario { background: var(--oro); color: #2b2204; } .primario:hover { background: #d8b23a; } .secundario { background: #fff; color: var(--azul); border: 1px solid var(--linea); } .secundario:hover { border-color: var(--azul); } .peligro { background: #fff; color: var(--mal); border: 1px solid #e3b4b0; }
+  main { padding: 34px 0 54px; min-height: 40vh; } h1.t { color: var(--azul); margin: 0 0 6px; } .lead { color: var(--suave); margin: 0 0 20px; max-width: 70ch; }
+  .tarjetas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; } @media (max-width: 860px) { .tarjetas { grid-template-columns: 1fr; } }
+  .tarjeta { background: #fff; border: 1px solid var(--linea); border-top: 5px solid var(--oro); border-radius: 10px; padding: 20px; } .tarjeta h2 { margin: 0 0 6px; color: var(--azul); font-size: 1.15rem; } .tarjeta p { color: var(--suave); font-size: .92rem; }
+  .caja { background: #fff; border: 1px solid var(--linea); border-radius: 10px; padding: 22px; max-width: 640px; margin-bottom: 16px; }
+  label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; margin: 12px 0; } label small { font-weight: 400; color: var(--suave); } input, select { font: inherit; padding: 10px 12px; border: 1px solid var(--linea); border-radius: 6px; }
+  .aviso { background: #fff8d6; border: 1px solid #ecd978; color: #6b5a05; border-radius: 8px; padding: 10px 14px; font-size: .9rem; margin: 10px 0; } .aviso.error { background: var(--mal-f); border-color: #e3b4b0; color: var(--mal); } .aviso.info { background: #eaf1fb; border-color: #c6d7ee; color: #1d3f72; }
+  .otorgante { display: flex; align-items: center; gap: 14px; background: var(--gris); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; } .otorgante img { width: 56px; height: 66px; object-fit: cover; border-radius: 6px; }
+  .entrega { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; } @media (max-width: 640px) { .entrega { grid-template-columns: 1fr; } } .entrega img { width: 250px; max-width: 100%; border: 1px solid var(--linea); border-radius: 10px; padding: 6px; }
+  .pin { font: 800 2.2rem/1 ui-monospace, monospace; letter-spacing: .3em; color: var(--azul); background: var(--gris); display: inline-block; padding: 10px 16px; border-radius: 8px; margin: 8px 0; }
+  .fila { display: flex; gap: 14px; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--linea); flex-wrap: wrap; } .fila .que span { display: block; color: var(--suave); font-size: .88rem; } .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+  .etiqueta { padding: 3px 10px; border-radius: 999px; font-size: .78rem; font-weight: 700; background: var(--gris); } .etiqueta.vigente { background: var(--ok-f); color: var(--ok); } .etiqueta.anulado { background: var(--mal-f); color: var(--mal); }
+  .veredicto { display: flex; gap: 12px; align-items: center; padding: 14px 16px; border-radius: 8px; font-weight: 800; font-size: 1.1rem; background: var(--ok-f); color: var(--ok); margin-bottom: 12px; } .veredicto.no { background: var(--mal-f); color: var(--mal); }
+  .pasaporte { display: grid; grid-template-columns: 150px 1fr; gap: 18px; } @media (max-width: 560px) { .pasaporte { grid-template-columns: 1fr; } } .pasaporte img { width: 150px; height: 190px; object-fit: cover; border-radius: 8px; border: 1px solid var(--linea); }
+  dl { margin: 0; } dl .f { display: flex; justify-content: space-between; gap: 18px; padding: 6px 0; border-bottom: 1px solid var(--linea); } dl .f:last-child { border-bottom: 0; } dt { color: var(--suave); } dd { margin: 0; font-weight: 700; text-align: right; }
+  dialog { border: 0; border-radius: 12px; padding: 0; width: min(460px, calc(100vw - 28px)); box-shadow: 0 24px 70px rgba(0,0,0,.4); border-top: 6px solid var(--oro); } dialog::backdrop { background: rgba(11,47,91,.7); }
+  .modal { padding: 24px; text-align: center; } .modal h2 { margin: 0 0 4px; color: var(--azul); } .modal .qr { width: 250px; max-width: 100%; display: block; margin: 10px auto; border: 1px solid var(--linea); border-radius: 10px; padding: 6px; } .cuenta { color: var(--suave); font-size: .86rem; }
+  footer { background: var(--azul); color: #b9c8e0; font-size: .85rem; border-top: 5px solid var(--oro); } footer .contenedor { padding: 22px 24px; }
+</style>
+</head>
+<body>
+<div class="tricolor"></div>
+<header><div class="contenedor">
+  <div class="cab"><img src="{{BASE}}/publico/logo.png" alt=""><div><strong>{{CANCILLERIA}}</strong><small>Oficina de pasaportes</small></div>
+    <nav><a href="#" data-r="">Inicio</a><a href="#solicitar" data-r="solicitar">Solicitar pasaporte</a><a href="#mis-pasaportes" data-r="mis-pasaportes">Mis pasaportes</a><a href="#verificar" data-r="verificar">Verificar</a><a href="{{BASE}}/auditoria/" id="nav-historial" hidden>Historial</a></nav></div>
+  <div id="persona" hidden></div>
+</div></header>
+<section class="heroe" id="heroe"><div class="contenedor">
+  <div><h1>Tu pasaporte, en tu wallet</h1><p>Solicita tu pasaporte identificándote con tu documento de identidad digital. Lo recibes como credencial en el teléfono y lo presentas ante una aerolínea o el control migratorio, compartiendo solo lo necesario.</p><a class="boton primario" href="#solicitar">Solicitar mi pasaporte</a></div>
+  <div class="libreta"><b>REPÚBLICA DE CÍVICA</b><div class="esc">✪</div><b>PASAPORTE</b><small>DIGITAL</small></div>
+</div></section>
+<main><div class="contenedor" id="vista"></div></main>
+<footer><div class="contenedor">Cancillería ficticia para probar el ecosistema EUDI Wallet. No expide pasaportes reales y el documento no tiene validez legal.</div></footer>
+<dialog id="modal"><div class="modal" id="m"></div></dialog>
+<script>
+(() => {
+  const BASE = '{{BASE}}'
+  const $ = (id) => document.getElementById(id)
+  const vista = $('vista'), modal = $('modal'), m = $('m')
+  const MOVIL = matchMedia('(pointer: coarse)').matches && innerWidth < 800
+  let persona = null, sondeo = null, cuenta = null
+  function el(tag, props = {}, ...hijos) {
+    const e = document.createElement(tag)
+    for (const [k, v] of Object.entries(props)) { if (k === 'class') e.className = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else if (v !== false && v != null) e.setAttribute(k, v === true ? '' : v) }
+    for (const h of hijos.flat()) if (h != null && h !== false) e.append(h.nodeType ? h : document.createTextNode(String(h)))
+    return e
+  }
+  const api = async (ruta, { method = 'GET', body } = {}) => {
+    const r = await fetch(BASE + ruta, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined })
+    const j = await r.json().catch(() => ({}))
+    if (!r.ok) throw Object.assign(new Error(j.error ?? 'Error'), { estado: r.status, cuerpo: j })
+    return j
+  }
+  const fecha = (f) => (f ? new Date(f.length === 10 ? `${f}T12:00:00Z` : f).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : '—')
+  const parar = () => { clearTimeout(sondeo); clearInterval(cuenta); sondeo = cuenta = null }
+  modal.addEventListener('close', parar)
+  const cerrar = () => { parar(); if (modal.open) modal.close() }
+
+  // Cierra la identificación: el servidor olvida a la persona y la página deja de mostrarla (encabezado y vistas).
+  async function salir() {
+    try { await api('/api/salir', { method: 'POST' }) } catch { /* igual se limpia la página */ }
+    clearTimeout(sondeo); persona = null; cuenta = null
+    const c = $('persona'); c.replaceChildren(); c.hidden = true
+    if (modal.open) modal.close()
+    const ya = location.hash === '' || location.hash === '#'
+    location.hash = ''
+    if (ya) ruta()   // si el hash no cambia no se dispara hashchange
+  }
+
+  async function cargarPersona() {
+    try { persona = await api('/api/yo') } catch { persona = null }
+    const c = $('persona'); c.replaceChildren(); c.hidden = !persona
+    if (!persona) return
+    c.append(persona.foto ? el('img', { src: persona.foto, alt: '' }) : '', el('span', {}, `${persona.nombres} ${persona.apellidos}`),
+      el('button', { class: 'secundario', onclick: salir }, 'Salir'))
+  }
+
+  // Pide algo a la wallet por el verifier (PID o pasaporte) y espera la respuesta.
+  function pedir({ proposito, tipo, titulo, sub }) {
+    return new Promise(async (resolver) => {
+      m.replaceChildren(el('h2', {}, titulo), el('p', { class: 'cuenta' }, 'Preparando el código…')); if (!modal.open) modal.showModal()
+      let s
+      try { s = await api('/api/solicitud', { method: 'POST', body: { proposito, tipo, dispositivo: MOVIL ? 'mismo' : 'otro' } }) }
+      catch (e) { m.replaceChildren(el('h2', {}, 'No se pudo'), el('div', { class: 'aviso error' }, e.message), el('button', { class: 'secundario', onclick: cerrar }, 'Cerrar')); return }
+      const estado = el('p', { class: 'cuenta' }, 'Esperando la wallet…')
+      m.replaceChildren(el('h2', {}, titulo), el('p', { class: 'cuenta' }, MOVIL ? `${sub} Abre tu wallet y acepta: volverás aquí.` : `${sub} Escanea el código con tu wallet.`),
+        MOVIL ? el('a', { class: 'boton primario', href: s.enlace }, 'Abrir mi wallet') : el('img', { class: 'qr', src: s.qr, alt: 'Código QR para la wallet' }), estado,
+        el('div', { style: 'margin-top:10px' }, el('button', { class: 'secundario', onclick: () => { cerrar(); resolver(null) } }, 'Cancelar')))
+      if (MOVIL) return
+      const preguntar = async () => {
+        try {
+          const r = await api(`/api/solicitud/${s.id}`)
+          if (r.estado === 'listo') { cerrar(); return resolver(r) }
+          if (r.estado === 'rechazada') { estado.textContent = r.motivo; estado.style.color = 'var(--mal)'; return }
+        } catch { /* reintentar */ }
+        sondeo = setTimeout(preguntar, 2000)
+      }
+      preguntar()
+    })
+  }
+
+  async function identificarse(destino) {
+    const r = await pedir({ proposito: 'identificacion', titulo: 'Identifícate', sub: 'Se pedirán tu nombre, documento, fecha y lugar de nacimiento, sexo y retrato de tu documento de identidad.' })
+    if (!r) return
+    await cargarPersona(); location.hash = destino; ruta()
+  }
+  const pideIdentidad = (destino) => vista.replaceChildren(el('h1', { class: 't' }, 'Identifícate'), el('p', { class: 'lead' }, 'Para continuar, comprueba quién eres con tu documento de identidad digital. Tus datos salen de él: nadie los escribe.'), el('button', { class: 'primario', onclick: () => identificarse(destino) }, 'Identificarme con mi wallet'))
+
+  function inicio() {
+    $('heroe').hidden = false
+    vista.replaceChildren(el('div', { class: 'tarjetas' },
+      el('div', { class: 'tarjeta' }, el('h2', {}, 'Solicitar pasaporte'), el('p', {}, 'Con tu documento de identidad digital. El retrato es el de tu documento.'), el('a', { class: 'boton primario', href: '#solicitar' }, 'Solicitar')),
+      el('div', { class: 'tarjeta' }, el('h2', {}, 'Mis pasaportes'), el('p', {}, 'Recíbelo en tu wallet, reexpídelo si lo pierdes o repórtalo como perdido.'), el('a', { class: 'boton secundario', href: '#mis-pasaportes' }, 'Ver mis pasaportes')),
+      el('div', { class: 'tarjeta' }, el('h2', {}, 'Verificar un pasaporte'), el('p', {}, 'Pide a una wallet su pasaporte y comprueba si es auténtico, está vigente y no fue revocado.'), el('a', { class: 'boton secundario', href: '#verificar' }, 'Verificar'))))
+  }
+
+  // Ya tiene un pasaporte vigente: en vez de un error sin salida se le ofrece reexpedirlo (o recibirlo, si aún no lo tiene en la wallet).
+  function yaTienePasaporte(tr) {
+    const enWallet = (tr.entregas ?? 0) > 0
+    const error = el('div', { class: 'aviso error', hidden: true })
+    const pedirOferta = async (reexpedir) => {
+      if (reexpedir && !confirm('Se emitirá una nueva copia y la que tienes dejará de valer. ¿Continuar?')) return
+      try { const r = await api(`/api/tramites/${tr.numero}/oferta`, { method: 'POST', body: { reexpedir } }); entrega(r.oferta, tr) } catch (e) { error.textContent = e.message; error.hidden = false }
+    }
+    vista.replaceChildren(el('h1', { class: 't' }, 'Solicitar pasaporte'),
+      el('div', { class: 'caja' },
+        el('div', { class: 'aviso info' }, `Ya tienes un pasaporte vigente (${tr.datos.pasaporte_numero}, hasta ${fecha(tr.datos.fecha_vencimiento)}). ${enWallet ? 'Si lo perdiste o cambiaste de teléfono, pide la reexpedición: la copia anterior dejará de valer.' : 'Todavía no lo has recibido en tu wallet.'}`),
+        error,
+        el('div', { class: 'acciones' },
+          enWallet ? el('button', { class: 'primario', onclick: () => pedirOferta(true) }, 'Reexpedir pasaporte') : el('button', { class: 'primario', onclick: () => pedirOferta(false) }, 'Recibir en mi wallet'),
+          el('a', { class: 'boton secundario', href: '#mis-pasaportes' }, 'Ver mis pasaportes'))))
+  }
+
+  async function solicitar() {
+    if (!persona) return pideIdentidad('solicitar')
+    try {
+      const hoy = new Date().toISOString().slice(0, 10)
+      const vigente = (await api('/api/tramites')).find((t) => t.estado === 'vigente' && t.datos.fecha_vencimiento >= hoy)
+      if (vigente) return yaTienePasaporte(vigente)
+    } catch { /* sin lista: se muestra el formulario y el servidor valida */ }
+    const campos = {}
+    const error = el('div', { class: 'aviso error', hidden: true })
+    const enviar = el('button', { class: 'primario', type: 'submit' }, 'Solicitar pasaporte')
+    campos.confirmo = el('input', { type: 'checkbox', required: true })
+    const form = el('form', { class: 'caja', onsubmit: async (e) => {
+      e.preventDefault(); error.hidden = true; enviar.disabled = true
+      try {
+        const r = await api('/api/tramites', { method: 'POST', body: { tipo: 'pasaporte', datos: { confirmo: campos.confirmo.checked } } })
+        entrega(r.oferta, r.tramite)
+      } catch (err) { error.textContent = err.message; error.hidden = false; enviar.disabled = false }
+    } },
+      el('div', { class: 'otorgante' }, persona.foto ? el('img', { src: persona.foto, alt: '' }) : '', el('div', {}, el('strong', {}, `${persona.nombres} ${persona.apellidos}`), el('br'), `Documento ${persona.documento} · nacido(a) el ${fecha(persona.fecha_nacimiento)}`, el('br'), `${persona.lugar_nacimiento ?? ''}${persona.sexo ? ' · ' + persona.sexo : ''}`)),
+      el('div', { class: 'aviso info' }, 'Tu retrato, nombre, documento, fecha y lugar de nacimiento (ciudad y departamento) y sexo salen de tu documento de identidad digital. El pasaporte vale 10 años (5 si eres menor de edad).'),
+      el('label', { style: 'flex-direction:row;gap:10px;align-items:flex-start' }, campos.confirmo, 'Declaro que los datos son ciertos y solicito mi pasaporte.'), error, enviar)
+    vista.replaceChildren(el('h1', { class: 't' }, 'Solicitar pasaporte'), el('p', { class: 'lead' }, 'Pasaporte ordinario.'), form)
+  }
+
+  function entrega(oferta, tr) {
+    vista.replaceChildren(el('h1', { class: 't' }, 'Recibe tu pasaporte'),
+      el('div', { class: 'caja entrega' },
+        MOVIL ? el('a', { class: 'boton primario', href: oferta.enlace }, 'Recibir en mi wallet') : el('img', { src: oferta.qr, alt: 'Código QR con la oferta' }),
+        el('div', {}, el('p', {}, MOVIL ? 'Toca el botón y escribe este PIN cuando tu wallet lo pida:' : 'Escanéalo con tu wallet y escribe este PIN cuando lo pida:'), el('div', { class: 'pin' }, oferta.pin),
+          el('p', { class: 'cuenta' }, 'La oferta vale 15 minutos y sirve una vez.'), el('a', { class: 'boton secundario', href: '#mis-pasaportes' }, 'Ir a mis pasaportes'))))
+  }
+
+  async function misPasaportes() {
+    if (!persona) return pideIdentidad('mis-pasaportes')
+    let lista = []
+    try { lista = await api('/api/tramites') } catch (e) { return pideIdentidad('mis-pasaportes') }
+    const error = el('div', { class: 'aviso error', hidden: true })
+    const oferta = async (tr, reexpedir) => {
+      if (reexpedir && !confirm('Se emitirá una nueva copia y la que tienes dejará de valer. ¿Continuar?')) return
+      try { const r = await api(`/api/tramites/${tr.numero}/oferta`, { method: 'POST', body: { reexpedir } }); entrega(r.oferta, tr) } catch (e) { error.textContent = e.message; error.hidden = false }
+    }
+    const perdido = async (tr) => {
+      if (!confirm('Se revocará este pasaporte y dejará de valer en cualquier wallet. ¿Reportarlo como perdido?')) return
+      try { await api(`/api/tramites/${tr.numero}/anular`, { method: 'POST', body: {} }); misPasaportes() } catch (e) { error.textContent = e.message; error.hidden = false }
+    }
+    const filas = lista.map((tr) => {
+      const enWallet = (tr.entregas ?? 0) > 0
+      const vence = tr.datos.fecha_vencimiento
+      const vencido = vence < new Date().toISOString().slice(0, 10)
+      const etiqueta = tr.estado !== 'vigente' ? 'Revocado' : vencido ? 'Vencido' : enWallet ? 'En tu wallet' : 'Emitido, falta recibirlo'
+      const ok = tr.estado === 'vigente' && !vencido
+      return el('div', { class: 'fila' },
+        el('div', { class: 'que' }, el('strong', {}, `Pasaporte ${tr.datos.pasaporte_numero}`), el('span', {}, `Solicitud ${tr.numero} · expedido ${fecha(tr.fecha)} · válido hasta ${fecha(vence)}`),
+          tr.anulado ? el('span', {}, `Revocado el ${fecha(tr.anulado.fecha)}: ${tr.anulado.motivo}`) : ''),
+        el('span', { class: `etiqueta ${ok ? 'vigente' : 'anulado'}` }, etiqueta),
+        el('div', { class: 'acciones' }, ok ? [enWallet ? el('button', { class: 'secundario', onclick: () => oferta(tr, true) }, 'Reexpedir (lo perdí)') : el('button', { class: 'secundario', onclick: () => oferta(tr, false) }, 'Recibir en mi wallet'), el('button', { class: 'peligro', onclick: () => perdido(tr) }, 'Reportar pérdida')] : ''))
+    })
+    vista.replaceChildren(el('h1', { class: 't' }, 'Mis pasaportes'), error, lista.length ? el('div', { class: 'caja', style: 'max-width:none' }, filas) : el('p', { class: 'lead' }, 'Aún no has solicitado ningún pasaporte.'), el('a', { class: 'boton primario', href: '#solicitar' }, 'Solicitar pasaporte'))
+  }
+
+  async function verificar() {
+    vista.replaceChildren(el('h1', { class: 't' }, 'Verificar un pasaporte'), el('p', { class: 'lead' }, 'Pide a quien te lo muestra que lo presente desde su wallet. Verás sus datos y si es auténtico, está vigente y no fue revocado.'),
+      el('button', { class: 'primario', onclick: async () => { const r = await pedir({ proposito: 'verificacion', tipo: 'pasaporte', titulo: 'Presenta el pasaporte', sub: 'Se le pedirá a la wallet el pasaporte.' }); if (r) resultado(r.documento) } }, 'Pedir el pasaporte'), el('div', { id: 'res', style: 'margin-top:18px' }))
+  }
+  function resultado(d) {
+    const ok = d.de_esta_cancilleria
+    const foto = d.datos['Retrato']
+    $('res').replaceChildren(el('div', { class: 'caja', style: 'max-width:none' },
+      el('div', { class: `veredicto${ok ? '' : ' no'}` }, ok ? '✔' : '✖', ok ? 'Pasaporte auténtico, vigente y sin revocar' : 'Pasaporte de otro emisor: no es de esta Cancillería'),
+      el('div', { class: 'pasaporte' }, foto ? el('img', { src: foto, alt: 'Retrato del titular' }) : '',
+        el('dl', {}, ...Object.entries(d.datos).filter(([k]) => k !== 'Retrato').map(([k, v]) => el('div', { class: 'f' }, el('dt', {}, k), el('dd', {}, String(v))))))))
+  }
+
+  async function ruta() {
+    cerrar()
+    const r = location.hash.replace('#', '').split('?')[0]
+    document.querySelectorAll('nav a').forEach((a) => a.classList.toggle('activo', a.dataset.r === r))
+    $('heroe').hidden = r !== ''
+    if (!r) return inicio()
+    if (r === 'solicitar') return solicitar()
+    if (r === 'mis-pasaportes') return misPasaportes()
+    if (r === 'verificar') return verificar()
+    if (r.startsWith('identificado') || r.startsWith('error') || r.startsWith('verificado')) { await cargarPersona(); location.hash = ''; return }
+    inicio()
+  }
+  addEventListener('hashchange', ruta)
+  cargarPersona().then(ruta)
+})()
+</script>
+<script>
+// Enlace «Historial»: solo se muestra a quien puede abrirlo (el proxy responde 403 fuera de las IPs de administración).
+try { fetch('{{BASE}}/auditoria/api/ping', { cache: 'no-store' }).then((r) => { if (r.ok) { const a = document.getElementById('nav-historial'); if (a) a.hidden = false } }).catch(() => {}) } catch (e) {}
+</script>
+</body>
+</html>

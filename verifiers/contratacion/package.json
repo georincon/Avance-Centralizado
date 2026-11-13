@@ -1,0 +1,19 @@
+{
+  "name": "contratacion-ejemplo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Portal de un empleador que verifica el nivel de formación académica de una persona candidata con la credencial de la universidad, pidiendo solo lo necesario",
+  "type": "module",
+  "main": "src/servidor.js",
+  "scripts": {
+    "start": "node src/servidor.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "pg": "^8.13.1",
+    "qrcode": "^1.5.4"
+  }
+}

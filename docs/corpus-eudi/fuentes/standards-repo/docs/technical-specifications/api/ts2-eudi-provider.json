@@ -1,0 +1,413 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"id": "http://data.europa.eu/eudi/model",
+	"type": "object",
+	"properties":
+	{
+		"EUDI-Provider-2025-04-24-v2":
+		{
+			"type": "object",
+			"anyOf":
+			[
+				{ "$ref": "#/definitions/Document" },
+				{ "$ref": "#/definitions/Identifier" },
+				{ "$ref": "#/definitions/Identifier" },
+				{ "$ref": "#/definitions/Law" },
+				{ "$ref": "#/definitions/Law" },
+				{ "$ref": "#/definitions/LegalEntity" },
+				{ "$ref": "#/definitions/LegalPerson" },
+				{ "$ref": "#/definitions/NaturalPerson" },
+				{ "$ref": "#/definitions/PIDProvider" },
+				{ "$ref": "#/definitions/Policy" },
+				{ "$ref": "#/definitions/Provider" },
+				{ "$ref": "#/definitions/PubEEAProvider" },
+				{ "$ref": "#/definitions/TrustService" },
+				{ "$ref": "#/definitions/TrustServiceProvider" },
+				{ "$ref": "#/definitions/WRPAccCertProvider" },
+				{ "$ref": "#/definitions/WRPRegistrar" },
+				{ "$ref": "#/definitions/WalletProvider" },
+				{ "$ref": "#/definitions/WalletSolution" }
+			]
+		}
+	},
+	"definitions":
+	{
+		"Document" : 
+		{
+			"type": "object",
+			"properties":
+			{
+				"content":
+				{
+					"type" : "string"
+				},
+				"type":
+				{
+					"type" : "string"
+				}
+			}
+		},
+		"Identifier" : 
+		{
+			"type": "object",
+			"properties":
+			{
+				"identifier":
+				{
+					"type" : "string"
+				},
+				"type":
+				{
+					"type" : "string"
+				}
+			}
+		},
+		"Identifier" : 
+		{
+			"type": "object",
+			"properties":
+			{
+			}
+		},
+		"Law" : 
+		{
+			"type": "object",
+			"properties":
+			{
+			}
+		},
+		"Law" : 
+		{
+			"type": "object",
+			"properties":
+			{
+				"lang":
+				{
+					"type" : "string"
+				},
+				"legalBasis":
+				{
+					"type" : "string"
+				}
+			}
+		},
+		"LegalEntity" : 
+		{
+			"type": "object",
+			"properties":
+			{
+				"country":
+				{
+					"type" : "string"
+				},
+				"email":
+				{
+					"type" : "array",
+					"items" : { "type":"string" },
+					"minItems": 0
+				},
+				"identifier":
+				{
+					"type" : "array",
+					"items" : { "$ref":"#/definitions/Identifier" },
+					"minItems": 0
+				},
+				"infoURI":
+				{
+					"type" : "array",
+					"items" : { "type":"string" },
+					"minItems": 0
+				},
+				"is identified by":
+				{
+					"type" : "array",
+					"items" : { "$ref":"#/definitions/Identifier" }
+				},
+				"legalPerson":
+				{
+					"$ref" : "#/definitions/LegalEntity"
+				},
+				"may be":
+				{
+					"type" : "array",
+					"items" : { "$ref":"#/definitions/LegalPerson" }
+				},
+				"naturalPerson":
+				{
+					"$ref" : "#/definitions/NaturalPerson"
+				},
+				"phone":
+				{
+					"type" : "array",
+					"items" : { "type":"string" },
+					"minItems": 0
+				},
+				"postalAddress":
+				{
+					"type" : "array",
+					"items" : { "type":"string" },
+					"minItems": 0
+				}
+			}
+		},
+		"LegalPerson" : 
+		{
+			"type": "object",
+			"properties":
+			{
+				"establishedByLaw":
+				{
+					"type" : "array",
+					"items" : { "$ref":"#/definitions/Law" },
+					"minItems": 0
+				},
+				"is established by":
+				{
+					"type" : "array",
+					"items" : { "$ref":"#/definitions/Law" }
+				},
+				"legalName":
+				{
+					"type" : "array",
+					"items" : { "type":"string" },
+					"minItems": 1
+				}
+			}
+		},
+		"NaturalPerson" : 
+		{
+			"type": "object",
+			"properties":
+			{
+				"dateOfBirth":
+				{
+					"type" : "string"
+				},
+				"familyName":
+				{
+					"type" : "string"
+				},
+				"givenName":
+				{
+					"type" : "string"
+				},
+				"placeOfBirth":
+				{
+					"type" : "string"
+				}
+			}
+		},
+		"PIDProvider" : 
+		{
+			"allOf":
+			[
+				{ "$ref": "#/definitions/Provider" },
+				{
+					"properties":
+					{
+						"PIDIssuer":
+						{
+							"type" : "string"
+						}
+					}
+				}
+			]
+		},
+		"Policy" : 
+		{
+			"type": "object",
+			"properties":
+			{
+				"policyURI":
+				{
+					"type" : "string"
+				},
+				"type":
+				{
+					"type" : "string"
+				}
+			}
+		},
+		"Provider" : 
+		{
+			"type": "object",
+			"properties":
+			{
+				"policy":
+				{
+					"type" : "array",
+					"items" : { "$ref":"#/definitions/Policy" },
+					"minItems": 0
+				},
+				"providerType":
+				{
+					"type" : "string"
+				},
+				"x5c":
+				{
+					"type" : "string"
+				}
+			}
+		},
+		"PubEEAProvider" : 
+		{
+			"allOf":
+			[
+				{ "$ref": "#/definitions/Provider" },
+				{
+					"properties":
+					{
+						"CAR":
+						{
+							"type" : "string"
+						},
+						"EEAIssuer":
+						{
+							"type" : "string"
+						}
+					}
+				}
+			]
+		},
+		"TrustService" : 
+		{
+			"type": "object",
+			"properties":
+			{
+				"srvName":
+				{
+					"type" : "string"
+				},
+				"srvQualifier":
+				{
+					"type" : "array",
+					"items" : { "type":"string" },
+					"minItems": 0
+				},
+				"srvURI":
+				{
+					"type" : "string"
+				},
+				"status":
+				{
+					"type" : "string"
+				},
+				"statusDate":
+				{
+					"type" : "string"
+				},
+				"type":
+				{
+					"type" : "string"
+				},
+				"x5c":
+				{
+					"type" : "string"
+				}
+			}
+		},
+		"TrustServiceProvider" : 
+		{
+			"allOf":
+			[
+				{ "$ref": "#/definitions/Provider" },
+				{
+					"properties":
+					{
+						"provides":
+						{
+							"type" : "array",
+							"items" : { "$ref":"#/definitions/TrustService" }
+						},
+						"trustSrv":
+						{
+							"type" : "array",
+							"items" : { "$ref":"#/definitions/TrustService" },
+							"minItems": 1
+						}
+					}
+				}
+			]
+		},
+		"WRPAccCertProvider" : 
+		{
+			"allOf":
+			[
+				{ "$ref": "#/definitions/Provider" },
+				{
+					"properties":
+					{
+						"provides":
+						{
+							"type" : "array",
+							"items" : { "$ref":"#/definitions/TrustService" }
+						},
+						"trustSrv":
+						{
+							"type" : "array",
+							"items" : { "$ref":"#/definitions/TrustService" },
+							"minItems": 1
+						}
+					}
+				}
+			]
+		},
+		"WRPRegistrar" : 
+		{
+			"allOf":
+			[
+				{ "$ref": "#/definitions/Provider" },
+				{
+					"properties":
+					{
+						"register":
+						{
+							"type" : "string"
+						},
+						"registerURI":
+						{
+							"type" : "array",
+							"items" : { "type":"string" },
+							"minItems": 1
+						}
+					}
+				}
+			]
+		},
+		"WalletProvider" : 
+		{
+			"allOf":
+			[
+				{ "$ref": "#/definitions/Provider" },
+				{
+					"properties":
+					{
+						"walletSol":
+						{
+							"$ref" : "#/definitions/WalletSolution"
+						}
+					}
+				}
+			]
+		},
+		"WalletSolution" : 
+		{
+			"type": "object",
+			"properties":
+			{
+				"refNum":
+				{
+					"type" : "string"
+				},
+				"solProvider":
+				{
+					"type" : "string"
+				},
+				"walletName":
+				{
+					"type" : "string"
+				}
+			}
+		}
+	}
+}

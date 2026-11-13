@@ -1,0 +1,610 @@
+openapi: 3.1.0
+info:
+  title: EUDI Wallet Relying Party Registrar API
+  version: v1.5
+servers:
+  - url: 'https://example.com/registrar'
+components:
+  schemas:
+    WalletRelyingParty:
+      $ref: '#/components/schemas/WalletRelyingPartySchema'
+    ProvidedAttestation:
+      type: object
+      properties:
+        format:
+          type: string
+        type:
+          type: string
+    Claim:
+      type: object
+      properties:
+        path:
+          type: string
+    Credential:
+      type: object
+      properties:
+        format:
+          type: string
+        meta:
+          $ref: '#/components/schemas/MetaType'
+        claims:
+          type: array
+          items:
+            $ref: '#/components/schemas/Claim'
+          minItems: 1
+    Identifier:
+      type: object
+      properties:
+        identifier:
+          type: string
+        type:
+          type: string
+    IntendedUse:
+      type: object
+      properties:
+        purpose:
+          type: array
+          items:
+            $ref: '#/components/schemas/MultiLangString'
+          minItems: 1
+        privacyPolicy:
+          type: array
+          items:
+            $ref: '#/components/schemas/Policy'
+          minItems: 1
+        intendedUseIdentifier:
+          type: string
+        createdAt:
+          type: string
+        revokedAt:
+          type: string
+        credentials:
+          type: array
+          items:
+            $ref: '#/components/schemas/Credential'
+          minItems: 1
+    Law:
+      type: object
+      properties:
+        lang:
+          type: string
+        legalBasis:
+          type: string
+    LegalEntity:
+      type: object
+      properties:
+        country:
+          type: string
+        email:
+          type: array
+          items:
+            type: string
+          minItems: 0
+        identifier:
+          type: array
+          items:
+            $ref: '#/components/schemas/Identifier'
+          minItems: 1
+        infoURI:
+          type: array
+          items:
+            type: string
+          minItems: 0
+        legalPerson:
+          $ref: '#/components/schemas/LegalEntity'
+        may be:
+          type: array
+          items:
+            $ref: '#/components/schemas/LegalPerson'
+        naturalPerson:
+          $ref: '#/components/schemas/NaturalPerson'
+        phone:
+          type: array
+          items:
+            type: string
+          minItems: 0
+        postalAddress:
+          type: array
+          items:
+            type: string
+          minItems: 0
+    LegalPerson:
+      type: object
+      properties:
+        establishedByLaw:
+          type: array
+          items:
+            $ref: '#/components/schemas/Law'
+          minItems: 0
+        legalName:
+          type: array
+          items:
+            type: string
+          minItems: 1
+    MetaType:
+      type: object
+      oneOf:
+        - $ref: '#/components/schemas/DcSdJwtMeta'
+        - $ref: '#/components/schemas/MsoMdocMeta'
+    DcSdJwtMeta:
+      title: dc_sd_jwt
+      type: object
+      required:
+        - vct_values
+      properties:
+        vct_values:
+          type: array
+          items:
+            type: string
+          minItems: 1
+      additionalProperties: false
+    MsoMdocMeta:
+      title: mso_mdoc
+      type: object
+      required:
+        - doctype_value
+      properties:
+        doctype_value:
+          type: string
+      additionalProperties: false
+    MultiLangString:
+      type: object
+      properties:
+        lang:
+          type: string
+        content:
+          type: string
+    NaturalPerson:
+      type: object
+      properties:
+        dateOfBirth:
+          type: string
+        familyName:
+          type: string
+        givenName:
+          type: string
+        placeOfBirth:
+          type: string
+    Policy:
+      type: object
+      properties:
+        policyURI:
+          type: string
+        type:
+          type: string
+    Provider:
+      type: object
+      properties:
+        policy:
+          type: array
+          items:
+            $ref: '#/components/schemas/Policy'
+          minItems: 0
+        providerType:
+          type: integer
+        x5c:
+          type: string
+    SupervisoryAuthority:
+      type: object
+      properties:
+        country:
+          type: string
+        email:
+          type: array
+          items:
+            type: string
+          minItems: 0
+        formURI:
+          type: array
+          items:
+            type: string
+          minItems: 0
+        name:
+          type: string
+        phone:
+          type: array
+          items:
+            type: string
+          minItems: 0
+    WalletRelyingPartyService:
+      type: object
+      properties:
+        serviceTradeName:
+          type: string
+        serviceIdentifier:
+          type: string
+        supportURI:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        srvDescription:
+          type: array
+          items:
+            type: array
+            minItems: 1
+            items:
+              $ref: '#/components/schemas/MultiLangString'
+        intendedUses:
+          type: array
+          items:
+            $ref: '#/components/schemas/IntendedUse'
+          minItems: 0
+        entitlements:
+          type: array
+          items:
+            type: string
+          minItems: 0
+        subEntitlements:
+          type: array
+          items:
+            type: string
+          minItems: 0  
+        providesAttestations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProvidedAttestation'
+          minItems: 0
+        usesIntermediaries:
+          type: array
+          items:
+            $ref: '#/components/schemas/WalletRelyingPartyService'
+          minItems: 0
+        isIntermediary:
+          type: boolean
+        servedWRPServices:
+          type: array
+          items:
+            type: string
+          minItems: 0 
+    WalletRelyingPartySchema:
+      allOf:
+        - $ref: '#/components/schemas/Provider'
+        - type: object
+          properties:
+            isPSB:
+              type: boolean
+            supervisoryAuthority:
+              $ref: '#/components/schemas/SupervisoryAuthority'
+            tradeName:
+              type: string
+            registryURI:
+              type: string
+            services:
+              type: array
+              minItems: 1
+              items:
+                $ref: '#/components/schemas/WalletRelyingPartyService'
+    SignedWRP:
+      type: object
+      description: The schema for the payload contained within the signed JWT response for WRP single queries/updates.
+      required:
+        - iss
+        - iat
+        - data
+      properties:
+        iss:
+          type: string
+          description: 'Issuer, the identifier of the Registry.'
+        iat:
+          type: integer
+          format: int64
+          description: 'Issued At, the timestamp at which the JWT was issued.'
+        data:
+          $ref: '#/components/schemas/WalletRelyingParty'
+    SignedWRPArray:
+      type: object
+      description: The schema for the payload within the JWT response for /wrp 'get' method.
+      required:
+        - iss
+        - iat
+        - data
+      properties:
+        iss:
+          type: string
+          description: 'Issuer, the identifier of the Registry.'
+        iat:
+          type: integer
+          format: int64
+          description: 'Issued At, the timestamp at which the JWT was issued.'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/WalletRelyingParty'
+        pagination:
+          type: object
+          properties:
+            next_cursor:
+              type: string
+              description: The cursor to use to fetch the next page of results.
+            has_next_page:
+              type: boolean
+              description: Whether there is a next page of results.
+    SignedIntendedUseCheckResult:
+      type: object
+      description: The schema for the payload within the JWT response for /wrp/check-intended-use 'get' method
+      required:
+        - iss
+        - iat
+        - data
+      properties:
+        iss:
+          type: string
+          description: 'Issuer, the identifier of the Registry'
+        iat:
+          type: integer
+          format: int64
+          description: 'Issued At, the timestamp at which the JWT was issued'
+        data:
+          type: object
+          properties:
+            isRegistered:
+              type: boolean
+              description: True if specified attributes match registration data.
+            details:
+              type: string
+paths:
+  /wrp:
+    put:
+      summary: Update an existing Wallet Relying Party
+      description: Atomic update method for managing wrp objects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalletRelyingParty'
+      responses:
+        '200':
+          description: Successfully updated Wallet Relying Party as a JWS-signed object
+          headers:
+            x-jku-url:
+              schema:
+                type: string
+                format: uri
+          content:
+            application/jwt:
+              schema:
+                type: string
+                format: JWS
+        '400':
+          description: Invalid request payload
+        '404':
+          description: Wallet Relying Party not found
+    get:
+      summary: 'Get a list of Wallet Relying Parties (with optional filtering, isolation, and pagination)'
+      description: Returns a list of matching Wallet Relying Parties. If `serviceIdentifier` is provided  along side `isolateService=true`, the returned parent records will have their  `walletRelyingPartyService` arrays filtered down to contain only the matching service instance.
+      parameters:
+        - in: query
+          name: identifier
+          schema:
+            type: string
+          description: Filter by Wallet-Relying Party identifier
+        - in: query
+          name: serviceidentifier
+          schema:
+            type: string
+          description: Filter by precise Service Identifier inside the WRPServices array
+        - in: query
+          name: isolateService
+          schema:
+            type: boolean
+            default: false
+          description: |
+            If true, and a `serviceIdentifier` match is found, the backend will strip out all  other non-matching service instances from the returned WRP objects in the `data` array.
+        - in: query
+          name: legalname
+          schema:
+            type: string
+          description: Filter by registered legal name
+        - in: query
+          name: tradename
+          schema:
+            type: string
+          description: Filter by WRP 'tradeName' or WalletRelyingPartyService 'serviceTradeName'
+        - in: query
+          name: policy
+          schema:
+            type: string
+          description: Filter by policy URI
+        - in: query
+          name: entitlement
+          schema:
+            type: string
+          description: Filter by entitlement value
+        - in: query
+          name: providedattestation
+          schema:
+            type: string
+          description: Filter by provided attestation type
+        - in: query
+          name: credentialmeta
+          schema:
+            type: string
+          description: Filter by credential -> meta information
+        - in: query
+          name: credentialformat
+          schema:
+            type: string
+          description: Filter by WRPs that have registered given credential format within their intended use
+        - in: query
+          name: usesintermediary
+          schema:
+            type: string
+          description: Filter by intermediary service matching with given 'WalletRelyingPartyService.serviceIdentifier' string
+        - in: query
+          name: isintermediary
+          schema:
+            type: boolean
+          description: Filter by WRPs that have registered as an intermediary
+        - in: query
+          name: intendeduseidentifier
+          schema:
+            type: string
+          description: Filter by registrar-assigned identifier of an intended use
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+          description: use limit-based pagination
+        - name: cursor
+          in: query
+          schema:
+            type: string
+          description: use cursor-based pagination
+      responses:
+        '200':
+          description: JWS-signed list of matching Wallet Relying Party objects (potentially service-isolated)
+          headers:
+            x-jku-url:
+              schema:
+                type: string
+                format: uri
+          content:
+            application/jwt:
+              schema:
+                type: string
+                format: JWS
+                description: Payload conforms to 'SignedWRPArray'
+        '400':
+          description: Invalid request payload
+        '404':
+          description: Wallet Relying Party not found
+  /wrp/{identifier}:
+    get:
+      summary: Get Wallet Relying Party by identifier
+      description: Method to retrieve a WRP object as a signed JWS.
+      parameters:
+        - in: path
+          name: identifier
+          required: true
+          schema:
+            type: string
+          description: The identifier of the Wallet Relying Party to retrieve
+      responses:
+        '200':
+          description: Found Wallet Relying Party as a JWS-signed object
+          headers:
+            x-jku-url:
+              schema:
+                type: string
+                format: uri
+          content:
+            application/jwt:
+              schema:
+                type: string
+                format: JWS
+        '404':
+          description: Wallet Relying Party not found
+    delete:
+      summary: Delete a Wallet Relying Party by identifier
+      description: Atomic WRP delete method. The whole WRP object will be deleted.
+      parameters:
+        - in: path
+          name: identifier
+          required: true
+          schema:
+            type: string
+          description: Wallet Relying Party identifier
+      responses:
+        '204':
+          description: Wallet Relying Party successfully deleted
+        '404':
+          description: Wallet Relying Party not found
+  /wrp/{identifier}/services/{serviceidentifier}:
+    get:
+      summary: Get Wallet Relying Party payload isolated to a specific registered Service Identifier
+      description: |
+        Retrieves the parent Wallet Relying Party record matching the '{identifier}',  but slices the `walletRelyingPartyService` array down so it returns ONLY the  single service instance matching the provided '{serviceidentifier}'.
+      parameters:
+        - in: path
+          name: identifier
+          required: true
+          schema:
+            type: string
+          description: The parent unique identifier of the Wallet Relying Party
+        - in: path
+          name: serviceidentifier
+          required: true
+          schema:
+            type: string
+          description: The specific service identifier lookup key
+      responses:
+        '200':
+          description: Found isolated parent record containing only the filtered service object instance
+          headers:
+            x-jku-url:
+              description: JWKS verification endpoint
+              schema:
+                type: string
+                format: uri
+          content:
+            application/jwt:
+              schema:
+                type: string
+                format: JWS
+                description: Payload unpacks to a SignedWRP containing the parent structural keys but a singular service item.
+        '404':
+          description: Either the target Wallet Relying Party or the specific Service Identifier was not located.
+      x-stoplight:
+        id: ydthi4t2vlans
+  /wrp/check-intended-use:
+    get:
+      summary: Check if a specific intended use configuration is active
+      description: Provides a JWS-signed boolean `TRUE` or `FALSE` response if the queried parameter set can be found in the Registrar's `Intended use` information
+      parameters:
+        - in: query
+          name: identifier
+          schema:
+            type: string
+          description: Filter by WRP identifier
+        - in: query
+          name: serviceidentifier
+          schema:
+            type: string
+          description: Service identification filter context
+        - in: query
+          name: intendeduseidentifier
+          schema:
+            type: string
+          description: Filter by intendedUseIdentifier
+        - in: query
+          name: credentialformat
+          schema:
+            type: string
+          description: Filter intended uses by registered credential format
+        - in: query
+          name: claimpath
+          schema:
+            type: string
+          description: Filter by registered claim paths
+        - in: query
+          name: credentialmeta
+          schema:
+            type: string
+          description: Filter by matching credential -> meta information
+        - in: query
+          name: policyurl
+          schema:
+            type: string
+            format: uri
+          description: Filter by registered privacy policy URI
+      responses:
+        '200':
+          description: Intended use check result as a JWS-signed object
+          headers:
+            x-jku-url:
+              schema:
+                type: string
+                format: uri
+          content:
+            application/jwt:
+              schema:
+                type: string
+                format: JWS
+        '400':
+          description: Invalid request parameters
+        '404':
+          description: Wallet Relying Party for intended use configuration not found

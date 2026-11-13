@@ -1,0 +1,117 @@
+/*
+ * Copyright (c) 2025-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.trustvalidator.config
+
+import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.core.io.Resource
+import java.net.URI
+import java.net.URL
+import java.nio.file.Path
+import java.time.Duration
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.toJavaDuration
+
+@ConfigurationProperties("trust-validator")
+data class TrustValidatorConfigurationProperties(
+    val dss: LoTLConfigurationProperties,
+    val lote: LoTEConfigurationProperties,
+    val trustSources: TrustSourcesConfigurationProperties? = null,
+    val enableCertificateRevocationCheck: Boolean = true,
+) {
+    data class LoTLConfigurationProperties(
+        val fileCache: FileCacheConfigurationProperties,
+        val inMemoryCache: InMemoryCacheConfigurationProperties,
+    )
+
+    data class LoTEConfigurationProperties(
+        val fileCache: FileCacheConfigurationProperties,
+        val inMemoryCache: InMemoryCacheConfigurationProperties,
+    )
+}
+
+data class FileCacheConfigurationProperties(
+    val location: Path,
+    val cleanupInterval: Duration = (24.hours - 5.minutes).toJavaDuration(),
+    val expiration: Duration = 24.hours.toJavaDuration(),
+) {
+    init {
+        require(cleanupInterval.isPositive)
+        require(expiration.isPositive)
+    }
+}
+
+data class InMemoryCacheConfigurationProperties(
+    val expiration: Duration = 10.minutes.toJavaDuration(),
+) {
+    init {
+        require(expiration.isPositive)
+    }
+}
+
+data class TrustSourcesConfigurationProperties(
+    val walletProviders: TrustedListsConfigurationProperties? = null,
+    val pidProviders: TrustedListsConfigurationProperties? = null,
+    val qeaaProviders: TrustedListsConfigurationProperties? = null,
+    val pubEaaProviders: TrustedListsConfigurationProperties? = null,
+    val eaaProviders: List<EAATrustedListsConfigurationProperties>? = null,
+    val wrpacProviders: TrustedListsConfigurationProperties? = null,
+    val wrprcProviders: TrustedListsConfigurationProperties? = null,
+    val keyStore: KeyStoreConfigurationProperties? = null,
+)
+
+data class TrustedListsConfigurationProperties(
+    val lotl: LoTLConfigurationProperties? = null,
+    val lote: LoTEConfigurationProperties? = null,
+) {
+    data class LoTLConfigurationProperties(
+        val location: URL,
+        val signatureVerification: KeyStoreConfigurationProperties? = null,
+        val issuanceService: URI,
+        val revocationService: URI,
+    )
+
+    data class LoTEConfigurationProperties(
+        val location: URL,
+        val issuanceService: URI,
+        val revocationService: URI,
+    )
+}
+
+data class KeyStoreConfigurationProperties(
+    val location: Resource,
+    val keyStoreType: String = "JKS",
+    val password: Password? = null,
+) {
+    init {
+        require(location.exists() && location.isFile && location.isReadable) {
+            "location must point to an existing readable file"
+        }
+    }
+}
+
+@JvmInline
+value class Password(
+    val value: String,
+) {
+    override fun toString(): String = "Password(REDACTED)"
+}
+
+data class EAATrustedListsConfigurationProperties(
+    val useCase: String,
+    val lotl: TrustedListsConfigurationProperties.LoTLConfigurationProperties? = null,
+    val lote: TrustedListsConfigurationProperties.LoTEConfigurationProperties? = null,
+)

@@ -1,0 +1,29 @@
+name: panel-control
+
+services:
+  panel-control:
+    build: ..
+    container_name: avance-control-panel
+    restart: unless-stopped
+    environment:
+      AVANCE_ROOT: /home/geovani/Workspace/Avance-Centralizado
+      CONTROL_PANEL_TOKEN: ${CONTROL_PANEL_TOKEN:?Configura CONTROL_PANEL_TOKEN en .env}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ../..:/home/geovani/Workspace/Avance-Centralizado:ro
+      # El Compose del ANFITRION, no el de la imagen.
+      #
+      # Compose guarda en cada contenedor la etiqueta `com.docker.compose.version`
+      # y, si no coincide con la del cliente que lo maneja, lo RECREA. Con dos
+      # versiones distintas (la del host y la de la imagen) el panel y la
+      # terminal se recrean los contenedores mutuamente, en bucle: cada accion
+      # del panel reinicia el ecosistema entero.
+      - /usr/libexec/docker/cli-plugins/docker-compose:/usr/local/libexec/docker/cli-plugins/docker-compose:ro
+    networks:
+      avance-eudi:
+        aliases:
+          - avance-control-panel
+networks:
+  avance-eudi:
+    name: avance-eudi
+    external: true

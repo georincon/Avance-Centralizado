@@ -1,0 +1,7 @@
+# nw-nginx — punto de entrada unico del ecosistema
+#
+# Secretos: la PKI local (CA y certificado del proxy) NO se versiona.
+# Se genera con ./scripts/generar-certificados.sh
+certs/
+webroot/
+certbot-renew/__pycache__/

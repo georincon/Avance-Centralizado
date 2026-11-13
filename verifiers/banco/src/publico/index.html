@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{NOMBRE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
+<link rel="stylesheet" href="{{BASE}}/estilo.css">
+</head>
+<body>
+<header>
+  <div class="barra">
+    <a class="logo" href="{{BASE}}/">
+      <span class="marca">
+        <svg viewBox="0 0 64 46" fill="none" aria-hidden="true">
+          <g stroke="#fff" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 40V19a9 9 0 0 1 18 0v21"/>
+            <path d="M34 8v23a9 9 0 0 0 18 0V8"/>
+          </g>
+        </svg>
+      </span>
+      {{NOMBRE}}
+    </a>
+    <nav><a href="#">Personas</a><a href="#">Empresas</a><a href="#">Ayuda</a><a id="enlace-historial" href="{{BASE}}/auditoria/" hidden>Historial</a></nav>
+  </div>
+</header>
+
+<div class="aviso-error" id="error" hidden><div></div></div>
+
+<section class="heroe">
+  <div>
+    <span class="eyebrow">Identidad digital</span>
+    <h1>Tu banco, sin contraseñas.</h1>
+    <p>Entra o abre tu cuenta en un minuto con tu documento de identidad digital. Tu wallet te muestra
+      qué datos nos compartes y tú decides.</p>
+    <div class="acciones">
+      <button class="primario" data-tipo="ingreso">Ingresar con mi wallet</button>
+      <button class="secundario" data-tipo="registro">Abrir una cuenta</button>
+    </div>
+  </div>
+
+  <div class="tarjeta-demo">
+    <div class="tarjeta">
+      <div class="fila-sup">
+        <!-- La "nu" de NU: el trazo de vidrio con la luz en el borde superior. -->
+        <svg class="marca-nu" viewBox="0 0 64 46" fill="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="vidrio" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#fff" stop-opacity=".98"/>
+              <stop offset=".3" stop-color="#fff" stop-opacity=".72"/>
+              <stop offset=".68" stop-color="#fff" stop-opacity=".18"/>
+              <stop offset="1" stop-color="#fff" stop-opacity=".04"/>
+            </linearGradient>
+          </defs>
+          <g stroke="url(#vidrio)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 40V19a9 9 0 0 1 18 0v21"/>
+            <path d="M34 8v23a9 9 0 0 0 18 0V8"/>
+          </g>
+        </svg>
+
+        <!-- Mastercard -->
+        <svg class="mc" viewBox="0 0 60 36" fill="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="mcRojo" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#FF6A4D"/><stop offset="1" stop-color="#EB001B"/>
+            </linearGradient>
+            <linearGradient id="mcAmarillo" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#FFD05C"/><stop offset="1" stop-color="#F79E1B"/>
+            </linearGradient>
+          </defs>
+          <circle cx="21" cy="18" r="16" fill="url(#mcRojo)"/>
+          <circle cx="39" cy="18" r="16" fill="url(#mcAmarillo)"/>
+          <path d="M30 4.92A16 16 0 0 1 30 31.08A16 16 0 0 1 30 4.92Z" fill="#F1651F"/>
+        </svg>
+      </div>
+
+      <!-- El chip -->
+      <svg class="chip" viewBox="0 0 44 34" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="plata" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#D9D7DB"/><stop offset=".55" stop-color="#B8B6BA"/><stop offset="1" stop-color="#95939A"/>
+          </linearGradient>
+        </defs>
+        <rect x=".9" y=".9" width="42.2" height="32.2" rx="6" fill="url(#plata)" stroke="#7C7A80" stroke-width="1.2"/>
+        <g stroke="#7C7A80" stroke-width="1.3" stroke-linecap="round">
+          <path d="M2 11h40"/><path d="M2 23h40"/>
+          <path d="M14 11v12"/><path d="M30 11v12"/>
+          <path d="M15.5 23v-4.5a6.5 6.5 0 0 1 13 0V23"/>
+          <path d="M22 11V6"/>
+        </g>
+      </svg>
+
+      <div class="fila-inf">
+        <div>
+          <div class="nombre">{{NOMBRE}}</div>
+          <div class="numero">•••• •••• •••• 2026</div>
+        </div>
+        <div class="tipo">crédito</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ventajas">
+  <div class="contenido">
+    <div class="ventaja">
+      <div class="icono">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      </div>
+      <h3>Sin claves que recordar</h3>
+      <p>Tu identidad la confirma el documento de tu wallet, firmado por quien lo emitió.</p>
+    </div>
+    <div class="ventaja">
+      <div class="icono">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+      </div>
+      <h3>Solo lo necesario</h3>
+      <p>Para entrar te pedimos tu número de documento y tu nombre. Nada más.</p>
+    </div>
+    <div class="ventaja">
+      <div class="icono">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      </div>
+      <h3>Cuenta en un minuto</h3>
+      <p>Sin formularios ni fotocopias: los datos llegan verificados desde tu wallet.</p>
+    </div>
+  </div>
+</section>
+
+<footer>Banco de ejemplo para probar el ecosistema EUDI Wallet. No es un banco real.</footer>
+
+<div class="velo" id="velo" role="dialog" aria-modal="true" aria-labelledby="titulo">
+  <div class="ventana">
+    <button class="cerrar" id="cerrar" aria-label="Cerrar">✕</button>
+    <h2 id="titulo"></h2>
+    <p class="sub" id="sub"></p>
+    <div class="qr solo-escritorio" id="qr"><div class="girando"></div></div>
+    <a class="boton primario ancho solo-movil" id="abrir-wallet" href="#">Abrir mi wallet</a>
+    <div class="pide"><strong>Le pediremos a tu wallet:</strong><ul id="pide"></ul></div>
+    <div class="estado" id="estado"></div>
+  </div>
+</div>
+
+<script>
+  const BASE = '{{BASE}}'
+  const MOVIL = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+  const TEXTOS = {
+    ingreso: {
+      titulo: 'Ingresar con tu wallet',
+      sub: MOVIL ? 'Abre tu wallet, revisa y acepta. Volverás aquí automáticamente.' : 'Escanea el código con la wallet de tu teléfono.',
+      pide: ['Número de documento', 'Nombres y apellidos'],
+    },
+    registro: {
+      titulo: 'Abrir tu cuenta',
+      sub: MOVIL ? 'Abre tu wallet, revisa y acepta. Volverás aquí automáticamente.' : 'Escanea el código con la wallet de tu teléfono.',
+      pide: ['Número de documento', 'Nombres y apellidos', 'Fecha de nacimiento (eres mayor de edad)', 'Foto'],
+    },
+  }
+  const $ = (id) => document.getElementById(id)
+  if (MOVIL) document.querySelectorAll('.solo-movil').forEach((e) => (e.style.display = 'flex'))
+  if (MOVIL) document.querySelectorAll('.solo-escritorio').forEach((e) => (e.style.display = 'none'))
+
+  const error = new URLSearchParams(location.search).get('error')
+  if (error) { $('error').hidden = false; $('error').firstElementChild.textContent = error; history.replaceState(null, '', BASE + '/') }
+
+  let sondeo
+  function estado(texto, tipo) {
+    $('estado').className = 'estado' + (tipo === 'error' ? ' error' : '')
+    $('estado').innerHTML = tipo === 'esperando' ? '<div class="girando"></div>' : ''
+    $('estado').append(texto)
+  }
+  function cerrar() { clearTimeout(sondeo); $('velo').classList.remove('abierto') }
+  $('cerrar').onclick = cerrar
+
+  async function empezar(tipo) {
+    const t = TEXTOS[tipo]
+    $('titulo').textContent = t.titulo
+    $('sub').textContent = t.sub
+    $('pide').innerHTML = t.pide.map((p) => `<li>${p}</li>`).join('')
+    $('qr').innerHTML = '<div class="girando"></div>'
+    estado('Preparando la solicitud…', 'esperando')
+    $('velo').classList.add('abierto')
+    try {
+      const r = await fetch(`${BASE}/api/solicitud`, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ tipo, dispositivo: MOVIL ? 'mismo' : 'otro' }),
+      })
+      const s = await r.json()
+      if (!r.ok) return estado(s.error ?? 'No se pudo preparar la solicitud.', 'error')
+      $('qr').innerHTML = `<img alt="Código QR para tu wallet" src="${s.qr}">`
+      $('abrir-wallet').href = s.enlace
+      estado(MOVIL ? 'Esperando tu wallet…' : 'Esperando que escanees el código…', 'esperando')
+      // En el teléfono la wallet vuelve a /volver; en el computador se pregunta aquí.
+      if (!MOVIL) preguntar(s.id)
+    } catch {
+      estado('No hay conexión con el banco.', 'error')
+    }
+  }
+
+  async function preguntar(id) {
+    try {
+      const r = await (await fetch(`${BASE}/api/solicitud/${id}`)).json()
+      if (r.estado === 'listo') { estado('¡Listo! Entrando…'); location.href = r.destino + (r.nuevo ? '?nueva=1' : ''); return }
+      if (r.estado === 'rechazada') return estado(r.motivo, 'error')
+    } catch { /* se reintenta */ }
+    sondeo = setTimeout(() => preguntar(id), 2000)
+  }
+
+  document.querySelectorAll('[data-tipo]').forEach((b) => (b.onclick = () => empezar(b.dataset.tipo)))
+</script>
+<script>
+try { fetch('{{BASE}}/auditoria/api/ping').then((r) => { if (r.ok) document.getElementById('enlace-historial').hidden = false }).catch(() => {}) } catch (e) {}
+</script>
+</body>
+</html>

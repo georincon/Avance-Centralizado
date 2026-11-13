@@ -1,0 +1,37 @@
+version: '3.3'
+
+services:
+  verifier:
+    image: ghcr.io/eu-digital-identity-wallet/eudi-srv-verifier-endpoint:latest
+    container_name: verifier-backend
+    ports:
+      - "8080:8080"
+    environment:
+      VERIFIER_PUBLICURL: "https://10.240.174.10"
+      VERIFIER_DEFAULTHTTPRESPONSEMODE: "DirectPost"
+      VERIFIER_ACCESS_CERTIFICATE_SIGNING_ALGORITHM: "ES512"
+      VERIFIER_ACCESS_CERTIFICATE_KEYSTORE: "file:///certs/keystore.jks"
+      VERIFIER_ACCESS_CERTIFICATE_KEYSTORE_TYPE: "jks"
+      VERIFIER_ACCESS_CERTIFICATE_KEYSTORE_PASSWORD: "keystore"
+      VERIFIER_ACCESS_CERTIFICATE_ALIAS: "access_certificate"
+      VERIFIER_ACCESS_CERTIFICATE_PASSWORD: "access_certificate"
+    volumes:
+      - ./keystore.jks:/certs/keystore.jks
+
+  verifier-ui:
+    image: ghcr.io/eu-digital-identity-wallet/eudi-web-verifier:latest
+    container_name: verifier-ui
+    ports:
+      - "4300:4300"
+    environment:
+      - DOMAIN_NAME=""
+      - HOST_API="https://10.240.174.10"
+
+  haproxy:
+    image: haproxy:2.7.2
+    container_name: haproxy
+    ports:
+      - "443:443"
+    volumes:
+      - ./haproxy.conf:/usr/local/etc/haproxy/haproxy.cfg
+      - ./haproxy.pem:/etc/ssl/certs/mysite.pem

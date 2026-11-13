@@ -1,0 +1,211 @@
+{
+  "_comentario": [
+    "Anclas de confianza de proveedores que NO son de la PKI propia del publicador.",
+    "Cada proveedor trae su propia CA: aqui se registra de que lista salio y con que",
+    "nombre se publica. `slug` es el nombre del fichero en `ca/` sin extension.",
+    "Ver scripts/importar-anclas-remotas.py (importa) y app/sembrar.py (siembra).",
+    "",
+    "Tipos de servicio (la forma DECLARADA es la del upstream, sin `TrstSvc`; la",
+    "forma canonica corregida la traduce service_type_registry al publicar):",
+    "  http://uri.etsi.org/Svc/Svctype/Provider/Wallet   -> TL/WP",
+    "  http://uri.etsi.org/Svc/Svctype/Provider/PID      -> TL/PID",
+    "  http://uri.etsi.org/TrstSvc/Svctype/EAA/Q         -> TL/QEAA",
+    "  http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA   -> TL/PUBEAA",
+    "  http://uri.etsi.org/Svc/Svctype/CA/RPaccess      -> TL/RPREG"
+  ],
+  "anclas": [
+    {
+      "tipo": "http://uri.etsi.org/Svc/Svctype/Provider/Wallet",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/Provider/Wallet",
+      "nombre": "Lista de estado del Wallet Provider (CN=Spartans Status List,O=Avance,C=CO)",
+      "supply_points": [],
+      "sha256": "a2d9a88f2f44d990205876d70a27ed51741620d2d5ea3d4dc22bcd97de14f865",
+      "slug": "wp-spartans-status-list-root-ca-a2d9a88f",
+      "origen": "PKI viva: eudi-srv-wallet-provider/docker/status-list/certs/cert.crt"
+    },
+    {
+      "tipo": "http://uri.etsi.org/Svc/Svctype/Provider/Wallet",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/Provider/Wallet",
+      "nombre": "Spartans Wallet Provider (CN=Spartans Wallet Provider Root CA,O=Avance,C=CO)",
+      "supply_points": [],
+      "sha256": "b71909ce1d0fdb8121e8288daee6bfae30b93e34dc06984be442256077f37f61",
+      "slug": "wp-spartans-wallet-provider-root-ca-b71909ce",
+      "origen": "PKI viva: eudi-srv-wallet-provider/docker/secretos/pki/raiz.crt"
+    },
+    {
+      "slug": "pid-registraduria-issuance-root-4f4c5301",
+      "tipo": "http://uri.etsi.org/Svc/Svctype/Provider/PID",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/Provider/PID",
+      "nombre": "PID Registraduria (CN=REGISTRADURIA ISSUANCE ROOT)",
+      "supply_points": [],
+      "sha256": "4f4c5301e645a2e48f23cf007822a39c8b5307c09953b86b79b218fa03487048",
+      "origen": "https://civica-desarrollo.avance.org.co/tl-publisher/TL/PID/current.xml"
+    },
+    {
+      "slug": "pid-uis-issuer-pid-root-ca-4fbe93f6",
+      "tipo": "http://uri.etsi.org/Svc/Svctype/Provider/PID",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/Provider/PID",
+      "nombre": "UIS Issuer (Universidad Industrial de Santander) - PID (CN=UIS Issuer PID Root CA,O=Universidad Industrial de Santander,C=CO)",
+      "supply_points": [],
+      "sha256": "4fbe93f6074958cc8fd6f39288fefaddb0e58e488e20ada746fb4297ce4fc9b2",
+      "origen": "https://civica-desarrollo.avance.org.co/tl-publisher/TL/PID/current.xml"
+    },
+    {
+      "slug": "qeaa-eps-salud-c-vica-root-ca-9adc19d6",
+      "tipo": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Q",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Q",
+      "nombre": "EPS Salud Cívica (CN=EPS Salud Cívica Root CA,O=EPS Salud Cívica,C=CO)",
+      "supply_points": [],
+      "sha256": "9adc19d616c99b86b03a6900989e49f06b17642f4b9e42388decca0cdf2bb8f5",
+      "origen": "https://civica-desarrollo.avance.org.co/tl-publisher/TL/QEAA/current.xml"
+    },
+    {
+      "slug": "pubeaa-uis-issuer-root-ca-f1e15d56",
+      "tipo": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA",
+      "nombre": "UIS Issuer (Universidad Industrial de Santander) (CN=UIS Issuer Root CA,O=Universidad Industrial de Santander,C=CO)",
+      "supply_points": [],
+      "sha256": "f1e15d56dc7d91a26a86530a210b752c4768cbe984ae565ce5df05c0ab5acd2f",
+      "origen": "https://civica-desarrollo.avance.org.co/tl-publisher/TL/PUBEAA/current.xml"
+    },
+    {
+      "slug": "pubeaa-notar-a-primera-de-c-vica-root-ca-8b189264",
+      "tipo": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA",
+      "nombre": "Notaría Primera de Cívica (CN=Notaría Primera de Cívica Root CA,O=Notaría Primera de Cívica,C=CO)",
+      "supply_points": [],
+      "sha256": "8b189264affffa163d3c54db12ac03c0843014c5258f6017d955d1c02eda0955",
+      "origen": "https://civica-desarrollo.avance.org.co/tl-publisher/TL/PUBEAA/current.xml"
+    },
+    {
+      "slug": "rpreg-civica-verifier-access-ca-3efd5660",
+      "tipo": "http://uri.etsi.org/Svc/Svctype/CA/RPaccess",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/CA/RPaccess",
+      "nombre": "Civica EUDI Verifier Access CA (CN=Civica Verifier Access CA,O=Civica EUDI,C=CO)",
+      "supply_points": [
+        "https://civica-desarrollo.avance.org.co/pki/crl/raiz.crl"
+      ],
+      "sha256": "3efd56609c63fcf4c2468d3aa468bb91c914405b36da6d007782129b54ec13c2",
+      "origen": "https://civica-desarrollo.avance.org.co/tl-publisher/TL/RPREG/current.xml"
+    },
+    {
+      "slug": "rpreg-avance-verifier-access-ca-1c465034",
+      "tipo": "http://uri.etsi.org/Svc/Svctype/CA/RPaccess",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/CA/RPaccess",
+      "nombre": "Avance Verifier Access CA (CN=Avance Verifier Access CA,O=Corporacion Avance,C=CO)",
+      "supply_points": [],
+      "sha256": "1c4650340346e57f564bba10c9abdbbcad0181bb30ae375802b068fcdb2cf6af",
+      "origen": "PKI propia del verifier: eudi-srv-verifier-local-build/docker-compose/secretos/pki/access-root.crt"
+    },
+    {
+      "tipo": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Q",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Q",
+      "nombre": "EPS Salud Avance",
+      "supply_points": [
+        "https://civica-desarrollo.avance.org.co/eps"
+      ],
+      "sha256": "75fd870fb1202e5d0b8df8ccf4ac13595d9cce724331b6b2b7d13ddaa1768249",
+      "slug": "qeaa-eps-salud-avance-root-ca-75fd870f",
+      "origen": "registrada en el back-office del tl-publisher (actor 25, 6-nov-2026)"
+    },
+    {
+      "tipo": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA",
+      "nombre": "Notaría Avance",
+      "supply_points": [
+        "https://civica-desarrollo.avance.org.co/notaria"
+      ],
+      "sha256": "f9b4a6a6731624223336924a590015235ffd522f5c35070db64c5b0c0e194b9a",
+      "slug": "pubeaa-notaria-avance-root-ca-f9b4a6a6",
+      "origen": "registrada en el back-office del tl-publisher (actor 27, 6-nov-2026)"
+    },
+    {
+      "tipo": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA",
+      "nombre": "Notaría Avance",
+      "supply_points": [
+        "https://civica-desarrollo.avance.org.co/notaria"
+      ],
+      "sha256": "2959a0692835d88b1b5d2a69aba943503df7fbf85dda70960d8769d20890103e",
+      "slug": "pubeaa-notaria-avance-root-ca-2959a069",
+      "origen": "registrada en el back-office del tl-publisher (actor 27, 6-nov-2026)"
+    },
+    {
+      "tipo": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Q",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Q",
+      "nombre": "Páramo Air",
+      "supply_points": [
+        "https://civica-desarrollo.avance.org.co/aerolinea"
+      ],
+      "sha256": "26de30da9e0ff27a05355c04f8d60d2e22857eca03e85f671bddd8b8e1e37215",
+      "slug": "qeaa-aerolinea-paramo-root-ca-26de30da",
+      "origen": "registrada en el back-office del tl-publisher (actor 33, 6-nov-2026)"
+    },
+    {
+      "tipo": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA",
+      "nombre": "Ministerio de Relaciones Exteriores de Cívica",
+      "supply_points": [
+        "https://civica-desarrollo.avance.org.co/cancilleria"
+      ],
+      "sha256": "85d22edf80143cb227448df8ac5f76d0f43ef9cefde1d2af640be0b08eef439d",
+      "slug": "pubeaa-cancilleria-avance-root-ca-85d22edf",
+      "origen": "registrada en el back-office del tl-publisher (actor 37, 6-nov-2026)"
+    },
+    {
+      "tipo": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Q",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Q",
+      "nombre": "Cumbre Gym",
+      "supply_points": [
+        "https://civica-desarrollo.avance.org.co/gym"
+      ],
+      "sha256": "230fb8d51b676ad0c4dfb401206564d4a4e5ebedefa827e1d9824d8d324df82a",
+      "slug": "qeaa-cumbre-gym-root-ca-230fb8d5",
+      "origen": "registrada en el back-office del tl-publisher (actor 42, 6-nov-2026)"
+    },
+    {
+      "tipo": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA",
+      "nombre": "Dirección de Tránsito de Bucaramanga",
+      "supply_points": [
+        "https://civica-desarrollo.avance.org.co/pid-transito"
+      ],
+      "sha256": "7f8220336361e48b895d8fbf0d808a5a69ff6173d195f3f493cbf022ce61e3a3",
+      "slug": "pubeaa-transito-issuance-root-7f822033",
+      "origen": "registrada en el back-office del tl-publisher (actor 46, 6-nov-2026)"
+    },
+    {
+      "tipo": "http://uri.etsi.org/Svc/Svctype/Provider/PID",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/Provider/PID",
+      "nombre": "Lista de estado de la Registraduría",
+      "supply_points": [
+        "https://civica-desarrollo.avance.org.co/status-list/pid-registraduria"
+      ],
+      "sha256": "cecc0f7df5e0bcb96da599c6e00ae5cef2226bcd616aeadf52ed756ba9f43412",
+      "slug": "pid-registraduria-status-list-cecc0f7d",
+      "origen": "registrada en el back-office del tl-publisher (actor 47, 6-nov-2026)"
+    },
+    {
+      "tipo": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA",
+      "nombre": "Lista de estado de Tránsito",
+      "supply_points": [
+        "https://civica-desarrollo.avance.org.co/status-list/pid-transito"
+      ],
+      "sha256": "6b772d8d08e9c4d334036a6afee74cf1fd71cb58856ab573d2d7db787bac74bc",
+      "slug": "pubeaa-transito-status-list-6b772d8d",
+      "origen": "registrada en el back-office del tl-publisher (actor 48, 6-nov-2026)"
+    },
+    {
+      "tipo": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA",
+      "canonico": "http://uri.etsi.org/TrstSvc/Svctype/EAA/Pub-EAA",
+      "nombre": "Lista de estado de la UIS",
+      "supply_points": [
+        "https://civica-desarrollo.avance.org.co/status-list/uis-issuer"
+      ],
+      "sha256": "cba5ea88cd349d3ed3bdd2427d59c29041152ee252ec3d32c0d8fd34068df2bb",
+      "slug": "pubeaa-uis-status-list-cba5ea88",
+      "origen": "registrada en el back-office del tl-publisher (actor 49, 6-nov-2026)"
+    }
+  ]
+}

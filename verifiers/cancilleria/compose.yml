@@ -1,0 +1,67 @@
+# La cancillería de ejemplo. Cuelga directamente de la red compartida "avance-eudi" con el
+# alias app-PREFIJO: el nginx central le pasa con la ruta completa tanto
+# https://DOMINIO/PREFIJO/… como https://DOMINIO/.well-known/<x>/PREFIJO (la
+# metadata del emisor). Habla con su verifier (../_comun, instancia
+# VERIFIER_INSTANCIA) por la misma red.
+#
+# Se usa con ./levantar.sh o, ya creada: docker compose -p cancilleria --env-file .env logs -f
+name: cancilleria
+
+services:
+  cancilleria:
+    build: .
+    restart: unless-stopped
+    # El dueño de ./datos y ./secretos (quien ejecutó levantar.sh).
+    user: ${UID_GID:-1000:1000}
+    environment:
+      # Base de datos PROPIA del historial (emisiones y verificaciones de este portal): ver el servicio postgres-verif.
+      HISTORIAL_DB_URL: postgres://verif_cancilleria:verif_cancilleria@postgres-verif:5432/verif_cancilleria
+      URL_PUBLICA: https://${DOMINIO}/${PREFIJO}
+      VERIFIER_API: http://verifier-${VERIFIER_INSTANCIA}/verifier-${VERIFIER_INSTANCIA}
+      TRUST_VALIDATOR_URL: ${TRUST_VALIDATOR_URL}
+      CANCILLERIA_NOMBRE: ${CANCILLERIA_NOMBRE}
+      FUNCIONARIO_NOMBRE: ${FUNCIONARIO_NOMBRE}
+      SECRETOS_DIR: /secretos
+      TRAMITES_ARCHIVO: /datos/tramites.json
+      PUERTO: "80"
+    volumes:
+      - ./datos:/datos
+      - ./secretos:/secretos:ro
+    networks:
+      default: {}   # red del proyecto: por aquí llega a su base de datos
+      avance-eudi:
+        aliases: ["app-${PREFIJO}"]
+
+  # Base de datos PROPIA de este portal (historial de emisiones y verificaciones). Solo la ve su portal (red del proyecto); para DBeaver
+  # se publica únicamente en 127.0.0.1:5465. Va en este mismo compose: si el portal se instala en otro servidor, se lleva su base.
+  postgres-verif:
+    image: postgres:17-alpine
+    container_name: postgres-verif-cancilleria
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: verif_cancilleria
+      POSTGRES_USER: verif_cancilleria
+      POSTGRES_PASSWORD: verif_cancilleria
+      TZ: America/Bogota
+    ports: ["127.0.0.1:5465:5432"]
+    volumes:
+      - postgres_verif:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U verif_cancilleria -d verif_cancilleria"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  postgres_verif:
+    name: cancilleria_postgres_verif
+
+networks:
+  # Red privada del proyecto (portal + su base). Subred pequeña y fija: Docker ya agotó sus rangos automáticos con tantos proyectos.
+  default:
+    ipam:
+      config:
+        - subnet: 172.16.102.0/28
+  avance-eudi:
+    name: avance-eudi
+    external: true

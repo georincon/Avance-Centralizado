@@ -1,0 +1,229 @@
+{
+  "openapi": "3.1.2",
+  "info": {
+    "title": "eudi-srv-trust-validator",
+    "version": "0.0.1"
+  },
+  "servers": [
+    {
+      "url": "..",
+      "description": "Current server"
+    }
+  ],
+  "paths": {
+    "/trust": {
+      "post": {
+        "tags": [
+          "trust validator"
+        ],
+        "description": "Check if a X509 certificate chain is trusted or not",
+        "operationId": "checkTrust",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrustQuery"
+              },
+              "examples": {
+                "TrustQueryPid": {
+                  "$ref": "#/components/examples/TrustQueryPid"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrustResponse"
+                },
+                "examples": {
+                  "TrustResponseTrusted": {
+                    "$ref": "#/components/examples/TrustResponseTrusted"
+                  },
+                  "TrustResponseNotTrusted": {
+                    "$ref": "#/components/examples/TrustResponseNotTrusted"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ErrorResponseMissingUseCase": {
+                    "$ref": "#/components/examples/ErrorResponseMissingUseCase"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "ErrorResponseNoConfigurationForVerificationContext": {
+                    "$ref": "#/components/examples/ErrorResponseNoConfigurationForVerificationContext"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "X509Certificate": {
+        "type": "string",
+        "nullable": false,
+        "format": "base64"
+      },
+      "VerificationContext": {
+        "type": "string",
+        "nullable": false,
+        "enum": [
+          "WalletProviderAttestation",
+          "WalletOrKeyStorageStatus",
+          "PID",
+          "PIDStatus",
+          "PubEAA",
+          "PubEAAStatus",
+          "QEAA",
+          "QEAAStatus",
+          "EAA",
+          "EAAStatus",
+          "WalletRelyingPartyRegistrationCertificate",
+          "WalletRelyingPartyRegistrationCertificateStatus",
+          "WalletRelyingPartyAccessCertificate",
+          "Custom"
+        ]
+      },
+      "TrustQuery": {
+        "type": "object",
+        "nullable": false,
+        "properties": {
+          "chain": {
+            "description": "A non-empty list of DER encoded X509 certificates in Base64",
+            "type": "array",
+            "nullable": false,
+            "items": {
+              "$ref": "#/components/schemas/X509Certificate"
+            },
+            "minItems": 1
+          },
+          "verificationContext": {
+            "allOf": [
+              {
+                "description": "How the X509 certificate chain trust must be checked as"
+              },
+              {
+                "$ref": "#/components/schemas/VerificationContext"
+              }
+            ]
+          },
+          "useCase": {
+            "description": "Verification use-case applicable to the selected verification context",
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "chain",
+          "verificationContext"
+        ]
+      },
+      "TrustResponse": {
+        "type": "object",
+        "nullable": false,
+        "properties": {
+          "trusted": {
+            "description": "Whether the X509 certificate chain is trusted or not",
+            "type": "boolean",
+            "nullable": false
+          },
+          "trustAnchor": {
+            "allOf": [
+              {
+                "description": "The trust anchor that validated the the trust of the certificate chain"
+              },
+              {
+                "$ref": "#/components/schemas/X509Certificate"
+              }
+            ]
+          },
+          "error": {
+            "description": "The error message explaining why the X509 certificate chain is not trusted",
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "nullable": false,
+        "properties": {
+          "description": {
+            "description": "A short description of the error that occurred",
+            "type": "string",
+            "nullable": false
+          }
+        },
+        "required": [
+          "description"
+        ]
+      }
+    },
+    "examples": {
+      "TrustQueryPid": {
+        "description": "Check if the X509 certificate chain belongs to a trusted PID Provider",
+        "value": {
+          "chain": [
+            "MIIC6zCCApGgAwIBAgIUbX8nbYSLRvy10mKN+hfCVr/8cBcwCgYIKoZIzj0EAwIwXDEeMBwGA1UEAwwVUElEIElzc3VlciBDQSAtIFVUIDAyMS0wKwYDVQQKDCRFVURJIFdhbGxldCBSZWZlcmVuY2UgSW1wbGVtZW50YXRpb24xCzAJBgNVBAYTAlVUMB4XDTI1MDQxMDE0MjU0MFoXDTI2MDcwNDE0MjUzOVowUjEUMBIGA1UEAwwLUElEIERTIC0gMDMxLTArBgNVBAoMJEVVREkgV2FsbGV0IFJlZmVyZW5jZSBJbXBsZW1lbnRhdGlvbjELMAkGA1UEBhMCVVQwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASrxZ13wLj/nUuGebYRmPO0q7pRk1x1SjrqLTvtQFpQcy9TwFCcgie/BBC2j/KpLcCr+oj4tyZAofmvHdaTExbBo4IBOTCCATUwHwYDVR0jBBgwFoAUYseURyi9D6IWIKeawkmURPEB08cwJwYDVR0RBCAwHoIcZGV2Lmlzc3Vlci1iYWNrZW5kLmV1ZGl3LmRldjAWBgNVHSUBAf8EDDAKBggrgQICAAABAjBDBgNVHR8EPDA6MDigNqA0hjJodHRwczovL3ByZXByb2QucGtpLmV1ZGl3LmRldi9jcmwvcGlkX0NBX1VUXzAyLmNybDAdBgNVHQ4EFgQUcs3KyqizHgtXRe32n6JBJHAfaLYwDgYDVR0PAQH/BAQDAgeAMF0GA1UdEgRWMFSGUmh0dHBzOi8vZ2l0aHViLmNvbS9ldS1kaWdpdGFsLWlkZW50aXR5LXdhbGxldC9hcmNoaXRlY3R1cmUtYW5kLXJlZmVyZW5jZS1mcmFtZXdvcmswCgYIKoZIzj0EAwIDSAAwRQIgTVZnchD+Qjq53Xs0oc07y3zG6kAXFkJ+ZKzlVG22sC8CIQDtDMQq0Qm/fQ5orrjRT4XB+0Jb6xFPxX9QkVRaMy/IiA=="
+          ],
+          "verificationContext": "PID"
+        }
+      },
+      "TrustResponseTrusted": {
+        "description": "X509 certificate chain is trusted",
+        "value": {
+          "trusted": true,
+          "trustAnchor": "MIIC3TCCAoOgAwIBAgIUEwybFc9Jw+az3r188OiHDaxCfHEwCgYIKoZIzj0EAwMwXDEeMBwGA1UEAwwVUElEIElzc3VlciBDQSAtIFVUIDAyMS0wKwYDVQQKDCRFVURJIFdhbGxldCBSZWZlcmVuY2UgSW1wbGVtZW50YXRpb24xCzAJBgNVBAYTAlVUMB4XDTI1MDMyNDIwMjYxNFoXDTM0MDYyMDIwMjYxM1owXDEeMBwGA1UEAwwVUElEIElzc3VlciBDQSAtIFVUIDAyMS0wKwYDVQQKDCRFVURJIFdhbGxldCBSZWZlcmVuY2UgSW1wbGVtZW50YXRpb24xCzAJBgNVBAYTAlVUMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEesDKj9rCIcrGj0wbSXYvCV953bOPSYLZH5TNmhTz2xa7VdlvQgQeGZRg1PrF5AFwt070wvL9qr1DUDdvLp6a1qOCASEwggEdMBIGA1UdEwEB/wQIMAYBAf8CAQAwHwYDVR0jBBgwFoAUYseURyi9D6IWIKeawkmURPEB08cwEwYDVR0lBAwwCgYIK4ECAgAAAQcwQwYDVR0fBDwwOjA4oDagNIYyaHR0cHM6Ly9wcmVwcm9kLnBraS5ldWRpdy5kZXYvY3JsL3BpZF9DQV9VVF8wMi5jcmwwHQYDVR0OBBYEFGLHlEcovQ+iFiCnmsJJlETxAdPHMA4GA1UdDwEB/wQEAwIBBjBdBgNVHRIEVjBUhlJodHRwczovL2dpdGh1Yi5jb20vZXUtZGlnaXRhbC1pZGVudGl0eS13YWxsZXQvYXJjaGl0ZWN0dXJlLWFuZC1yZWZlcmVuY2UtZnJhbWV3b3JrMAoGCCqGSM49BAMDA0gAMEUCIQCe4R9rO4JhFp821kO8Gkb8rXm4qGG/e5/Oi2XmnTQqOQIgfFs+LDbnP2/j1MB4rwZ1FgGdpr4oyrFB9daZyRIcP90"
+        }
+      },
+      "TrustResponseNotTrusted": {
+        "description": "X509 certificate chain is not trusted",
+        "value": {
+          "trusted": false,
+          "error": "Certification path could not be validated"
+        }
+      },
+      "ErrorResponseMissingUseCase": {
+        "description": "Missing useCase",
+        "value": {
+          "description": "Missing useCase"
+        }
+      },
+      "ErrorResponseNoConfigurationForVerificationContext": {
+        "description": "No configuration found for VerificationContext",
+        "value": {
+          "description": "No configuration found for VerificationContext"
+        }
+      }
+    }
+  }
+}

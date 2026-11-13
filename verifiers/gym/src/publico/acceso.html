@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control de acceso · {{GYM}}</title>
+<link rel="icon" href="{{BASE}}/publico/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap">
+<style>
+  /* Pantalla de la puerta: tres direcciones en una página (/acceso, /acceso/entrada, /acceso/salida).
+     Se lee desde lejos: el resultado ocupa toda la pantalla y se distingue por color. */
+  :root { --fondo: #0C0D10; --panel: #15171C; --texto: #FFFFFF; --suave: #A8A29E; --naranja: #F26A1B; --lima: #C6F135; --borde: #2A2D35;
+    --titulo: "Barlow Condensed", Impact, "Arial Narrow Bold", sans-serif; --cuerpo: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: radial-gradient(900px 600px at 50% -10%, rgba(242,106,27,.2), transparent 70%), var(--fondo); color: var(--texto); font-family: var(--cuerpo); overflow: hidden; }
+  .barra { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 22px; z-index: 3; background: linear-gradient(#000, transparent); }
+  .marca { display: flex; align-items: center; gap: 12px; font: 800 1.35rem var(--titulo); letter-spacing: .16em; text-transform: uppercase; color: var(--naranja); }
+  .marca svg { width: 34px; height: 34px; }
+  .modo { font: 800 1.1rem var(--titulo); letter-spacing: .2em; text-transform: uppercase; padding: 6px 18px; border-radius: 999px; border: 2px solid currentColor; }
+  .modo.entrada { color: var(--lima); } .modo.salida { color: var(--naranja); }
+  .pantalla { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 78px 18px 70px; text-align: center; overflow-y: auto; }
+  h1 { margin: 0; font: 800 clamp(2rem, 5.6vw, 3.4rem)/1.05 var(--titulo); text-transform: uppercase; letter-spacing: .03em; }
+  h1 em { font-style: normal; color: var(--lima); }
+  p { margin: 0; color: var(--suave); font-size: clamp(1rem, 2.4vw, 1.2rem); line-height: 1.45; max-width: 40ch; }
+  .qr { background: #fff; padding: 14px; border-radius: 22px; box-shadow: 0 0 0 4px var(--naranja), 0 0 0 10px rgba(242,106,27,.18), 0 0 60px rgba(242,106,27,.35); }
+  .qr img { display: block; width: min(64vw, 42vh, 340px); height: auto; }
+  .estado { color: var(--suave); display: flex; gap: 10px; align-items: center; min-height: 24px; font-weight: 500; }
+  .girando { width: 18px; height: 18px; border: 2px solid var(--borde); border-top-color: var(--lima); border-radius: 50%; animation: g .8s linear infinite; }
+  @keyframes g { to { transform: rotate(360deg); } }
+  .pie-aforo { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; align-items: center; gap: 16px; padding: 10px 18px 14px; background: linear-gradient(transparent, rgba(0,0,0,.9)); z-index: 3; color: var(--suave); text-transform: uppercase; letter-spacing: .12em; font-size: .85rem; }
+  .pie-aforo b { font: 800 1.9rem var(--titulo); color: var(--lima); letter-spacing: .02em; }
+  .medidor { width: min(36vw, 280px); height: 10px; border-radius: 999px; background: #272A31; overflow: hidden; }
+  .medidor span { display: block; height: 100%; background: linear-gradient(90deg, #22C55E, var(--lima)); transition: width .4s; }
+  .medidor.casi span { background: linear-gradient(90deg, var(--lima), #F59E0B); } .medidor.lleno span { background: linear-gradient(90deg, #F97316, #DC2626); }
+  /* Resultado */
+  .resultado { z-index: 4; }
+  .resultado.ok-entrada { background: radial-gradient(800px 560px at 50% 30%, #14B866, #075C2F 78%); }
+  .resultado.ok-salida { background: radial-gradient(800px 560px at 50% 30%, #F97316, #7C2D12 78%); }
+  .resultado.no { background: radial-gradient(800px 560px at 50% 30%, #D2222D, #6E0A11 78%); }
+  .resultado .icono { width: min(34vw, 190px); height: min(34vw, 190px); padding: 22px; border-radius: 50%; border: 4px solid rgba(255,255,255,.85); box-shadow: 0 0 0 10px rgba(255,255,255,.12); }
+  .resultado h1 { font-size: clamp(2.6rem, 9vw, 5.4rem); }
+  .resultado p { color: rgba(255,255,255,.94); font-size: clamp(1.1rem, 3.2vw, 1.6rem); max-width: 34ch; }
+  .resultado .foto { width: min(38vw, 230px); height: min(38vw, 230px); object-fit: cover; border-radius: 50%; border: 5px solid rgba(255,255,255,.9); box-shadow: 0 0 0 12px rgba(255,255,255,.14), 0 10px 40px rgba(0,0,0,.45); background: #fff; }
+  .datos { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .dato { background: rgba(0,0,0,.28); border: 1px solid rgba(255,255,255,.28); border-radius: 14px; padding: 8px 18px; }
+  .dato small { display: block; text-transform: uppercase; letter-spacing: .1em; font-size: .72rem; opacity: .8; }
+  .dato b { font: 700 1.4rem var(--titulo); letter-spacing: .03em; }
+  .cuenta { height: 6px; width: min(70vw, 420px); background: rgba(255,255,255,.25); border-radius: 3px; overflow: hidden; }
+  .cuenta span { display: block; height: 100%; background: #fff; width: 100%; transform-origin: left; animation: cuenta var(--dur) linear forwards; }
+  @keyframes cuenta { to { transform: scaleX(0); } }
+  button, .boton { font: inherit; font-weight: 700; border-radius: 14px; padding: 14px 24px; min-height: 50px; cursor: pointer; border: 1px solid rgba(255,255,255,.45); background: rgba(255,255,255,.1); color: #fff; text-transform: uppercase; letter-spacing: .08em; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+  button:hover, .boton:hover { background: rgba(255,255,255,.2); }
+  .principal { background: var(--naranja); border-color: var(--naranja); color: #111; } .principal:hover { background: #ff7d36; }
+  .lima { background: var(--lima); border-color: var(--lima); color: #111; } .lima:hover { background: #d6ff55; }
+  /* Menú y clave */
+  .tarjeta { background: var(--panel); border: 1px solid var(--borde); border-radius: 22px; padding: 26px; display: flex; flex-direction: column; gap: 14px; width: min(94vw, 560px); text-align: left; }
+  .tarjeta h2 { margin: 0; font: 800 1.7rem var(--titulo); letter-spacing: .06em; text-transform: uppercase; }
+  input, select { font: inherit; padding: 13px 14px; border-radius: 12px; border: 1px solid var(--borde); background: #0F1115; color: #fff; width: 100%; }
+  label { display: flex; flex-direction: column; gap: 6px; font-size: .9rem; color: var(--suave); }
+  .error { color: #FF8A80; min-height: 1.3em; font-size: .95rem; }
+  .acciones { display: flex; gap: 12px; flex-wrap: wrap; }
+  .acciones > * { flex: 1 1 200px; }
+  .sede-fila { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--borde); }
+  .sede-fila:last-child { border-bottom: 0; }
+  .sede-fila b { font: 700 1.2rem var(--titulo); letter-spacing: .04em; }
+  .sede-fila b:first-child { min-width: 150px; }
+  .sede-fila .medidor { flex: 1; }
+  [hidden] { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { .girando, .cuenta span { animation: none; } }
+</style>
+</head>
+<body>
+<div class="barra">
+  <div class="marca"><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF8A3D"/><stop offset="1" stop-color="#C2410C"/></linearGradient></defs><rect x="4" y="4" width="56" height="56" rx="14" fill="url(#lg)"/><g fill="#fff"><rect x="11" y="23" width="6" height="18" rx="2"/><rect x="47" y="23" width="6" height="18" rx="2"/><rect x="17" y="19" width="6" height="26" rx="2"/><rect x="41" y="19" width="6" height="26" rx="2"/><rect x="23" y="29.5" width="18" height="5" rx="1.5"/></g></svg><span>{{GYM}}</span></div>
+  <span class="modo" id="modo" hidden></span>
+</div>
+
+<!-- Clave de puerta -->
+<main class="pantalla" id="clave" hidden>
+  <div class="tarjeta">
+    <h2>Pantalla de la puerta</h2>
+    <p style="max-width:none">Esta pantalla registra entradas y salidas. Escribe la clave de puerta (la misma de administración) para activarla en este dispositivo.</p>
+    <label>Clave de puerta<input id="clave-in" type="password" autocomplete="off"></label>
+    <div class="error" id="clave-error" role="alert"></div>
+    <button class="principal" id="clave-ok">Activar esta pantalla</button>
+  </div>
+</main>
+
+<!-- Menú -->
+<main class="pantalla" id="menu" hidden>
+  <h1>Control de <em>acceso</em></h1>
+  <div class="tarjeta">
+    <label>Sede de esta puerta<select id="sede"></select></label>
+    <div class="acciones">
+      <a class="boton lima" id="ir-entrada" href="#">Pantalla de entrada</a>
+      <a class="boton principal" id="ir-salida" href="#">Pantalla de salida</a>
+    </div>
+    <h2 style="font-size:1.2rem;margin-top:8px">Aforo en vivo</h2>
+    <div id="aforos"></div>
+    <button id="cerrar-puerta" style="margin-top:6px">Cerrar la sesión de puerta</button>
+  </div>
+</main>
+
+<!-- Pantalla de entrada o de salida -->
+<main class="pantalla" id="codigo" hidden aria-live="polite">
+  <h1 id="titulo"></h1>
+  <div class="qr" id="qr"><div class="girando" style="margin:150px"></div></div>
+  <div class="estado" id="estado"><div class="girando"></div> Preparando el código…</div>
+  <p id="ayuda"></p>
+</main>
+
+<main class="pantalla resultado" id="resultado" hidden role="alert">
+  <img class="foto" id="r-foto" alt="Foto del socio" hidden>
+  <svg class="icono" id="r-icono" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+  <h1 id="r-titulo"></h1>
+  <p id="r-texto"></p>
+  <div class="datos" id="r-datos"></div>
+  <div class="cuenta" aria-hidden="true"><span id="r-cuenta"></span></div>
+  <button id="siguiente">Siguiente persona</button>
+</main>
+
+<div class="pie-aforo" id="pie-aforo" hidden>
+  <span id="pie-sede"></span><b id="pie-n"></b><div class="medidor" id="pie-med"><span></span></div>
+</div>
+
+<script>
+const BASE = '{{BASE}}'
+const AFORO_MAX = Number('{{AFORO}}')
+const $ = (id) => document.getElementById(id)
+const MODO = location.pathname.endsWith('/acceso/entrada') ? 'entrada' : location.pathname.endsWith('/acceso/salida') ? 'salida' : null
+const SEDES = {{SEDES}}
+const sedeUrl = new URLSearchParams(location.search).get('sede')
+const SEDE = SEDES.includes(sedeUrl) ? sedeUrl : SEDES[0]
+const ESPERA = { ok: 6000, no: 9000 }
+let sondeo, regreso, refresco
+
+const api = async (ruta, o = {}) => {
+  const r = await fetch(BASE + ruta, { ...o, headers: { 'content-type': 'application/json' }, body: o.body && JSON.stringify(o.body) })
+  const c = await r.json().catch(() => ({}))
+  if (!r.ok) throw Object.assign(new Error(c.error || `Error ${r.status}`), { estado: r.status, puerta: c.puerta })
+  return c
+}
+const ver = (id) => { for (const p of ['clave', 'menu', 'codigo', 'resultado']) $(p).hidden = p !== id }
+const medidor = (el, dentro) => { const f = dentro / AFORO_MAX; el.className = 'medidor' + (f >= 1 ? ' lleno' : f >= 0.8 ? ' casi' : ''); el.firstElementChild.style.width = `${Math.min(100, Math.round(f * 100))}%` }
+
+// --- Clave de puerta -------------------------------------------------------------------------------
+function pedirClave() {
+  clearTimeout(sondeo); clearTimeout(regreso); clearInterval(refresco)
+  $('modo').hidden = true; $('pie-aforo').hidden = true
+  ver('clave')
+  $('clave-in').value = ''; $('clave-in').focus()
+}
+async function activar() {
+  try { await api('/api/puerta/entrar', { method: 'POST', body: { clave: $('clave-in').value } }); iniciar() }
+  catch (e) { $('clave-error').textContent = e.message }
+}
+$('clave-ok').onclick = activar
+$('clave-in').addEventListener('keydown', (e) => e.key === 'Enter' && activar())
+
+// --- Menú ---------------------------------------------------------------------------------------------
+async function pintarAforos() {
+  try {
+    const a = await api('/api/puerta/aforo')
+    $('aforos').replaceChildren(...a.map((s) => {
+      const fila = document.createElement('div'); fila.className = 'sede-fila'
+      const m = document.createElement('div'); m.innerHTML = '<span></span>'
+      const nombre = document.createElement('b'); nombre.textContent = s.sede
+      const n = document.createElement('b'); n.textContent = `${s.dentro}/${s.max}`; n.style.color = 'var(--lima)'
+      medidor(m, s.dentro); m.className = 'medidor ' + m.className.replace('medidor', '')
+      fila.append(nombre, m, n); return fila
+    }))
+  } catch (e) { if (e.estado === 401) pedirClave() }
+}
+function menu() {
+  ver('menu')
+  $('sede').replaceChildren(...SEDES.map((s) => Object.assign(document.createElement('option'), { value: s, textContent: s, selected: s === SEDE })))
+  const enlaces = () => { const q = `?sede=${encodeURIComponent($('sede').value)}`; $('ir-entrada').href = `${BASE}/acceso/entrada${q}`; $('ir-salida').href = `${BASE}/acceso/salida${q}` }
+  $('sede').onchange = enlaces; enlaces()
+  $('cerrar-puerta').onclick = async () => { await api('/api/puerta/salir', { method: 'POST' }); pedirClave() }
+  pintarAforos(); refresco = setInterval(pintarAforos, 5000)
+}
+
+// --- Entrada / salida -------------------------------------------------------------------------------------------
+async function aforoPie() {
+  try {
+    const a = (await api('/api/puerta/aforo')).find((s) => s.sede === SEDE)
+    if (!a) return
+    $('pie-sede').textContent = `${a.sede} · dentro`; $('pie-n').textContent = `${a.dentro}/${a.max}`; medidor($('pie-med'), a.dentro); $('pie-aforo').hidden = false
+  } catch (e) { if (e.estado === 401) pedirClave() }
+}
+async function nuevoCodigo() {
+  clearTimeout(sondeo); clearTimeout(regreso)
+  ver('codigo')
+  $('qr').replaceChildren(Object.assign(document.createElement('div'), { className: 'girando', style: 'margin:150px' }))
+  $('estado').replaceChildren(Object.assign(document.createElement('div'), { className: 'girando' }), 'Preparando el código…')
+  aforoPie()
+  try {
+    const s = await api('/api/solicitud', { method: 'POST', body: { proposito: 'acceso', modo: MODO, sede: SEDE } })
+    const img = new Image(); img.alt = 'Código QR para presentar la tarjeta de socio con la wallet'; img.src = s.qr
+    $('qr').replaceChildren(img)
+    $('estado').replaceChildren(Object.assign(document.createElement('div'), { className: 'girando' }), 'Esperando la tarjeta…')
+    preguntar(s.id)
+  } catch (e) {
+    if (e.estado === 401) return pedirClave()
+    $('estado').textContent = `${e.message || 'Sin conexión'}. Reintentando…`
+    regreso = setTimeout(nuevoCodigo, 5000)
+  }
+}
+async function preguntar(id) {
+  try {
+    const r = await api(`/api/solicitud/${id}`)
+    if (r.estado === 'rechazada') return mostrar({ ok: false, modo: MODO, motivo: r.motivo })
+    if (r.estado === 'listo') return mostrar(r.acceso)
+  } catch (e) { if (e.estado === 404) return nuevoCodigo() }
+  sondeo = setTimeout(() => preguntar(id), 1500)
+}
+
+const ICONOS = {
+  ok: '<circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.5 3.5L17 9"/>',
+  no: '<circle cx="12" cy="12" r="10"/><path d="M8 8l8 8M16 8l-8 8"/>',
+}
+const dato = (k, v) => { const d = document.createElement('div'); d.className = 'dato'; const s = document.createElement('small'); s.textContent = k; const b = document.createElement('b'); b.textContent = v; d.append(s, b); return d }
+const fecha = (f) => new Date(`${f}T12:00:00`).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
+const duracion = (min) => (min >= 60 ? `${Math.floor(min / 60)} h ${min % 60} min` : `${min} min`)
+
+function mostrar(a) {
+  const ok = a.ok === true
+  const entrada = MODO === 'entrada'
+  $('r-icono').innerHTML = ok ? ICONOS.ok : ICONOS.no
+  // Con foto en la tarjeta se muestra ella (para compararla con la persona); si no, el icono.
+  $('r-foto').hidden = !a.foto
+  if (a.foto) $('r-foto').src = a.foto
+  $('r-icono').style.display = a.foto ? 'none' : ''
+  $('resultado').className = 'pantalla resultado ' + (ok ? (entrada ? 'ok-entrada' : 'ok-salida') : 'no')
+  $('r-titulo').textContent = ok ? (entrada ? `¡Bienvenido, ${a.nombre}!` : `¡Hasta pronto, ${a.nombre}!`) : 'No puede pasar'
+  $('r-texto').textContent = ok
+    ? (entrada ? 'Ingreso registrado. ¡Buen entrenamiento!' : (a.sin_ingreso ? 'Salida registrada (no constaba el ingreso).' : `Salida registrada. Entrenaste ${duracion(a.permanencia_min ?? 0)}.`))
+    : `${a.nombre ? a.nombre + ': ' : ''}${a.motivo ?? 'No se pudo verificar la tarjeta.'}`
+  const datos = []
+  if (ok) {
+    datos.push(dato('Plan', a.plan))
+    datos.push(dato('Vigente hasta', fecha(a.hasta)))
+    datos.push(dato(a.dias_restantes <= 5 ? 'Te quedan' : 'Días restantes', a.dias_restantes === 0 ? 'Hoy' : `${a.dias_restantes} d`))
+    if (a.aforo) datos.push(dato('Dentro ahora', `${a.aforo.dentro}/${a.aforo.max}`))
+    if (!a.foto) datos.push(dato('Foto', 'La tarjeta no trae foto'))
+  }
+  $('r-datos').replaceChildren(...datos)
+  ver('resultado')
+  const cuenta = $('r-cuenta')
+  const espera = ok ? ESPERA.ok : ESPERA.no
+  cuenta.style.setProperty('--dur', `${espera}ms`)
+  cuenta.replaceWith(cuenta.cloneNode(true))
+  regreso = setTimeout(nuevoCodigo, espera)
+  aforoPie()
+}
+$('siguiente').onclick = nuevoCodigo
+
+// --- Arranque -------------------------------------------------------------------------------------------------------
+async function iniciar() {
+  let p
+  try { p = await api('/api/puerta/estado') } catch { return setTimeout(iniciar, 3000) }
+  if (!p.autorizada) return pedirClave()
+  if (!MODO) return menu()
+  const m = $('modo'); m.hidden = false; m.className = `modo ${MODO}`; m.textContent = `${MODO === 'entrada' ? 'Entrada' : 'Salida'} · ${SEDE}`
+  $('titulo').innerHTML = MODO === 'entrada' ? 'Para <em>entrar</em>, escanea con tu wallet' : 'Para <em>salir</em>, escanea con tu wallet'
+  $('ayuda').textContent = MODO === 'entrada' ? 'Presenta tu tarjeta de socio. Se pide tu nombre, foto, plan y vigencia.' : 'Presenta tu tarjeta de socio para registrar tu salida.'
+  nuevoCodigo()
+  refresco = setInterval(aforoPie, 8000)
+}
+iniciar()
+</script>
+</body>
+</html>

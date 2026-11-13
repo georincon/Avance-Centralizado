@@ -1,0 +1,473 @@
+Identidad Digital EUDI Wallet
+
+
+
+
+  Identidad Digital EUDI Wallet
+     Sep 24, 2026          · Preparado por ​@Luis Andres
+
+
+  1. Contexto y marco regulatorio
+  El EUDI Wallet (European Digital Identity Wallet) es la billetera de identidad digital que
+  impulsa la Unión Europea bajo el reglamento eIDAS 2.0. Su objetivo es que cualquier
+  ciudadano pueda identificarse, autenticarse y compartir credenciales oficiales (diplomas,
+  licencias, identificación) de forma digital, verificable y bajo su propio control, tanto dentro
+  como fuera de su país.
+
+  La especificación técnica que rige todo el ecosistema es el ARF (Architecture and
+  Reference Framework), publicado y mantenido por la Comisión Europea. El ARF define
+  los roles del ecosistema, los modelos de datos, los algoritmos criptográficos permitidos y
+  las pruebas de conformidad que debe superar cualquier implementación que quiera
+  interoperar dentro del marco europeo.
+
+  Puntos clave para el equipo:
+
+        Plazo regulatorio: cada Estado miembro debe ofrecer al menos una wallet a sus
+        ciudadanos en 2026.
+        Modelo de confianza: se apoya en las Trusted Lists de eIDAS (Art. 22a) — listas
+        oficiales de quién puede emitir y verificar credenciales legítimamente.
+        Estándares de base: W3C Decentralized Identifiers (DID) y Verifiable Credentials,
+        además de ISO/IEC 18013-5 para documentos tipo licencia de conducción.
+        Por qué nos importa: los 5 frentes de trabajo del proyecto (ERSo 004-008) son, en
+        conjunto, la capa de infraestructura de identidad (DID + registro) que hace posible
+        construir un Issuer o un Verifier conforme con este marco.
+
+
+  2. Los 3 roles del ecosistema (triángulo de confianza)
+  Todo el ecosistema gira en torno a tres roles que interactúan sin necesidad de conocerse
+  previamente ni verificar nada por teléfono:
+
+
+
+
+                                                                                           Page 1 of 10
+Identidad Digital EUDI Wallet
+
+
+
+
+     Rol                        Función                   Ejemplo                 ¿Necesita DID
+                                                                                  propio?
+
+     Issuer (Emisor)            Crea y firma              Universidad,            Sí — es la base de
+                                credenciales              gobierno, entidad       ERSo 006
+                                verificables              certificadora
+
+     Holder (Titular /          Recibe, almacena y        Ciudadano usando la     Opcional, según el
+     Wallet)                    comparte credenciales     app EUDI Wallet         caso de uso
+                                bajo su propio control
+
+     Verifier                   Solicita y valida         Empleador, banco,       Puede necesitar
+     (Verificador)              credenciales antes de     control fronterizo      registrarse como
+                                confiar en ellas                                  verificador conforme
+
+
+  El Holder actúa principalmente como transporte y punto de control de privacidad del
+  usuario: la carga técnica pesada (firmar y verificar) recae sobre el Issuer y el Verifier.
+  Cuando el Holder comparte una credencial, no envía el documento completo: aplica
+  divulgación selectiva (selective disclosure), entregando solo los atributos puntuales que
+  el Verifier solicitó.
+
+
+  3. Conceptos técnicos base
+
+     Término                         Definición                           Relevancia para el proyecto
+
+     DID (Decentralized              Identificador único, sin autoridad   Es la "clédula" de cada entidad
+     Identifier)                     central, con formato did:            (institución, persona) en el
+                                     <método>:<identificador>             ecosistema
+
+     DID Document                    JSON que declara las llaves          Lo que se publica y se
+                                     públicas, métodos de verificación    resuelve al verificar algo
+                                     y endpoints de servicio de un DID
+
+     VDR (Verifiable Data            El registro/directorio donde se      Objeto de ERSo 004
+     Registry)                       publican y consultan DID
+                                     Documents (y otros datos
+                                     verificables)
+
+
+
+
+                                                                                                       Page 2 of 10
+Identidad Digital EUDI Wallet
+
+
+
+
+     Término                    Definición                         Relevancia para el proyecto
+
+     did:web                    Método DID que usa                 Método elegido para ERSo
+                                infraestructura web estándar       005/006, el más simple de
+                                (HTTPS + .well-known ) en lugar    desplegar
+                                de blockchain
+
+     Verifiable Credential      Documento firmado digitalmente     Lo que emite el Issuer y
+     (VC)                       que declara atributos sobre un     consume el Verifier
+                                sujeto (título, edad, identidad)
+
+
+
+  Ejemplo real: did.json bajo did:web
+  Un documento did:web se publica en https://<dominio>/.well-known/did.json .
+  Ejemplo mínimo pero completo:
+
+     {
+          "@context": [
+            "https://www.w3.org/ns/did/v1",
+            "https://w3id.org/security/suites/jws-2020/v1"
+          ],
+          "id": "did:web:universidad-avance.edu.co",
+          "verificationMethod": [
+            {
+              "id": "did:web:universidad-avance.edu.co#key-1",
+              "type": "JsonWebKey2020",
+              "controller": "did:web:universidad-avance.edu.co",
+              "publicKeyJwk": {
+                "kty": "EC",
+                "crv": "P-256",
+                "x": "f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU",
+                "y": "x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0"
+              }
+            }
+          ],
+          "authentication": ["did:web:universidad-avance.edu.co#key-1"],
+          "assertionMethod": ["did:web:universidad-avance.edu.co#key-1"],
+          "service": [
+            {
+              "id": "did:web:universidad-avance.edu.co#credential-issuer",
+              "type": "OID4VCI",
+
+
+
+
+                                                                                               Page 3 of 10
+Identidad Digital EUDI Wallet
+
+
+
+
+                  "serviceEndpoint": "https://universidad-avance.edu.co/issuer"
+              }
+          ]
+     }
+
+
+
+     Campo                      Qué declara
+
+      id                        El DID mismo; debe coincidir exactamente con el
+                                dominio donde se aloja el archivo
+
+      verificationMethod        La(s) llave(s) pública(s) de la institución, con su
+                                tipo criptográfico ( publicKeyJwk )
+
+      authentication            Qué llave(s) sirven para que la institución se
+                                autentique a sí misma
+
+      assertionMethod           Qué llave(s) sirven específicamente para firmar
+                                credenciales (la que usa el Issuer al emitir)
+
+      service                   Endpoints donde otros sistemas pueden
+                                interactuar con la institución (ej. emisión de
+                                credenciales vía OID4VCI)
+
+
+
+
+  4. Credenciales verificables y protocolo de presentación
+
+  4.1 Ejemplo real de una credencial firmada
+
+     {
+          "@context": ["https://www.w3.org/2018/credentials/v1"],
+          "id": "urn:uuid:8a7e2f10-4b3c-4e1a-9f2d-diploma-2024",
+          "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+          "issuer": "did:web:universidad-avance.edu.co",
+          "issuanceDate": "2024-11-15T00:00:00Z",
+          "credentialSubject": {
+            "id": "did:example:estudiante-ana-123",
+            "name": "Ana María Rodríguez",
+            "degree": { "type": "BachelorDegree", "name": "Ingeniería de Sistemas" },
+            "birthDate": "2001-03-22"
+          },
+          "proof": {
+            "type": "JsonWebSignature2020",
+
+
+
+
+                                                                                      Page 4 of 10
+Identidad Digital EUDI Wallet
+
+
+
+
+              "created": "2024-11-15T10:32:00Z",
+              "verificationMethod": "did:web:universidad-avance.edu.co#key-1",
+              "proofPurpose": "assertionMethod",
+              "jws": "eyJhbGciOiJFUzI1NiJ9..s3fK9dQmZp1_xL7vN2rT8wA4yC6bE0hJ"
+          }
+     }
+
+
+  El campo issuer y el proof.verificationMethod apuntan directo al did.json de la
+  sección 3: así es como un Verifier sabe dónde buscar la llave pública correcta para
+  comprobar el jws (la firma). El campo issuanceDate es el que se cruza contra el historial
+  de versiones de ERSo 008 cuando el sello del Issuer ya cambió desde que se firmó esta
+  credencial.
+
+
+  4.2 Protocolo de presentación (OpenID4VP)
+  Es el flujo que ocurre cuando un Holder comparte una credencial con un Verifier:
+
+    1. El Verifier arma una Authorization Request con los atributos exactos que necesita (no
+       la credencial completa).
+    2. La codifica como código QR (flujo cross-device) o deep link (mismo dispositivo).
+    3. El Holder escanea/abre la solicitud; su Wallet la interpreta y muestra qué se está
+       pidiendo.
+    4. El Holder aprueba con biometría o PIN.
+    5. La Wallet construye una Verifiable Presentation (VP) aplicando divulgación selectiva:
+       solo incluye los atributos aprobados.
+    6. La VP se envía firmada al endpoint de respuesta del Verifier.
+    7. El Verifier valida criptográficamente la VP (resolviendo el DID del Issuer, como en la
+       sección 3).
+    8. Se extraen y usan los atributos verificados.
+
+  Este protocolo es el que finalmente consume toda la infraestructura de ERSo 004-008: sin
+  un VDR desplegado y sin DID Documents publicados y versionados correctamente, el
+  paso 7 no tiene forma de completarse.
+
+
+  5. Desglose técnico de los 8 frentes (ERSo 001-008)
+  Estos ocho puntos cubren las dos mitades del ecosistema: ERSo 001-003 preparan al
+  Titular (Holder) — su wallet y su propio DID — y ERSo 004-008 preparan la infraestructura
+  de confianza que usan el Emisor (Issuer) y el Verificador (Verifier). Son secuenciales por
+
+
+
+                                                                                            Page 5 of 10
+Identidad Digital EUDI Wallet
+
+
+
+
+  diseño dentro de cada mitad: cada uno depende de que el anterior esté operativo.
+
+
+  ERSo 001 — Cartera de identidad y custodia de claves en hardware
+        Qué implica: construir o adoptar la app Wallet que actúa como Holder, con custodia de
+        las llaves privadas del usuario respaldada por hardware (Secure Enclave en iOS,
+        StrongBox/TEE en Android — lo que el ARF llama WSCD, Wallet Secure Cryptographic
+        Device).
+        Consideraciones técnicas: la llave privada nunca sale del hardware seguro; cada
+        operación de firma exige biometría o PIN; se necesita un plan de recuperación ante
+        pérdida del dispositivo que no comprometa la seguridad.
+        Dependencia: ninguna — es la base del lado Holder, en paralelo a ERSo 004 del lado
+        VDR.
+        Entregable: wallet funcional con custodia de llaves en hardware.
+
+
+  ERSo 002 — Suite criptográfica y formatos de credencial: SD-JWT VC y mdoc
+        Qué implica: definir qué algoritmos criptográficos y qué formatos de credencial
+        soportará el sistema. El ARF exige, como mínimo, SD-JWT VC (credenciales tipo JWT
+        con divulgación selectiva nativa) y mdoc (ISO/IEC 18013-5, el formato de documentos
+        tipo licencia de conducción digital).
+        Consideraciones técnicas: SD-JWT VC oculta campos mediante hashes de cada claim
+        sin invalidar la firma; mdoc usa CBOR en vez de JSON con su propio esquema de
+        divulgación selectiva. Hay que soportar ambos formatos en paralelo, no elegir uno solo,
+        porque distintos Verifiers pueden exigir uno u otro.
+        Dependencia: ERSo 001 — la wallet necesita la custodia de llaves lista antes de
+        emitir/validar en estos formatos.
+        Entregable: librería o módulo que emite y valida ambos formatos de credencial.
+
+
+  ERSo 003 — Creación del DID y DID Document del titular
+        Qué implica: generar el DID propio del ciudadano (Holder) y su DID Document, análogo
+        a lo que ERSo 006 hace para la institución, pero a nivel de cada usuario individual.
+        Consideraciones técnicas: a diferencia del DID institucional (público y estable), el DID
+        del titular suele priorizar la privacidad — por ejemplo rotación frecuente o DIDs de un
+        solo uso según el ARF — generado localmente en el dispositivo a partir de la llave
+        custodiada en ERSo 001.
+
+
+
+
+                                                                                           Page 6 of 10
+Identidad Digital EUDI Wallet
+
+
+
+
+        Dependencia: ERSo 001 (llave en hardware) y ERSo 002 (formato en el que se
+        empaqueta la identidad).
+        Entregable: mecanismo de generación de DID de titular, integrado a la wallet.
+
+
+  ERSo 004 — Despliegue del VDR de extensión
+        Qué implica: elegir y desplegar la infraestructura de registro. Para did:web , puede ser
+        tan simple como un servidor HTTPS con control de versiones (no requiere blockchain).
+        Consideraciones técnicas: alta disponibilidad, políticas de escritura/autorización de
+        quién puede publicar, certificado HTTPS válido, cuidado con caché/CDN sirviendo
+        versiones desactualizadas del did.json .
+        Dependencia: ninguna — es la base de todo lo demás.
+        Entregable: servicio/dominio operativo donde publicar DID Documents.
+
+
+  ERSo 005 — Publicación del DID Document bajo did:web
+        Qué implica: un procedimiento reproducible (idealmente automatizado) para publicar
+        cualquier DID Document en .well-known/did.json (o en una ruta con path ).
+        Consideraciones técnicas: pipeline de CI/CD, content-type correcto, validación de
+        sintaxis contra el DID Core spec antes de publicar, prueba con un resolver público (ej.
+         web-did-resolver ).
+        Dependencia: ERSo 004.
+        Entregable: herramienta/pipeline reutilizable de publicación.
+
+
+  ERSo 006 — Publicación del DID Document institucional
+        Qué implica: generar el par de llaves real de la institución (con custodia adecuada de la
+        llave privada — HSM o KMS recomendado) y publicar el DID Document institucional
+        usando el procedimiento de ERSo 005.
+        Consideraciones técnicas: gestión segura de la llave privada, posible vinculación con
+        certificados eIDAS (QWAC/QSeal), endpoints de servicio ( OID4VCI ) si la institución
+        emitirá credenciales.
+        Dependencia: ERSo 005.
+        Entregable: DID institucional publicado y resoluble públicamente.
+
+
+
+
+                                                                                            Page 7 of 10
+Identidad Digital EUDI Wallet
+
+
+
+
+  ERSo 007 — Resolución y verificación DID como consumidor conforme
+        Qué implica: construir o adoptar un DID resolver, implementar la lógica de verificación
+        de firmas (VC/VP) y validar contra una lista de confianza (Trusted List/LOTL de eIDAS,
+        o una propia mientras tanto).
+        Consideraciones técnicas: manejo de errores de resolución (dominio caído,
+        documento mal formado), cacheo con invalidación correcta, pruebas de conformidad
+        según el ARF.
+        Dependencia: ERSo 004-006 (necesita DID Documents reales publicados contra los
+        cuales probar).
+        Entregable: componente/servicio verificador reutilizable.
+
+
+  ERSo 008 — Ciclo de vida y trazabilidad de versiones del DID Document
+        Qué implica: diseñar el esquema de versionado (timestamps, hash encadenado o
+        snapshots firmados), soportar rotación de llaves sin romper verificaciones
+        retroactivas, y un mecanismo de revocación.
+        Consideraciones técnicas: almacenamiento del historial (base de datos, log append-
+        only o versionado vía Git), periodo de gracia tras una rotación, forma en que ERSo 007
+        consulta "qué llave era válida en la fecha X".
+        Dependencia: ERSo 004-007 — retroalimenta directamente al verificador.
+        Entregable: mecanismo de historial/auditoría integrado al VDR.
+
+  Nota de secuenciación: el orden natural es 001 → 002 → 003 (lado Holder) en paralelo con
+  004 → 005 (lado VDR), convergiendo en 006 → 007 → 008 una vez que existen tanto
+  identidades de titulares como identidades institucionales que verificar.
+
+
+  6. Hoja de ruta de implementación sugerida
+  Fase 0 — Nivelación del equipo (1-2 semanas) Leer el DID Core spec, la especificación
+   did:web y el capítulo de Trust Model del ARF. Montar un did:web de prueba en un
+  entorno sandbox (ej. GitHub Pages) para validar el flujo completo antes de tocar el
+  proyecto real.
+
+  Fase 1 — VDR + publicación genérica (ERSo 004-005) Decidir la tecnología del VDR
+  (servidor propio vs. sitio estático vs. object storage con CDN) y automatizar la publicación
+  con validación de esquema en el pipeline de CI/CD.
+
+
+
+
+                                                                                           Page 8 of 10
+Identidad Digital EUDI Wallet
+
+
+
+
+  Fase 1B — Cartera del titular, en paralelo (ERSo 001-003) Mientras se monta el VDR, el
+  equipo de wallet puede avanzar en paralelo: custodia de llaves en hardware (001), soporte
+  de SD-JWT VC y mdoc (002), y generación del DID del titular (003). Converge con el resto
+  en la Fase 5 (piloto end-to-end).
+
+  Fase 2 — Identidad institucional real (ERSo 006) Generación y custodia de llaves
+  (idealmente HSM/KMS, no archivos sueltos), publicación del DID institucional real y
+  pruebas contra resolvers públicos.
+
+  Fase 3 — Verificador (ERSo 007) Adoptar o construir un resolver, implementar la lógica de
+  verificación de VC/VP, e integrar contra una lista de confianza (propia al inicio, luego la
+  LOTL real de eIDAS).
+
+  Fase 4 — Ciclo de vida (ERSo 008) Diseñar el esquema de versionado e historial, y simular
+  una rotación de llaves con verificación retroactiva para validar que el diseño funciona.
+
+  Fase 5 — Piloto end-to-end Un Issuer de prueba emite una credencial, un Wallet de
+  prueba la guarda, y un Verifier de prueba la valida usando el flujo OpenID4VP completo
+  descrito en la sección 4.
+
+
+  Stack tecnológico de referencia
+        Resolución DID: did-resolver / web-did-resolver (Decentralized Identity
+        Foundation)
+        Wallet (referencia UE): eudi-lib-jvm-openid4vp-kt — implementación oficial en
+        Kotlin del lado Wallet
+        Verifier (referencia UE): eudi-srv-verifier-endpoint — implementación oficial de
+        endpoint verificador
+        Especificación madre: repositorio eu-digital-identity-wallet/eudi-doc-
+        architecture-and-reference-framework (el ARF completo, versionado)
+
+  Partir de las implementaciones de referencia oficiales de la UE reduce el riesgo de
+  desviarse de las pruebas de conformidad del ARF.
+
+
+  7. Riesgos y puntos de atención
+        Custodia de llaves privadas: si la llave del Issuer se compromete, cualquier credencial
+        futura queda en riesgo. Requiere HSM/KMS y un procedimiento de rotación de
+        emergencia (ERSo 008), no solo un archivo .pem en un servidor.
+
+
+
+
+                                                                                           Page 9 of 10
+Identidad Digital EUDI Wallet
+
+
+
+
+        Disponibilidad del VDR: si el dominio que aloja el did.json cae, nadie puede resolver
+        ni verificar nada. Es un punto único de falla que necesita SLA y alta disponibilidad real.
+        Caché desactualizado: proxies o CDNs sirviendo una versión vieja del did.json tras
+        una rotación de llaves puede causar falsos rechazos, o peor, aceptar firmas hechas con
+        una llave ya revocada.
+        Conformidad regulatoria: operar dentro del marco EUDI real probablemente exige
+        pasar pruebas de conformidad del ARF y figurar en listas de confianza oficiales — no
+        es solo un tema técnico, también de gobernanza y legal.
+        Privacidad y minimización de datos: aunque el Wallet aplica divulgación selectiva, hay
+        que diseñar con cuidado qué atributos pide cada Verifier — pedir de más rompe el
+        principio de minimización que exige el marco.
+        Interoperabilidad: seguir estrictamente los formatos estándar (DID Core, W3C VC,
+        OpenID4VP) en vez de variantes propias, para no quedar aislados del ecosistema
+        europeo ni fallar las pruebas de conformidad.
+
+
+  8. Referencias y recursos oficiales
+        Architecture and Reference Framework (ARF) — especificación técnica oficial del
+        EUDI Wallet
+        ARF publicado (eudi.dev) — versión navegable de la especificación
+        did:web Method Specification (W3C CCG) — spec completa del método usado en
+        ERSo 005/006
+        web-did-resolver (DIF) — librería de referencia para resolver DIDs did:web
+        eudi-lib-jvm-openid4vp-kt — implementación oficial de OpenID4VP, lado Wallet
+        eudi-srv-verifier-endpoint — implementación oficial de endpoint Verifier
+        Understanding OpenID4VP (eIDAS Pro) — explicación complementaria del protocolo
+        de presentación
+
+
+
+
+                                                                                             Page 10 of 10
+

@@ -1,0 +1,18 @@
+# Documentation toolchain for the ARF website (eudi.dev).
+#
+# MkDocs 1.x is unmaintained and MkDocs 2.0 will be incompatible with
+# Material for MkDocs, so versions are pinned defensively. For full
+# supply-chain integrity, compile with hashes:
+#   pip-compile --generate-hashes requirements.txt
+mkdocs==1.6.1
+mkdocs-material==9.7.6
+mkdocs-material[imaging]==9.7.6
+mike==2.1.3
+# Renders the Annex 2 high-level-requirements markdown from the HLTR CSV
+# (hltr/scripts/, run via `make hltr`). Also an mkdocs dependency, pinned
+# here explicitly because the generator depends on it directly.
+jinja2==3.1.6
+mkdocs-git-revision-date-localized-plugin==1.3.0
+# Resolves [Topic N][topic-N] internal cross-references from any page depth
+# (used by the HLRs and discussion topics). Pinned defensively like the rest.
+mkdocs-autorefs==1.4.4

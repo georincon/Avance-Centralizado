@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{NOMBRE}} · Puerta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Raleway:wght@500;700&display=swap">
+<style>
+  /* Estilo "luna dorada": negro, dorado y titulares condensados en mayúscula, en la línea de la
+     gala de locales de ocio nocturno. Los colores de resultado (verde/rojo) se mantienen: en la puerta
+     la señal tiene que verse desde lejos. */
+  :root { --fondo: #070707; --panel: #121212; --texto: #FFFFFF; --suave: #B9B2A4; --oro: #F5A623; --oro-claro: #FFD27A; --oro-osc: #DE6906; --borde: #2B2418;
+    --titulo: "Anton", Impact, "Arial Narrow Bold", sans-serif; --cuerpo: "Raleway", system-ui, -apple-system, "Segoe UI", sans-serif; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: radial-gradient(900px 600px at 50% -10%, rgba(245,166,35,.16), transparent 70%), radial-gradient(700px 500px at 100% 100%, rgba(222,105,6,.12), transparent 70%), var(--fondo);
+    color: var(--texto); font-family: var(--cuerpo); overflow: hidden; }
+  .luna { position: fixed; top: -90px; right: -90px; width: 380px; height: 380px; opacity: .9; pointer-events: none; }
+  .estrellas { position: fixed; inset: 0; pointer-events: none; opacity: .5;
+    background: radial-gradient(2px 2px at 12% 22%, var(--oro-claro), transparent), radial-gradient(1.5px 1.5px at 26% 70%, #fff, transparent), radial-gradient(2px 2px at 78% 40%, var(--oro-claro), transparent),
+      radial-gradient(1.5px 1.5px at 88% 82%, #fff, transparent), radial-gradient(1.5px 1.5px at 40% 12%, #fff, transparent), radial-gradient(2px 2px at 6% 88%, var(--oro-claro), transparent); }
+  .pantalla { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 70px 16px 56px; text-align: center; }
+  .marca { position: fixed; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 14px 16px; background: linear-gradient(#000, rgba(0,0,0,.0)); z-index: 2; }
+  .marca svg { width: 30px; height: 30px; flex: none; }
+  .marca span { font-family: var(--titulo); letter-spacing: .28em; text-transform: uppercase; font-size: 1.15rem; color: var(--oro); text-shadow: 0 0 18px rgba(245,166,35,.55); }
+  .marca::after { content: ""; position: absolute; left: 20%; right: 20%; bottom: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--oro), transparent); }
+  h1 { margin: 0; font-family: var(--titulo); font-weight: 400; text-transform: uppercase; letter-spacing: .04em; font-size: clamp(1.8rem, 5.4vw, 3rem); line-height: 1.08; }
+  h1 em { font-style: normal; color: var(--oro); }
+  p { margin: 0; color: var(--suave); font-size: clamp(1rem, 2.6vw, 1.2rem); line-height: 1.45; max-width: 34ch; }
+  .qr { position: relative; background: #fff; padding: 14px; border-radius: 22px; box-shadow: 0 0 0 4px var(--oro), 0 0 0 9px rgba(245,166,35,.18), 0 0 60px rgba(245,166,35,.35); }
+  .qr img { display: block; width: min(68vw, 44vh, 360px); height: auto; }
+  .privacidad { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--borde); background: rgba(245,166,35,.07); border-radius: 999px; padding: 9px 16px; color: var(--oro-claro); font-size: .95rem; font-weight: 500; }
+  .estado { color: var(--suave); display: flex; align-items: center; gap: 10px; min-height: 24px; font-weight: 500; }
+  .girando { width: 18px; height: 18px; border: 2px solid var(--borde); border-top-color: var(--oro); border-radius: 50%; animation: g .8s linear infinite; }
+  @keyframes g { to { transform: rotate(360deg); } }
+  .resultado { z-index: 3; }
+  .resultado .icono { width: min(40vw, 200px); height: min(40vw, 200px); padding: 22px; border-radius: 50%; border: 4px solid rgba(255,255,255,.85); box-shadow: 0 0 0 10px rgba(255,255,255,.12); }
+  .resultado h1 { font-size: clamp(2.8rem, 10vw, 5.2rem); letter-spacing: .03em; }
+  .resultado p { color: rgba(255,255,255,.92); font-size: clamp(1.1rem, 3.4vw, 1.5rem); }
+  .entra { background: radial-gradient(700px 500px at 50% 30%, #12A559, #075C2F 75%); } .menor { background: radial-gradient(700px 500px at 50% 30%, #D2222D, #7C0B12 75%); } .error { background: radial-gradient(700px 500px at 50% 30%, #C98A10, #6B4600 75%); }
+  .cuenta { height: 6px; width: min(70vw, 420px); background: rgba(255,255,255,.25); border-radius: 3px; overflow: hidden; }
+  .cuenta span { display: block; height: 100%; background: #fff; width: 100%; transform-origin: left; animation: cuenta var(--dur) linear forwards; }
+  @keyframes cuenta { to { transform: scaleX(0); } }
+  button { font: inherit; font-weight: 700; border-radius: 14px; padding: 14px 26px; min-height: 48px; cursor: pointer; background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.5); text-transform: uppercase; letter-spacing: .08em; }
+  button:hover { background: rgba(255,255,255,.24); }
+  .noche { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; gap: 34px; padding: 10px 16px 14px; background: linear-gradient(transparent, rgba(0,0,0,.85)); color: var(--suave); z-index: 2; }
+  .noche div { display: flex; align-items: baseline; gap: 8px; font-size: .85rem; text-transform: uppercase; letter-spacing: .12em; }
+  .noche b { font-family: var(--titulo); font-weight: 400; font-size: 1.7rem; color: var(--oro); letter-spacing: .02em; }
+  .noche .rechazos b { color: #FF6B6B; }
+  .activar { background: var(--oro); color: #070707; border-color: var(--oro); font-size: clamp(1.1rem, 3.6vw, 1.5rem); padding: 18px 44px; border-radius: 16px; box-shadow: 0 0 0 8px rgba(245,166,35,.18); }
+  .activar:hover { background: #FFC04D; }
+  .reposo p { color: var(--suave); max-width: 34ch; margin: 0; }
+  .desactivar { background: transparent; color: var(--suave); border-color: rgba(255,255,255,.28); font-size: .85rem; padding: 10px 22px; min-height: 40px; }
+  .desactivar:hover { color: #fff; background: rgba(255,255,255,.1); }
+  [hidden] { display: none !important; }
+  .historial { position: fixed; top: 14px; left: 14px; z-index: 4; font-family: var(--cuerpo); font-weight: 700; font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; color: var(--suave); text-decoration: none; border: 1px solid var(--borde); background: rgba(0,0,0,.55); border-radius: 999px; padding: 7px 14px; }
+  .historial:hover { color: var(--oro); border-color: var(--oro); }
+  @media (max-width: 600px) { .luna { width: 260px; height: 260px; top: -70px; right: -70px; } .marca span { font-size: .95rem; letter-spacing: .2em; } }
+  @media (prefers-reduced-motion: reduce) { .girando, .cuenta span { animation: none; } }
+</style>
+</head>
+<body>
+<svg class="luna" viewBox="0 0 200 200" aria-hidden="true"><defs><radialGradient id="lg" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#FFE3A3"/><stop offset=".55" stop-color="#F5A623"/><stop offset="1" stop-color="#DE6906"/></radialGradient></defs><path d="M130 22a82 82 0 1 0 48 118A68 68 0 0 1 130 22z" fill="url(#lg)" opacity=".92"/><circle cx="60" cy="150" r="3" fill="#FFD27A"/><circle cx="170" cy="60" r="2" fill="#fff"/></svg>
+<div class="estrellas" aria-hidden="true"></div>
+<div class="marca" aria-hidden="true"><svg viewBox="0 0 200 200"><path d="M130 22a82 82 0 1 0 48 118A68 68 0 0 1 130 22z" fill="#F5A623"/></svg><span>{{NOMBRE}}</span></div>
+
+<main class="pantalla reposo" id="reposo" aria-live="polite">
+  <h1>Puerta en <em>reposo</em></h1>
+  <p id="reposo-texto">Pulsa «Activar» cuando quieras empezar a verificar la edad de quien llegue.</p>
+  <button class="activar" id="activar">Activar puerta</button>
+</main>
+
+<main class="pantalla" id="codigo" aria-live="polite" hidden>
+  <h1>Para entrar, <em>escanea</em> con tu wallet</h1>
+  <div class="qr" id="qr"><div class="girando" style="margin:150px"></div></div>
+  <div class="estado" id="estado"><div class="girando"></div> Preparando el código…</div>
+  <span class="privacidad">
+    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+    Solo se comprueba que eres mayor de {{EDAD}}. No se guarda ningún dato.
+  </span>
+  <button class="desactivar" id="desactivar">Desactivar puerta</button>
+</main>
+
+<main class="pantalla resultado" id="resultado" hidden role="alert">
+  <svg class="icono" id="r-icono" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+  <h1 id="r-titulo"></h1>
+  <p id="r-texto"></p>
+  <div class="cuenta" aria-hidden="true"><span id="r-cuenta"></span></div>
+  <button id="siguiente">Siguiente persona</button>
+  <button class="desactivar" id="desactivar-2">Desactivar puerta</button>
+</main>
+
+<a class="historial" id="enlace-historial" href="{{BASE}}/auditoria/" hidden>Historial</a>
+<div class="noche" id="noche"></div>
+
+<script>
+const BASE = '{{BASE}}'
+const EDAD = '{{EDAD}}'
+const ESPERA_RESULTADO = 6000
+const $ = (id) => document.getElementById(id)
+let sondeo, regreso, idActual = null
+
+const ICONOS = {
+  entra: '<circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.5 3.5L17 9"/>',
+  menor: '<circle cx="12" cy="12" r="10"/><path d="M8 8l8 8M16 8l-8 8"/>',
+  error: '<path d="M12 3l10 18H2z"/><path d="M12 10v4M12 17.5h.01"/>',
+}
+const TEXTOS = {
+  entra: ['Puede entrar', `Mayor de ${EDAD} años, verificado con su documento.`],
+  menor: ['No puede entrar', `Su documento dice que es menor de ${EDAD} años.`],
+}
+
+function estado(texto, cargando) {
+  $('estado').replaceChildren(...(cargando ? [Object.assign(document.createElement('div'), { className: 'girando' })] : []), texto)
+}
+
+async function nuevoCodigo() {
+  clearTimeout(sondeo); clearTimeout(regreso)
+  $('resultado').hidden = true
+  $('resultado').className = 'pantalla resultado'
+  $('reposo').hidden = true
+  $('codigo').hidden = false
+  $('qr').replaceChildren(Object.assign(document.createElement('div'), { className: 'girando', style: 'margin:150px' }))
+  estado('Preparando el código…', true)
+  try {
+    const r = await fetch(`${BASE}/api/solicitud`, { method: 'POST' })
+    const s = await r.json()
+    if (!r.ok) throw new Error(s.error)
+    const img = new Image()
+    img.alt = 'Código QR para verificar la edad con la wallet'
+    img.src = s.qr
+    $('qr').replaceChildren(img)
+    idActual = s.id
+    estado('Esperando a la wallet…', true)
+    preguntar(s.id)
+  } catch (e) {
+    reposo(`${e.message || 'Sin conexión'}. Pulsa «Activar» para intentarlo de nuevo.`)
+  }
+}
+
+// La puerta no genera solicitudes por su cuenta: solo cuando alguien la activa. Si el código vence sin usarse (o falla), vuelve al reposo.
+function reposo(texto) {
+  clearTimeout(sondeo); clearTimeout(regreso)
+  $('codigo').hidden = true
+  $('resultado').hidden = true
+  $('reposo-texto').textContent = texto || 'Pulsa «Activar» cuando quieras empezar a verificar la edad de quien llegue.'
+  $('reposo').hidden = false
+}
+
+async function preguntar(id) {
+  try {
+    const r = await (await fetch(`${BASE}/api/solicitud/${id}`)).json()
+    if (r.estado === 'vencida') return reposo('El código venció sin usarse. Pulsa «Activar» para generar otro.')
+    if (r.estado !== 'esperando') return mostrar(r)
+  } catch { /* reintentar */ }
+  sondeo = setTimeout(() => preguntar(id), 1500)
+}
+
+function mostrar(r) {
+  idActual = null
+  const tipo = r.estado === 'entra' || r.estado === 'menor' ? r.estado : 'error'
+  const [titulo, texto] = TEXTOS[tipo] ?? ['No se pudo verificar', `${r.motivo ?? 'Inténtalo otra vez'}.`]
+  $('r-icono').innerHTML = ICONOS[tipo]
+  $('r-titulo').textContent = titulo
+  $('r-texto').textContent = texto
+  $('resultado').className = `pantalla resultado ${tipo}`
+  $('codigo').hidden = true
+  $('resultado').hidden = false
+  const cuenta = $('r-cuenta')
+  cuenta.style.setProperty('--dur', `${ESPERA_RESULTADO}ms`)
+  cuenta.replaceWith(cuenta.cloneNode(true)) // reinicia la animación
+  regreso = setTimeout(nuevoCodigo, ESPERA_RESULTADO)
+  noche()
+}
+
+async function noche() {
+  try {
+    const n = await (await fetch(`${BASE}/api/noche`)).json()
+    $('noche').replaceChildren(...[['entradas', n.entradas, n.entradas === 1 ? 'entrada' : 'entradas'], ['rechazos', n.rechazos, n.rechazos === 1 ? 'rechazo' : 'rechazos']].map(([clase, num, texto]) => { const d = document.createElement('div'); d.className = clase; const b = document.createElement('b'); b.textContent = num; d.append(b, texto); return d }))
+  } catch { /* opcional */ }
+}
+
+$('siguiente').onclick = nuevoCodigo
+$('activar').onclick = nuevoCodigo
+// Desactivar: cancela el código pendiente (si lo hay) y deja la puerta en reposo hasta que alguien la active otra vez.
+function desactivar() {
+  if (idActual) { try { fetch(`${BASE}/api/solicitud/${idActual}/cancelar`, { method: 'POST' }).catch(() => {}) } catch (e) {} idActual = null }
+  reposo('Puerta desactivada. Pulsa «Activar» cuando quieras volver a verificar.')
+}
+$('desactivar').onclick = desactivar
+$('desactivar-2').onclick = desactivar
+noche()   // al abrir solo se muestra el reposo: no se crea ninguna solicitud
+</script>
+<script>
+try { fetch('{{BASE}}/auditoria/api/ping').then((r) => { if (r.ok) document.getElementById('enlace-historial').hidden = false }).catch(() => {}) } catch (e) {}
+</script>
+</body>
+</html>

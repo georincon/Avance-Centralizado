@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{NOMBRE}} · Control de acceso</title>
+<link rel="icon" href="{{BASE}}/publico/marca.svg">
+<style>
+  /* Inter y DM Mono, alojadas aquí: la página no llama a Google Fonts. */
+  @font-face { font-family: 'Inter'; font-weight: 300 700; font-display: swap; src: url('{{BASE}}/publico/fuentes/inter-latin.woff2') format('woff2');
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: 'Inter'; font-weight: 300 700; font-display: swap; src: url('{{BASE}}/publico/fuentes/inter-latin-ext.woff2') format('woff2');
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+  @font-face { font-family: 'DM Mono'; font-weight: 400; font-display: swap; src: url('{{BASE}}/publico/fuentes/dm-mono-400.woff2') format('woff2'); }
+  @font-face { font-family: 'DM Mono'; font-weight: 500; font-display: swap; src: url('{{BASE}}/publico/fuentes/dm-mono-500.woff2') format('woff2'); }
+  /* Estilo de centro de control de misión: negro, blanco, rojo y azul, etiquetas en monoespaciada. */
+  :root {
+    --fondo: #000000; --panel: #0b0b0c; --panel2: #151516; --linea: #2d2d2d; --texto: #ffffff; --suave: #b9b9bb; --tenue: #58585b;
+    --azul: #288bff; --azul-osc: #1c67e3; --rojo: #f64137; --rojo-osc: #c1241b; --verde: #2fd16f; --verde-osc: #148a46; --ambar: #ffc233;
+    --mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: var(--fondo); color: var(--texto); font: 16px/1.55 "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; display: flex; flex-direction: column; }
+  .mono { font-family: var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+  /* Cabecera */
+  header { background: #000; border-bottom: 1px solid var(--linea); }
+  .barra { max-width: 1280px; margin: 0 auto; padding: 14px 28px; display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+  .marca { display: flex; align-items: center; gap: 14px; }
+  .marca svg { width: 44px; height: 44px; flex: none; }
+  .marca strong { display: block; font-size: 1.5rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; line-height: 1; }
+  .marca small { font-family: var(--mono); color: var(--suave); font-size: .7rem; letter-spacing: .22em; text-transform: uppercase; }
+  .telemetria { margin-left: auto; display: flex; gap: 22px; flex-wrap: wrap; font-family: var(--mono); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--suave); align-items: center; }
+  .telemetria b { color: var(--texto); font-weight: 500; }
+  .telemetria .ok::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--verde); margin-right: 8px; box-shadow: 0 0 0 3px rgba(47,209,111,.25); }
+  #reloj { color: var(--texto); font-variant-numeric: tabular-nums; }
+  .franja-roja { height: 4px; background: linear-gradient(90deg, var(--rojo) 0 30%, var(--azul) 30% 100%); }
+  /* Cuerpo */
+  main { max-width: 1280px; width: 100%; margin: 0 auto; padding: 28px 28px 44px; flex: 1; display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 920px) { main { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--linea); position: relative; }
+  .panel::before { content: ""; position: absolute; left: -1px; top: -1px; width: 22px; height: 22px; border-left: 3px solid var(--rojo); border-top: 3px solid var(--rojo); }
+  .panel > h2 { margin: 0; padding: 14px 22px 14px 40px; font-family: var(--mono); font-weight: 500; font-size: .74rem; letter-spacing: .22em; text-transform: uppercase; color: var(--suave); border-bottom: 1px solid var(--linea); display: flex; justify-content: space-between; align-items: center; }
+  #paso { color: var(--azul); }
+  .puesto { min-height: 540px; padding: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 16px;
+    background: radial-gradient(500px 300px at 50% 0%, rgba(40,139,255,.12), transparent 70%); }
+  .puesto h3 { margin: 0; font-size: 2.1rem; font-weight: 700; letter-spacing: -.01em; text-transform: uppercase; line-height: 1.05; }
+  .puesto p { margin: 0; color: var(--suave); max-width: 48ch; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 999px; font-weight: 600; letter-spacing: .02em; }
+  button:focus-visible { outline: 3px solid var(--azul); outline-offset: 3px; }
+  .grande { padding: 16px 38px; font-size: 1.05rem; background: var(--azul); color: #fff; text-transform: uppercase; letter-spacing: .08em; font-size: .95rem; }
+  .solo-movil { display: none; text-decoration: none; }
+  .grande:hover { background: var(--azul-osc); }
+  .suave { padding: 10px 20px; background: transparent; color: var(--suave); border: 1px solid var(--linea); text-transform: uppercase; letter-spacing: .08em; font-size: .78rem; }
+  .suave:hover { color: #fff; border-color: #fff; }
+  .qr { width: 300px; max-width: 100%; background: #fff; padding: 12px; box-shadow: 0 0 0 2px var(--azul), 0 0 0 8px rgba(40,139,255,.2); }
+  .cuenta { font-family: var(--mono); color: var(--suave); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; }
+  .pide { border: 1px solid var(--linea); padding: 10px 16px; font-size: .86rem; color: var(--suave); max-width: 54ch; background: var(--panel2); }
+  .pide b { color: #fff; font-family: var(--mono); font-weight: 500; letter-spacing: .08em; text-transform: uppercase; font-size: .72rem; }
+  .carnet { display: grid; grid-template-columns: 250px 1fr; gap: 30px; align-items: center; text-align: left; width: 100%; }
+  @media (max-width: 640px) { .carnet { grid-template-columns: 1fr; justify-items: center; text-align: center; } }
+  .foto { width: 250px; max-width: 70vw; aspect-ratio: 3 / 4; object-fit: cover; border: 3px solid #fff; background: #fff; box-shadow: 0 0 0 1px var(--linea), 12px 12px 0 var(--azul-osc); }
+  .datos small { display: block; font-family: var(--mono); color: var(--suave); font-size: .7rem; letter-spacing: .22em; text-transform: uppercase; margin-top: 14px; }
+  .datos .nombre { font-size: 2.1rem; font-weight: 700; line-height: 1.05; letter-spacing: -.01em; text-transform: uppercase; }
+  .datos .doc { font-family: var(--mono); font-size: 1.6rem; font-weight: 500; letter-spacing: .06em; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  .chip { font-family: var(--mono); display: inline-flex; gap: 6px; align-items: center; padding: 5px 12px; font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; background: rgba(47,209,111,.12); color: var(--verde); border: 1px solid rgba(47,209,111,.5); }
+  .chip.gris { background: var(--panel2); color: var(--suave); border-color: var(--linea); }
+  .decision { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; margin-top: 8px; }
+  .permitir, .denegar { padding: 20px; font-size: 1.1rem; letter-spacing: .12em; text-transform: uppercase; color: #fff; border-radius: 4px; }
+  .permitir { background: var(--verde-osc); } .permitir:hover { background: var(--verde); color: #021a0c; }
+  .denegar { background: var(--rojo-osc); } .denegar:hover { background: var(--rojo); }
+  .aviso { background: rgba(255,194,51,.08); border: 1px solid rgba(255,194,51,.45); color: var(--ambar); padding: 10px 14px; font-size: .86rem; width: 100%; text-align: left; }
+  .error { background: rgba(246,65,55,.1); border: 1px solid var(--rojo); color: #ffb4ae; padding: 12px 16px; max-width: 54ch; }
+  .resultado { font-size: 2.4rem; font-weight: 700; padding: 8px 22px; text-transform: uppercase; letter-spacing: .04em; }
+  .resultado.ok { color: var(--verde); border: 2px solid var(--verde); } .resultado.no { color: var(--rojo); border: 2px solid var(--rojo); }
+  .contadores { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--linea); }
+  .contadores div { padding: 16px 22px; } .contadores div + div { border-left: 1px solid var(--linea); }
+  .contadores b { display: block; font-family: var(--mono); font-weight: 500; font-size: 2.4rem; font-variant-numeric: tabular-nums; line-height: 1; } .contadores span { font-family: var(--mono); color: var(--suave); font-size: .68rem; letter-spacing: .2em; text-transform: uppercase; }
+  .contadores .p b { color: var(--verde); } .contadores .d b { color: var(--rojo); }
+  ul.lista { list-style: none; margin: 0; padding: 0; max-height: 440px; overflow: auto; }
+  ul.lista li { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 13px 22px; border-bottom: 1px solid var(--linea); }
+  ul.lista li:last-child { border-bottom: 0; }
+  .insignia { width: 12px; height: 12px; } .insignia.permitido { background: var(--verde); } .insignia.denegado { background: var(--rojo); }
+  ul.lista strong { display: block; font-size: .92rem; text-transform: uppercase; letter-spacing: .02em; } ul.lista small { font-family: var(--mono); color: var(--suave); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; }
+  ul.lista time { font-family: var(--mono); color: var(--suave); font-size: .8rem; font-variant-numeric: tabular-nums; }
+  .vacio { padding: 30px 22px; color: var(--tenue); text-align: center; font-family: var(--mono); font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; }
+  footer { border-top: 1px solid var(--linea); color: var(--tenue); font-family: var(--mono); font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; }
+  footer div { max-width: 1280px; margin: 0 auto; padding: 16px 28px; line-height: 1.7; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="barra">
+    <div class="marca">
+      <svg viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="20" fill="#0b2a6b"/><circle cx="22" cy="22" r="20" fill="none" stroke="#fff" stroke-width="1.500"/><ellipse cx="22" cy="22" rx="20" ry="7.500" fill="none" stroke="#f64137" stroke-width="2.200" transform="rotate(-24 22 22)"/><circle cx="31" cy="12.500" r="2.600" fill="#fff"/><path d="M16 22.500l4 4 8-9" fill="none" stroke="#fff" stroke-width="2.800" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><strong>{{NOMBRE}}</strong><small>Centro de control de acceso</small></div>
+    </div>
+    <div class="telemetria"><span class="ok"><b>Portería en línea</b></span><span>Verificador <b>activo</b></span><span id="reloj"></span><a class="suave" href="{{BASE}}/auditoria/" id="enlHistorial" hidden style="text-decoration:none;border-radius:999px">Historial</a></div>
+  </div>
+  <div class="franja-roja" aria-hidden="true"></div>
+</header>
+<main>
+  <section class="panel" aria-live="polite">
+    <h2><span>Puesto de control</span><span id="paso"></span></h2>
+    <div class="puesto" id="puesto"></div>
+  </section>
+  <section class="panel">
+    <h2><span>Registro de la jornada</span></h2>
+    <div class="contadores"><div class="p"><b id="n-permitidos">0</b><span>Permitidos</span></div><div class="d"><b id="n-denegados">0</b><span>Denegados</span></div></div>
+    <ul class="lista" id="registro"></ul>
+    <div class="vacio" id="vacio">Todavía no hay ingresos.</div>
+  </section>
+</main>
+<footer><div>Servicio de ejemplo para probar el ecosistema EUDI Wallet. La foto no se guarda: se borra al decidir. El registro guarda hora, nombre, documento y decisión durante una hora.</div></footer>
+
+<script>
+(() => {
+  const BASE = '{{BASE}}'
+  const $ = (id) => document.getElementById(id)
+  const puesto = $('puesto')
+  let sondeo = null, cuenta = null
+  const MOVIL = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+
+  function el(tag, props = {}, ...hijos) {
+    const e = document.createElement(tag)
+    for (const [k, v] of Object.entries(props)) {
+      if (k === 'class') e.className = v
+      else if (k.startsWith('on')) e.addEventListener(k.slice(2), v)
+      else e.setAttribute(k, v)
+    }
+    for (const h of hijos.flat()) if (h != null) e.append(h.nodeType ? h : document.createTextNode(String(h)))
+    return e
+  }
+  const api = async (ruta, opciones) => {
+    const r = await fetch(BASE + ruta, opciones)
+    return { ok: r.ok, estado: r.status, cuerpo: await r.json().catch(() => ({})) }
+  }
+  const parar = () => { clearInterval(sondeo); clearInterval(cuenta); sondeo = cuenta = null }
+  const hora = (t) => new Date(t).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+  const reloj = () => { $('reloj').textContent = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }
+  reloj(); setInterval(reloj, 1000)
+
+  const PORTERIA = '<svg viewBox="0 0 240 170" width="240" aria-hidden="true"><g fill="none" stroke="#2d2d2d" stroke-width="1.500"><circle cx="120" cy="85" r="76"/><circle cx="120" cy="85" r="52"/><circle cx="120" cy="85" r="28"/><path d="M120 5v160M40 85h160"/></g><ellipse cx="120" cy="85" rx="76" ry="26" fill="none" stroke="#f64137" stroke-width="2" transform="rotate(-24 120 85)"/><circle cx="120" cy="85" r="12" fill="#288bff"/><path d="M114 85l4.500 4.500L127 80" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="176" cy="46" r="5" fill="#fff"/><g fill="#fff" fill-opacity=".5"><circle cx="30" cy="30" r="1.600"/><circle cx="210" cy="140" r="1.600"/><circle cx="60" cy="140" r="1.200"/><circle cx="200" cy="28" r="1.200"/></g></svg>'
+  const icono = (marcado) => { const t = document.createElement('template'); t.innerHTML = marcado; return t.content.firstChild }
+
+  function espera() {
+    parar(); $('paso').textContent = 'En espera'
+    puesto.replaceChildren(
+      icono(PORTERIA),
+      el('h3', {}, 'Listo para un nuevo ingreso'),
+      el('p', {}, 'Pulsa el botón y pídele a la persona que escanee el código con su wallet. Verás su foto y su identidad ya verificadas.'),
+      el('button', { class: 'grande', onclick: nuevo }, 'Nuevo ingreso'),
+    )
+  }
+
+  async function nuevo() {
+    parar(); $('paso').textContent = 'Generando…'
+    puesto.replaceChildren(el('p', { class: 'cuenta' }, 'Preparando el código…'))
+    const { ok, cuerpo } = await api('/api/solicitud', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ dispositivo: MOVIL ? 'mismo' : 'otro' }) })
+    if (!ok) return fallo(cuerpo.error ?? 'No se pudo crear la solicitud.')
+    mostrarQr(cuerpo)
+  }
+
+  function mostrarQr(s) {
+    $('paso').textContent = 'Esperando a la wallet'
+    const restante = el('div', { class: 'cuenta' })
+    puesto.replaceChildren(
+      el('h3', {}, MOVIL ? 'Abre tu wallet' : 'Escanea con tu wallet'),
+      MOVIL ? el('a', { class: 'grande solo-movil', href: s.enlace, style: 'display:inline-block;text-decoration:none' }, 'Abrir mi wallet') : el('img', { class: 'qr', src: s.qr, alt: 'Código QR para la wallet' }),
+      MOVIL ? el('p', {}, 'Revisa y acepta en tu wallet. Volverás aquí automáticamente.') : null,
+      restante,
+      el('div', { class: 'pide' }, el('b', {}, 'Se pide: '), 'foto, nombres, apellidos y número de documento del documento de identidad digital. Solo se muestran al guardia.'),
+      el('div', {}, el('button', { class: 'suave', onclick: () => { parar(); espera() } }, 'Cancelar')),
+    )
+    const limite = Date.now() + s.vence_en * 1000
+    cuenta = setInterval(() => {
+      const seg = Math.max(0, Math.round((limite - Date.now()) / 1000))
+      restante.textContent = `El código vence en ${Math.floor(seg / 60)}:${String(seg % 60).padStart(2, '0')}`
+    }, 1000)
+    if (MOVIL) return   // la wallet vuelve a /volver y la página retoma la solicitud al cargar
+    sondeo = setInterval(async () => {
+      const { cuerpo } = await api('/api/solicitud/' + s.id)
+      if (cuerpo.estado === 'listo') { parar(); mostrarPersona(s.id, cuerpo.persona) }
+      else if (cuerpo.estado === 'rechazada') { parar(); fallo(cuerpo.motivo) }
+    }, 1500)
+  }
+
+  function mostrarPersona(id, p) {
+    $('paso').textContent = 'Decide el ingreso'
+    const decidir = async (decision) => {
+      const botones = puesto.querySelectorAll('button'); botones.forEach((b) => (b.disabled = true))
+      const { ok, cuerpo } = await api('/api/decision', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id, decision }) })
+      if (!ok) return fallo(cuerpo.error ?? 'No se pudo registrar la decisión.')
+      await cargarRegistro()
+      resuelto(decision === 'permitir')
+    }
+    puesto.replaceChildren(
+      el('div', { class: 'carnet' },
+        el('img', { class: 'foto', src: p.foto, alt: 'Foto del documento de identidad' }),
+        el('div', { class: 'datos' },
+          el('small', {}, 'Nombre'), el('div', { class: 'nombre' }, `${p.nombres} ${p.apellidos}`),
+          el('small', {}, 'Documento'), el('div', { class: 'doc' }, p.documento),
+          el('div', { class: 'chips' }, el('span', { class: 'chip' }, '✔ Documento verificado'), el('span', { class: 'chip gris' }, 'Emitido por ' + (/registraduria/i.test(p.emisor) ? 'la Registraduría' : new URL(p.emisor).hostname))))),
+      el('div', { class: 'aviso' }, 'Compara la foto con la persona que tienes delante. Si no coincide, deniega el ingreso.'),
+      el('div', { class: 'decision' }, el('button', { class: 'permitir', onclick: () => decidir('permitir') }, '✔ Permitir'), el('button', { class: 'denegar', onclick: () => decidir('denegar') }, '✖ Denegar')),
+    )
+  }
+
+  function resuelto(permitido) {
+    $('paso').textContent = permitido ? 'Ingreso permitido' : 'Ingreso denegado'
+    puesto.replaceChildren(
+      el('div', { class: `resultado ${permitido ? 'ok' : 'no'}` }, permitido ? '✔ Ingreso permitido' : '✖ Ingreso denegado'),
+      el('p', {}, 'La foto ya se borró de la pantalla y de la memoria. Quedó anotado en el registro.'),
+      el('button', { class: 'grande', onclick: nuevo }, 'Siguiente ingreso'),
+    )
+  }
+
+  function fallo(motivo) {
+    $('paso').textContent = 'No verificado'
+    puesto.replaceChildren(
+      el('div', { class: 'error' }, motivo),
+      el('div', {}, el('button', { class: 'grande', onclick: nuevo }, 'Generar un código nuevo'), ' ', el('button', { class: 'suave', onclick: espera }, 'Volver')),
+    )
+  }
+
+  async function cargarRegistro() {
+    const { cuerpo } = await api('/api/registro')
+    const lista = cuerpo.registro ?? []
+    $('n-permitidos').textContent = lista.filter((e) => e.decision === 'permitido').length
+    $('n-denegados').textContent = lista.filter((e) => e.decision === 'denegado').length
+    $('vacio').hidden = lista.length > 0
+    $('registro').replaceChildren(...lista.map((e) => el('li', {},
+      el('span', { class: `insignia ${e.decision}`, title: e.decision }),
+      el('div', {}, el('strong', {}, e.nombre), el('small', {}, `Documento ${e.documento} · ${e.decision}`)),
+      el('time', {}, hora(e.hora)))))
+  }
+
+  // Al volver la wallet (mismo teléfono) la página se recarga: se retoma la solicitud de esta sesión.
+  async function retomar() {
+    const q = new URLSearchParams(location.search)
+    const error = q.get('error'), volvio = q.get('volver')
+    if (error || volvio) history.replaceState(null, '', BASE + '/')
+    if (error) return fallo(error)
+    if (!volvio) return espera()
+    const { cuerpo: p } = await api('/api/pendiente')
+    if (!p.id) return fallo('No encontramos la solicitud. Inténtalo de nuevo desde este navegador.')
+    const { cuerpo } = await api('/api/solicitud/' + p.id)
+    if (cuerpo.estado === 'listo') mostrarPersona(p.id, cuerpo.persona)
+    else fallo(cuerpo.motivo ?? 'No se pudo verificar.')
+  }
+  espera(); cargarRegistro(); retomar()
+})()
+</script>
+<script>
+/* Enlace «Historial»: oculto salvo en redes de administración (el proxy responde 403 fuera de ellas). */
+try {
+  fetch('{{BASE}}/auditoria/api/ping', { cache: 'no-store' }).then((r) => {
+    if (r.status === 200 || r.status === 204) { const e = document.getElementById('enlHistorial'); if (e) { e.hidden = false; e.style.display = '' } }
+  }).catch(() => {})
+} catch (e) {}
+</script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!--
+  Código propio de este fork (emulador de la Registraduría Nacional del Estado Civil).
+  No es parte del eudi-srv-pid-issuer original de la Comisión Europea.
+-->
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/main.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/public/css/registraduria-theme.css}">
+    <link rel="icon" type="image/png" th:href="@{/public/img/registraduria/escudo-favicon.png}">
+    <title>Registraduría (emulador) :: Ciudadanos</title>
+</head>
+<body>
+<div class="rne-header">
+    <img th:src="@{/public/img/registraduria/logo-blanco.svg}" alt="Escudo Registraduría Nacional del Estado Civil">
+    <div>
+        <h1>Registraduría (emulador)</h1>
+        <p class="rne-subtitle mb-0">Datos de prueba. No uses datos reales.</p>
+    </div>
+</div>
+<th:block th:replace="~{registraduria-admin-nav :: nav('ciudadanos')}"/>
+<main class="container p-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col">
+            <h2 class="rne-titulo mb-0">Ciudadanos</h2>
+        </div>
+    </div>
+
+    <div class="rne-card row mb-3 g-2 align-items-center mx-0">
+        <div class="col">
+            <form method="get" th:action="@{/registraduria/admin/ciudadanos}" class="d-flex gap-2">
+                <input type="text" name="q" class="form-control" placeholder="Buscar por documento o nombre"
+                       th:value="${query}">
+                <button type="submit" class="btn btn-outline-secondary">Buscar</button>
+            </form>
+        </div>
+        <div class="col-auto" th:text="${total} + ' en total'">0 en total</div>
+        <div class="col-auto">
+            <a class="btn btn-outline-secondary" th:href="@{/registraduria/admin/avisos}">Avisos de revocación
+                <span class="badge" th:classappend="${avisosAbiertos > 0} ? 'bg-danger' : 'bg-secondary'" th:text="${avisosAbiertos}">0</span></a>
+            <a class="btn btn-primary" th:href="@{/registraduria/admin/ciudadanos/nuevo}">Nuevo ciudadano</a>
+        </div>
+    </div>
+
+    <div class="alert alert-success" role="alert" th:if="${revocadas != null && fallidas == '0'}">
+        <span th:text="${revocadas} + ' credencial(es) revocada(s).'">0 credencial(es) revocada(s).</span>
+        <span th:if="${sinEstado != null && sinEstado != '0'}"
+              th:text="${sinEstado} + ' no se pueden revocar (se emitieron sin lista de estado).'"></span>
+    </div>
+    <div class="alert alert-warning" role="alert" th:if="${bloqueado}">
+        La emisión de nuevas credenciales a este ciudadano quedó <strong>bloqueada</strong>. Sus datos no se modificaron.
+    </div>
+    <div class="alert alert-success" role="alert" th:if="${desbloqueado}">
+        Se levantó el bloqueo: ya se le pueden emitir credenciales.
+    </div>
+    <div class="alert alert-danger" role="alert" th:if="${fallidas != null && fallidas != '0'}">
+        <span th:text="${fallidas} + ' credencial(es) no se pudieron revocar (el servicio de estado no respondió); siguen vigentes. Inténtalo de nuevo.'"></span>
+    </div>
+
+    <div class="rne-card p-0 rne-tabla-marco"><table class="table table-hover rne-tabla mb-0">
+        <thead>
+        <tr>
+            <th>Documento</th>
+            <th>Nombre</th>
+            <th>Nacimiento</th>
+            <th>Nacionalidad</th>
+            <th>Contacto</th>
+            <th>Foto</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="cedula : ${cedulas}">
+            <td><span th:text="${cedula.documentNumber}">documento</span>
+                <span class="badge bg-danger" th:if="${bloqueados.contains(cedula.documentNumber)}">Emisión bloqueada</span></td>
+            <td th:text="${cedula.apellidos} + ' ' + ${cedula.nombres}">nombre</td>
+            <td th:text="${cedula.fechaNacimiento}">fecha</td>
+            <td th:text="${cedula.nacionalidad}">CO</td>
+            <td class="small">
+                <span th:text="${cedula.correoElectronico != null} ? ${cedula.correoElectronico} : '—'">correo</span><br>
+                <span class="text-muted" th:text="${cedula.celular != null} ? ${cedula.celular} : '—'">celular</span>
+            </td>
+            <td th:text="${cedula.fotoReferencia != null} ? 'Sí' : 'No'">¿Sí/No?</td>
+            <td class="text-end">
+                <a class="btn btn-outline-secondary btn-sm"
+                   th:href="@{/registraduria/admin/ciudadanos/{documentNumber}/editar(documentNumber=${cedula.documentNumber})}">Editar</a>
+                <form method="post" class="d-inline js-confirm-form"
+                      th:action="@{/registraduria/admin/ciudadanos/{documentNumber}/borrar(documentNumber=${cedula.documentNumber})}"
+                      th:attr="data-title='Borrar ciudadano',
+                               data-yes='SÍ, borrar',
+                               data-text='¿Seguro que quieres BORRAR al ciudadano ' + ${cedula.documentNumber} + ' de la Registraduría? Se elimina su registro y su foto, y no se puede deshacer. Esto NO revoca las credenciales que ya se le emitieron: revócalas antes si corresponde.'">
+                    <button type="button" class="btn btn-outline-danger btn-sm js-confirm-open">Borrar</button>
+                </form>
+                <form method="post" class="d-inline js-confirm-form"
+                      th:action="@{/registraduria/admin/ciudadanos/{documentNumber}/revocar(documentNumber=${cedula.documentNumber})}"
+                      th:attr="data-title='Revocar credenciales',
+                               data-yes='SÍ, revocar',
+                               data-fields='revoke',
+                               data-text='¿Seguro que quieres revocar TODAS las credenciales vigentes del ciudadano ' + ${cedula.documentNumber} + '? Dejarán de ser válidas ante cualquier verificador y esta acción no se puede deshacer.'">
+                    <input type="hidden" name="reason" value="other">
+                    <input type="hidden" name="block" value="false">
+                    <button type="button" class="btn btn-outline-warning btn-sm js-confirm-open">Revocar credenciales</button>
+                </form>
+                <form method="post" class="d-inline js-confirm-form" th:if="${bloqueados.contains(cedula.documentNumber)}"
+                      th:action="@{/registraduria/admin/ciudadanos/{documentNumber}/desbloquear(documentNumber=${cedula.documentNumber})}"
+                      th:attr="data-title='Levantar el bloqueo',
+                               data-yes='SÍ, desbloquear',
+                               data-text='¿Seguro que quieres permitir de nuevo la emisión de credenciales al ciudadano ' + ${cedula.documentNumber} + '? Sus datos y credenciales no cambian.'">
+                    <button type="button" class="btn btn-outline-success btn-sm js-confirm-open">Desbloquear</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table></div>
+</main>
+
+<dialog id="confirm-dialog" class="rne-confirm" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+    <h2 id="confirm-title" class="h5">Confirmar</h2>
+    <p id="confirm-text" class="mb-3"></p>
+    <div id="confirm-fields" class="mb-4" hidden>
+        <label for="confirm-reason" class="form-label">Motivo de la revocación (se le informará al titular)</label>
+        <select id="confirm-reason" class="form-select mb-2">
+            <option value="user-request">El titular lo solicitó</option>
+            <option value="data-changed">Cambiaron sus datos</option>
+            <option value="fraud">Posible fraude o suplantación</option>
+            <option value="legal">Decisión legal o administrativa</option>
+            <option value="other" selected>Otro motivo</option>
+        </select>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="confirm-block">
+            <label class="form-check-label" for="confirm-block">Bloquear también la emisión de nuevas credenciales a este ciudadano</label>
+        </div>
+    </div>
+    <div class="d-flex justify-content-end gap-2">
+        <button type="button" id="confirm-no" class="btn btn-secondary" autofocus>NO</button>
+        <button type="button" id="confirm-yes" class="btn btn-danger">SÍ</button>
+    </div>
+</dialog>
+<noscript>
+    <div class="container p-4"><div class="alert alert-warning">Esta pantalla necesita JavaScript para confirmar la revocación o el borrado.</div></div>
+</noscript>
+<script type="application/javascript" th:src="@{/public/js/registraduria-admin-list.js}"></script>
+</body>
+</html>

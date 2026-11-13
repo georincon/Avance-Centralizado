@@ -1,0 +1,19 @@
+{
+  "name": "discoteca-ejemplo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Discoteca de ejemplo: control de mayoría de edad en la puerta con la wallet, sin guardar datos",
+  "type": "module",
+  "main": "src/servidor.js",
+  "scripts": {
+    "start": "node src/servidor.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "pg": "^8.13.1",
+    "qrcode": "^1.5.4"
+  }
+}

@@ -1,0 +1,202 @@
+/*
+ * Copyright (c) 2023-2026 European Commission
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package eu.europa.ec.eudi.pidissuer.domain
+
+import com.eygraber.uri.Uri
+import com.eygraber.uri.Url
+import eu.europa.ec.eudi.pidissuer.adapter.out.json.InstantEpochSecondsSerializer
+import kotlinx.serialization.Required
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import org.slf4j.LoggerFactory
+import java.net.MalformedURLException
+import java.util.*
+import kotlin.time.Instant
+import kotlin.uuid.Uuid
+
+private val logHttpsUrl = LoggerFactory.getLogger(HttpsUrl::class.java)
+
+@JvmInline
+value class HttpsUrl private constructor(
+    val value: Url,
+) {
+    val externalForm: String
+        get() = value.toString()
+
+    companion object {
+        fun of(url: Url): HttpsUrl? = url.takeIf { "https".equals(it.scheme, ignoreCase = true) }?.let { HttpsUrl(it) }
+
+        fun of(url: String): HttpsUrl? =
+            try {
+                of(Url.parse(url))
+            } catch (_: MalformedURLException) {
+                null
+            }
+
+        fun unsafe(url: String): HttpsUrl {
+            val parsed = Url.parse(url)
+            logHttpsUrl.warn("Using unsafe URL $url")
+            return HttpsUrl(parsed)
+        }
+    }
+}
+
+@JvmInline
+value class Scope(
+    val value: String,
+)
+
+@JvmInline
+value class Format(
+    val value: String,
+)
+
+typealias CredentialIssuerId = HttpsUrl
+
+data class ImageUri(
+    val uri: Uri,
+    val alternativeText: String? = null,
+)
+
+@JvmInline
+value class BackgroundImage(
+    val uri: Uri,
+)
+
+data class DisplayName(
+    val name: String,
+    val locale: Locale,
+) {
+    companion object {
+        fun en(name: String): DisplayName = DisplayName(name, Locale.ENGLISH)
+    }
+}
+typealias Color = String
+
+data class CredentialDisplay(
+    val name: DisplayName,
+    val logo: ImageUri? = null,
+    val description: String? = null,
+    val backgroundColor: Color? = null,
+    val backgroundImage: BackgroundImage? = null,
+    val textColor: Color? = null,
+)
+
+typealias Display = Map<Locale, String>
+
+data class ClaimDefinition(
+    val path: ClaimPath,
+    val mandatory: Boolean? = null,
+    val display: Display = emptyMap(),
+    val nested: List<ClaimDefinition> = emptyList(),
+) {
+    init {
+        require(path.value.last() is ClaimPathElement.Claim) { "The provided ClaimPath does not correspond to an Attribute" }
+        require(nested.all { path == it.path.parent() }) {
+            "'nested' contains Claims with ClaimPaths that are not nested under this Claim"
+        }
+    }
+
+    val name: String
+        get() = (path.value.last() as ClaimPathElement.Claim).name
+
+    companion object
+}
+
+/**
+ * Identify how the Credential is bound to the identifier
+ * of the End-User who possesses the Credential
+ */
+sealed interface CryptographicBindingMethod {
+    /**
+     * Support for keys in JWK format RFC7517
+     */
+    data object Jwk : CryptographicBindingMethod
+
+    /**
+     * Support for keys expressed as a COSE Key object
+     */
+    data object CoseKey : CryptographicBindingMethod
+}
+
+/**
+ * The unique identifier of an [IssuedCredential].
+ */
+@JvmInline
+value class IssuedCredentialId(
+    val value: Uuid,
+) {
+    companion object {
+        fun random(): IssuedCredentialId = IssuedCredentialId(Uuid.random())
+    }
+}
+
+/**
+ * Credential that have issued by a specific issuing service.
+ */
+data class IssuedCredential(
+    val format: Format,
+    val type: String,
+    val issuedAt: Instant,
+    val expiresAt: Instant,
+    val notificationId: NotificationId? = null,
+    val status: StatusListToken?,
+    val clientStatus: StatusListToken,
+    val keyStorageStatus: StatusListToken?,
+    val identifier: IssuedCredentialId = IssuedCredentialId.random(),
+)
+
+/**
+ * The unique identifier of a Credential.
+ */
+@JvmInline
+value class CredentialIdentifier(
+    val value: String,
+)
+
+/**
+ * A Status List Token per Token Status List.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-oauth-status-list/">https://datatracker.ietf.org/doc/draft-ietf-oauth-status-list/</a>
+ */
+@Serializable
+data class StatusListToken(
+    @Required @SerialName(TokenStatusListSpec.URI)
+    val statusList: Uri,
+    @Required @SerialName(TokenStatusListSpec.IDX)
+    val index: UInt,
+)
+
+@JvmInline
+value class CoseAlgorithm(
+    val value: Int,
+)
+
+@JvmInline
+@Serializable
+value class NonBlankString(
+    val value: String,
+) {
+    init {
+        require(value.isNotBlank())
+    }
+
+    override fun toString(): String = value
+}
+
+typealias EpochSecondsInstant =
+    @Serializable(with = InstantEpochSecondsSerializer::class)
+    Instant

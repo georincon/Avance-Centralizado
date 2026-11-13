@@ -1,0 +1,23 @@
+<!--
+  Código propio de este fork (emulador de la Registraduría Nacional del Estado Civil).
+  Barra de navegación del panel de administración: se incluye en TODAS las páginas del panel
+  (Ciudadanos, Historial de emisiones y Avisos de revocación) para poder pasar de una a otra sin volver atrás.
+  Uso:  <th:block th:replace="~{registraduria-admin-nav :: nav('ciudadanos')}"/>   (activo: ciudadanos | historial | avisos)
+-->
+<!doctype html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="nav(activo)">
+    <div class="rne-franja"></div>
+    <nav class="rne-nav">
+        <a th:href="@{/registraduria/admin/ciudadanos}" th:classappend="${activo == 'ciudadanos'} ? 'activo'">Ciudadanos</a>
+        <a th:href="@{/registraduria/admin/historial}" th:classappend="${activo == 'historial'} ? 'activo'">Historial de emisiones</a>
+        <a th:href="@{/registraduria/admin/avisos}" th:classappend="${activo == 'avisos'} ? 'activo'">Avisos de revocación</a>
+        <span class="espacio"></span>
+        <form method="post" th:action="@{/registraduria/admin/logout}" class="m-0">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">Salir</button>
+        </form>
+    </nav>
+</th:block>
+</body>
+</html>
